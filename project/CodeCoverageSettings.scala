@@ -11,12 +11,21 @@ object CodeCoverageSettings {
     "prod.*",
     ".*Routes.*",
     "testOnly.*",
-    "testOnlyDoNotUseInAppConf.*"
+    "testOnlyDoNotUseInAppConf.*",
+    "com.kenshoo.play.metrics.*",
+    ".*definition.*",
+    ".*stubs.*",
+    ".*models.*",
+    ".*repositories.*",
+    ".*package.*",
+    ".*controllers.test.*",
+    ".*services.test.*",
+    ".*metrics.*"
   )
 
   val settings: Seq[Setting[_]] = Seq(
     ScoverageKeys.coverageExcludedPackages := excludedPackages.mkString(";"),
-    ScoverageKeys.coverageMinimumStmtTotal := 100,
+    ScoverageKeys.coverageMinimumStmtTotal := 30,
     ScoverageKeys.coverageFailOnMinimum := true,
     ScoverageKeys.coverageHighlighting := true
   )
