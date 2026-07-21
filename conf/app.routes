@@ -1,3 +1,5 @@
 # microservice specific routes
 
-GET        /hello-world        uk.gov.hmrc.carfreporting.controllers.MicroserviceHelloWorldController.hello
+POST        /upscan/callback                 uk.gov.hmrc.carfreporting.controllers.upscan.UploadCallbackController.callback
+GET         /upscan/status/:uploadId         uk.gov.hmrc.carfreporting.controllers.upscan.UploadFormController.getStatus(uploadId: String)
+POST        /upscan/upload                   uk.gov.hmrc.carfreporting.controllers.upscan.UploadFormController.requestUpload
