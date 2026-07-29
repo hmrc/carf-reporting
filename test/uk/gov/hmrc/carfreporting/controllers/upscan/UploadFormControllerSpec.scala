@@ -23,6 +23,7 @@ import play.api.test.Helpers.*
 import uk.gov.hmrc.carfreporting.base.SpecBase
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.upscan.*
+import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.Quarantined
 import uk.gov.hmrc.carfreporting.services.upscan.UploadProgressTracker
 import uk.gov.hmrc.carfreporting.types.ResultT
 

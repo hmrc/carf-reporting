@@ -18,6 +18,7 @@ package uk.gov.hmrc.carfreporting.models.upscan
 
 import play.api.libs.json.{JsError, Json}
 import uk.gov.hmrc.carfreporting.base.SpecBase
+import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
 
 class UploadStatusSpec extends SpecBase {
 

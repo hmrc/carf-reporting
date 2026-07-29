@@ -28,6 +28,7 @@ import uk.gov.hmrc.carfreporting.base.TestData
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.upscan.*
+import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import java.time.Instant

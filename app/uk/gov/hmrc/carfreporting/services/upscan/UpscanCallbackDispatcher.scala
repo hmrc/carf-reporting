@@ -18,6 +18,7 @@ package uk.gov.hmrc.carfreporting.services.upscan
 
 import play.api.Logging
 import uk.gov.hmrc.carfreporting.models.upscan.*
+import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
 import uk.gov.hmrc.carfreporting.types.ResultT
 
 import javax.inject.Inject

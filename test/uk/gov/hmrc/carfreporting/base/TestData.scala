@@ -19,6 +19,7 @@ package uk.gov.hmrc.carfreporting.base
 import org.bson.types.ObjectId
 import uk.gov.hmrc.carfreporting.config.Constants.ukZoneId
 import uk.gov.hmrc.carfreporting.models.upscan.*
+import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
 
 import java.time.*
 import java.util.UUID
@@ -67,14 +68,15 @@ trait TestData {
       errorDetails(failureReason)
     )
 
-  val uploadedSuccessfully = UploadedSuccessfully(
-    name = "test.xml",
-    mimeType = "application/xml",
-    downloadUrl = testDownloadUrl,
-    size = Some(987L),
-    checksum = Some("396f1")
-  )
+  val uploadedSuccessfully: UploadStatus.UploadedSuccessfully =
+    UploadedSuccessfully(
+      name = "test.xml",
+      mimeType = "application/xml",
+      downloadUrl = testDownloadUrl,
+      size = Some(987L),
+      checksum = Some("396f1")
+    )
 
-  val uploadRejected = UploadRejected(errorDetails("REJECTED"))
+  val uploadRejected: UploadStatus.UploadRejected = UploadRejected(errorDetails("REJECTED"))
 
 }

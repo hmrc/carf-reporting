@@ -18,22 +18,22 @@ package uk.gov.hmrc.carfreporting.models.upscan
 
 import play.api.libs.json.*
 
-sealed trait UploadStatus
+enum UploadStatus {
+  case NotStarted
+  case InProgress
+  case Failed
+  case Quarantined
 
-case object NotStarted extends UploadStatus
-case object InProgress extends UploadStatus
-case object Failed extends UploadStatus
-case object Quarantined extends UploadStatus
+  case UploadedSuccessfully(
+      name: String,
+      mimeType: String,
+      downloadUrl: String,
+      size: Option[Long],
+      checksum: Option[String]
+  )
 
-case class UploadedSuccessfully(
-    name: String,
-    mimeType: String,
-    downloadUrl: String,
-    size: Option[Long],
-    checksum: Option[String]
-) extends UploadStatus
-
-case class UploadRejected(details: ErrorDetails) extends UploadStatus
+  case UploadRejected(details: ErrorDetails)
+}
 
 object UploadStatus {
 
