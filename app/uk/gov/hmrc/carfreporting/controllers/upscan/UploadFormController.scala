@@ -32,7 +32,7 @@ class UploadFormController @Inject() (
     extends BackendController(cc) {
 
   // TODO: Try to use AuthAction when linked to frontend (CARF-578)
-  def requestUpload: Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def saveRequestedUpload: Action[JsValue] = Action.async(parse.json) { implicit request =>
     request.body
       .validate[UpscanIdentifiers]
       .fold(

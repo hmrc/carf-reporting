@@ -37,9 +37,9 @@ case class UploadRejected(details: ErrorDetails) extends UploadStatus
 
 object UploadStatus {
 
-  implicit val uploadedSuccessfullyFormat: OFormat[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
+  val uploadedSuccessfullyFormat: OFormat[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
 
-  implicit val uploadRejectedFormat: OFormat[UploadRejected] = Json.format[UploadRejected]
+  val uploadRejectedFormat: OFormat[UploadRejected] = Json.format[UploadRejected]
 
   implicit val read: Reads[UploadStatus] = new Reads[UploadStatus] {
 

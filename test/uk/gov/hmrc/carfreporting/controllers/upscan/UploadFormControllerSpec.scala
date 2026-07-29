@@ -38,14 +38,14 @@ class UploadFormControllerSpec extends SpecBase {
   }
 
   "UploadFormController" - {
-    ".requestUpload" - {
+    ".saveRequestedUpload" - {
       "must return OK when passed a valid request body" in {
         val upscanIdentifiers = UpscanIdentifiers(testUploadId, testReference)
 
         when(mockUploadProgressTracker.requestUpload(eqTo(testUploadId), eqTo(testReference)))
           .thenReturn(ResultT.fromValue(true))
 
-        val result = controller.requestUpload(
+        val result = controller.saveRequestedUpload(
           fakeRequestWithJsonBody(Json.toJson(upscanIdentifiers))
         )
 
@@ -60,7 +60,7 @@ class UploadFormControllerSpec extends SpecBase {
         when(mockUploadProgressTracker.requestUpload(eqTo(testUploadId), eqTo(testReference)))
           .thenReturn(ResultT.fromError(MongoError("Error message")))
 
-        val result = controller.requestUpload(
+        val result = controller.saveRequestedUpload(
           fakeRequestWithJsonBody(Json.toJson(upscanIdentifiers))
         )
 
@@ -73,7 +73,7 @@ class UploadFormControllerSpec extends SpecBase {
       "must return BadRequest when passed an invalid request body" in {
         val requestBody = """{ "fileReference" : "test" }"""
 
-        val result = controller.requestUpload(
+        val result = controller.saveRequestedUpload(
           fakeRequestWithJsonBody(Json.toJson(requestBody))
         )
 
