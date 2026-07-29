@@ -20,11 +20,11 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{reset, times, verify, when}
 import play.api.http.Status.*
 import play.api.libs.json.Json
-import play.api.test.Helpers.status
+import play.api.test.Helpers.{contentAsString, status}
 import uk.gov.hmrc.carfreporting.base.SpecBase
+import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.services.upscan.UpscanCallbackDispatcher
-
-import scala.concurrent.Future
+import uk.gov.hmrc.carfreporting.types.ResultT
 
 class UploadCallbackControllerSpec extends SpecBase {
 
@@ -54,7 +54,7 @@ class UploadCallbackControllerSpec extends SpecBase {
           }"""
       )
 
-      when(mockUpscanCallbackDispatcher.handleCallback(any())).thenReturn(Future.successful(true))
+      when(mockUpscanCallbackDispatcher.handleCallback(any())).thenReturn(ResultT.fromValue(true))
 
       val result = controller.callback(
         fakeRequestWithJsonBody(Json.toJson(requestBody))
@@ -77,7 +77,7 @@ class UploadCallbackControllerSpec extends SpecBase {
             }"""
       )
 
-      when(mockUpscanCallbackDispatcher.handleCallback(any())).thenReturn(Future.successful(true))
+      when(mockUpscanCallbackDispatcher.handleCallback(any())).thenReturn(ResultT.fromValue(true))
 
       val result = controller.callback(
         fakeRequestWithJsonBody(Json.toJson(requestBody))
@@ -100,7 +100,7 @@ class UploadCallbackControllerSpec extends SpecBase {
             }"""
       )
 
-      when(mockUpscanCallbackDispatcher.handleCallback(any())).thenReturn(Future.successful(true))
+      when(mockUpscanCallbackDispatcher.handleCallback(any())).thenReturn(ResultT.fromValue(true))
 
       val result = controller.callback(
         fakeRequestWithJsonBody(Json.toJson(requestBody))
@@ -123,13 +123,42 @@ class UploadCallbackControllerSpec extends SpecBase {
             }"""
       )
 
-      when(mockUpscanCallbackDispatcher.handleCallback(any())).thenReturn(Future.successful(true))
+      when(mockUpscanCallbackDispatcher.handleCallback(any())).thenReturn(ResultT.fromValue(true))
 
       val result = controller.callback(
         fakeRequestWithJsonBody(Json.toJson(requestBody))
       )
 
       status(result) mustEqual OK
+
+      verify(mockUpscanCallbackDispatcher, times(1)).handleCallback(any())
+    }
+
+    "must return InternalServerError when UpscanCallbackDispatcher returns an error" in {
+      val requestBody = Json.parse(
+        """{
+          "reference" : "11370e18-6e24-453e-b45a-76d3e32ea33d",
+          "downloadUrl" : "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
+          "uploadDetails" : {
+            "fileName" : "test.xml",
+            "fileMimeType" : "application/xml",
+            "uploadTimestamp" : "2018-04-24T09:30:00Z",
+            "checksum" : "396f1",
+            "size" : 987
+            },
+          "fileStatus" : "READY"
+        }"""
+      )
+
+      when(mockUpscanCallbackDispatcher.handleCallback(any()))
+        .thenReturn(ResultT.fromError(MongoError("Error message")))
+
+      val result = controller.callback(
+        fakeRequestWithJsonBody(Json.toJson(requestBody))
+      )
+
+      status(result)     mustEqual INTERNAL_SERVER_ERROR
+      contentAsString(result) must include("Error message")
 
       verify(mockUpscanCallbackDispatcher, times(1)).handleCallback(any())
     }

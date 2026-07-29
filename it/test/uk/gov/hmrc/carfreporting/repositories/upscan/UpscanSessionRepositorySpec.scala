@@ -26,6 +26,7 @@ import org.scalatest.matchers.must.Matchers.*
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.carfreporting.base.TestData
 import uk.gov.hmrc.carfreporting.config.AppConfig
+import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
@@ -55,11 +56,35 @@ class UpscanSessionRepositorySpec
   "UpscanSessionRepository" - {
     ".insert" - {
       "must insert an UploadSessionDetails" in {
-        val setResult = repository.insert(uploadSessionDetails).futureValue
+        val setResult = repository.insert(uploadSessionDetails).value.futureValue
         val record    = find(Filters.equal("_id", uploadSessionDetails._id)).futureValue.headOption.value
 
-        setResult mustEqual true
-        record    mustEqual uploadSessionDetails
+        setResult mustBe Right(true)
+        record    mustBe uploadSessionDetails
+      }
+
+      "must return a MongoError if there is already a record with the same uploadId" in {
+        val setResult1 = repository.insert(uploadSessionDetails).value.futureValue
+        val setResult2 = repository.insert(uploadSessionDetails.copy(reference = Reference("new"))).value.futureValue
+
+        setResult1 mustBe Right(true)
+        setResult2 mustBe Left(
+          MongoError(
+            "MongoWriteException from UpscanSessionRepository .insert - ensure no duplicate uploadId or reference"
+          )
+        )
+      }
+
+      "must return a MongoError if there is already a record with the same reference" in {
+        val setResult1 = repository.insert(uploadSessionDetails).value.futureValue
+        val setResult2 = repository.insert(uploadSessionDetails.copy(uploadId = UploadId("111111"))).value.futureValue
+
+        setResult1 mustBe Right(true)
+        setResult2 mustBe Left(
+          MongoError(
+            "MongoWriteException from UpscanSessionRepository .insert - ensure no duplicate uploadId or reference"
+          )
+        )
       }
     }
 
@@ -67,13 +92,13 @@ class UpscanSessionRepositorySpec
       "when there is a record for the uploadId" in {
         insert(uploadSessionDetails).futureValue
 
-        val result = repository.findByUploadId(testUploadId).futureValue
+        val result = repository.findByUploadId(testUploadId).value.futureValue
 
-        result.value mustEqual uploadSessionDetails
+        result mustBe Right(Some(uploadSessionDetails))
       }
 
       "when there is no record for the uploadId" in {
-        repository.findByUploadId(UploadId("abc")).futureValue mustBe None
+        repository.findByUploadId(UploadId("abc")).value.futureValue mustBe Right(None)
       }
     }
 
@@ -81,11 +106,11 @@ class UpscanSessionRepositorySpec
       "must update the status and lastUpdated time" in {
         insert(uploadSessionDetails).futureValue
 
-        val updateResult = repository.updateStatus(testReference, Failed).futureValue
+        val updateResult = repository.updateStatus(testReference, Failed).value.futureValue
         val record       = find(Filters.equal("_id", uploadSessionDetails._id)).futureValue.headOption.value
 
-        updateResult mustEqual true
-        record       mustEqual uploadSessionDetails.copy(status = Failed, lastUpdated = instant)
+        updateResult mustBe Right(true)
+        record       mustBe uploadSessionDetails.copy(status = Failed, lastUpdated = instant)
       }
     }
   }

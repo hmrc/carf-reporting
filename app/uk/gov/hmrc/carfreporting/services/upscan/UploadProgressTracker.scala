@@ -19,9 +19,10 @@ package uk.gov.hmrc.carfreporting.services.upscan
 import org.bson.types.ObjectId
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.repositories.upscan.UpscanSessionRepository
+import uk.gov.hmrc.carfreporting.types.ResultT
 
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class UploadProgressTracker @Inject() (
     repository: UpscanSessionRepository
@@ -30,7 +31,7 @@ class UploadProgressTracker @Inject() (
   def requestUpload(
       uploadId: UploadId,
       fileReference: Reference
-  ): Future[Boolean] =
+  ): ResultT[Boolean] =
     repository.insert(
       UploadSessionDetails(ObjectId.get(), uploadId, fileReference, InProgress)
     )
@@ -38,10 +39,10 @@ class UploadProgressTracker @Inject() (
   def registerUploadResult(
       fileReference: Reference,
       uploadStatus: UploadStatus
-  ): Future[Boolean] =
+  ): ResultT[Boolean] =
     repository.updateStatus(fileReference, uploadStatus)
 
-  def getUploadResult(id: UploadId): Future[Option[UploadStatus]] =
+  def getUploadResult(id: UploadId): ResultT[Option[UploadStatus]] =
     repository.findByUploadId(id).map(_.map(_.status))
 
 }

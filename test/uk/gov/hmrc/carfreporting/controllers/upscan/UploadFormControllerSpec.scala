@@ -21,10 +21,10 @@ import org.mockito.Mockito.{reset, times, verify, when}
 import play.api.libs.json.Json
 import play.api.test.Helpers.*
 import uk.gov.hmrc.carfreporting.base.SpecBase
+import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.services.upscan.UploadProgressTracker
-
-import scala.concurrent.Future
+import uk.gov.hmrc.carfreporting.types.ResultT
 
 class UploadFormControllerSpec extends SpecBase {
 
@@ -43,13 +43,29 @@ class UploadFormControllerSpec extends SpecBase {
         val upscanIdentifiers = UpscanIdentifiers(testUploadId, testReference)
 
         when(mockUploadProgressTracker.requestUpload(eqTo(testUploadId), eqTo(testReference)))
-          .thenReturn(Future.successful(true))
+          .thenReturn(ResultT.fromValue(true))
 
         val result = controller.requestUpload(
           fakeRequestWithJsonBody(Json.toJson(upscanIdentifiers))
         )
 
         status(result) mustEqual OK
+
+        verify(mockUploadProgressTracker, times(1)).requestUpload(eqTo(testUploadId), eqTo(testReference))
+      }
+
+      "must return InternalServerError when UploadProgressTracker returns an error" in {
+        val upscanIdentifiers = UpscanIdentifiers(testUploadId, testReference)
+
+        when(mockUploadProgressTracker.requestUpload(eqTo(testUploadId), eqTo(testReference)))
+          .thenReturn(ResultT.fromError(MongoError("Error message")))
+
+        val result = controller.requestUpload(
+          fakeRequestWithJsonBody(Json.toJson(upscanIdentifiers))
+        )
+
+        status(result)     mustEqual INTERNAL_SERVER_ERROR
+        contentAsString(result) must include("Error message")
 
         verify(mockUploadProgressTracker, times(1)).requestUpload(eqTo(testUploadId), eqTo(testReference))
       }
@@ -69,7 +85,7 @@ class UploadFormControllerSpec extends SpecBase {
 
     ".getStatus" - {
       "must return NOT_FOUND when no upload status is retrieved" in {
-        when(mockUploadProgressTracker.getUploadResult(eqTo(testUploadId))).thenReturn(Future.successful(None))
+        when(mockUploadProgressTracker.getUploadResult(eqTo(testUploadId))).thenReturn(ResultT.fromValue(None))
 
         val result = controller.getStatus(testUploadId.value)(fakeRequest)
 
@@ -80,7 +96,7 @@ class UploadFormControllerSpec extends SpecBase {
 
       "must return OK when an upload status with no fields is retrieved" in {
         when(mockUploadProgressTracker.getUploadResult(eqTo(testUploadId)))
-          .thenReturn(Future.successful(Some(Quarantined)))
+          .thenReturn(ResultT.fromValue(Some(Quarantined)))
 
         val result = controller.getStatus(testUploadId.value)(fakeRequest)
 
@@ -92,7 +108,7 @@ class UploadFormControllerSpec extends SpecBase {
 
       "must return OK when an UploadedSuccessfully is retrieved" in {
         when(mockUploadProgressTracker.getUploadResult(eqTo(testUploadId)))
-          .thenReturn(Future.successful(Some(uploadedSuccessfully)))
+          .thenReturn(ResultT.fromValue(Some(uploadedSuccessfully)))
 
         val result = controller.getStatus(testUploadId.value)(fakeRequest)
 
@@ -114,7 +130,7 @@ class UploadFormControllerSpec extends SpecBase {
 
       "must return OK when an UploadRejected is retrieved" in {
         when(mockUploadProgressTracker.getUploadResult(eqTo(testUploadId)))
-          .thenReturn(Future.successful(Some(uploadRejected)))
+          .thenReturn(ResultT.fromValue(Some(uploadRejected)))
 
         val result = controller.getStatus(testUploadId.value)(fakeRequest)
 
@@ -129,6 +145,18 @@ class UploadFormControllerSpec extends SpecBase {
 
         status(result)        mustEqual OK
         contentAsJson(result) mustEqual Json.parse(expectedJson)
+
+        verify(mockUploadProgressTracker, times(1)).getUploadResult(eqTo(testUploadId))
+      }
+
+      "must return INTERNAL_SERVER_ERROR when UploadProgressTracker returns an error" in {
+        when(mockUploadProgressTracker.getUploadResult(eqTo(testUploadId)))
+          .thenReturn(ResultT.fromError(MongoError("Error message")))
+
+        val result = controller.getStatus(testUploadId.value)(fakeRequest)
+
+        status(result)     mustEqual INTERNAL_SERVER_ERROR
+        contentAsString(result) must include("Error message")
 
         verify(mockUploadProgressTracker, times(1)).getUploadResult(eqTo(testUploadId))
       }

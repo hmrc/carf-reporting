@@ -40,15 +40,20 @@ class UploadFormController @Inject() (
         valid = identifiers =>
           uploadProgressTracker
             .requestUpload(identifiers.uploadId, identifiers.fileReference)
-            .map(_ => Ok)
+            .value
+            .map {
+              case Right(_)    => Ok
+              case Left(error) => InternalServerError(s"Unexpected error: $error")
+            }
       )
   }
 
   // TODO: Try to use AuthAction when linked to frontend (CARF-578)
   def getStatus(uploadId: String): Action[AnyContent] = Action.async {
-    uploadProgressTracker.getUploadResult(UploadId(uploadId)).map {
-      case Some(uploadStatus) => Ok(Json.toJson(uploadStatus))
-      case None               => NotFound
+    uploadProgressTracker.getUploadResult(UploadId(uploadId)).value.map {
+      case Right(Some(uploadStatus)) => Ok(Json.toJson(uploadStatus))
+      case Right(None)               => NotFound
+      case Left(error)               => InternalServerError(s"Unexpected error: $error")
     }
   }
 }

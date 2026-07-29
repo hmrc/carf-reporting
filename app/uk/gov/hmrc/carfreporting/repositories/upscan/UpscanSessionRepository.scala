@@ -16,20 +16,23 @@
 
 package uk.gov.hmrc.carfreporting.repositories.upscan
 
+import com.mongodb.MongoWriteException
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Updates.set
 import org.mongodb.scala.model.{FindOneAndUpdateOptions, IndexModel, IndexOptions, Updates}
 import uk.gov.hmrc.carfreporting.config.AppConfig
+import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.upscan.*
+import uk.gov.hmrc.carfreporting.types.ResultT
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import java.time.{Clock, Instant}
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class UpscanSessionRepository @Inject() (
@@ -52,28 +55,33 @@ class UpscanSessionRepository @Inject() (
           ascending("uploadId"),
           IndexOptions()
             .name("uploadId-index")
-            .unique(false)
+            .unique(true)
         ),
         IndexModel(
           ascending("reference"),
           IndexOptions()
             .name("reference-index")
-            .unique(false)
+            .unique(true)
         )
       ),
       replaceIndexes = true
     ) {
 
-  def findByUploadId(uploadId: UploadId): Future[Option[UploadSessionDetails]] =
-    collection
-      .find(equal("uploadId", Codecs.toBson(uploadId.value)))
-      .first()
-      .toFutureOption()
+  def findByUploadId(uploadId: UploadId): ResultT[Option[UploadSessionDetails]] =
+    ResultT.fromFuture {
+      collection
+        .find(equal("uploadId", Codecs.toBson(uploadId.value)))
+        .headOption()
+        .map(Right(_))
+        .recover { case _ =>
+          Left(MongoError("Failed to call UpscanSessionRepository .findByUploadId"))
+        }
+    }
 
   def updateStatus(
       reference: Reference,
       newStatus: UploadStatus
-  ): Future[Boolean] = {
+  ): ResultT[Boolean] = {
     val filter: Bson                     = equal("reference", Codecs.toBson(reference.value))
     val modifier: Bson                   = Updates.combine(
       set("status", Codecs.toBson(newStatus)),
@@ -81,16 +89,33 @@ class UpscanSessionRepository @Inject() (
     )
     val options: FindOneAndUpdateOptions = FindOneAndUpdateOptions().upsert(true)
 
-    collection
-      .findOneAndUpdate(filter, modifier, options)
-      .toFuture()
-      .map(_ => true)
+    ResultT.fromFuture {
+      collection
+        .findOneAndUpdate(filter, modifier, options)
+        .toFuture()
+        .map(_ => Right(true))
+        .recover { case _ =>
+          Left(MongoError("Failed to call UpscanSessionRepository .updateStatus"))
+        }
+    }
+
   }
 
-  def insert(uploadDetails: UploadSessionDetails): Future[Boolean] =
-    collection
-      .insertOne(uploadDetails)
-      .toFuture()
-      .map(_ => true)
+  def insert(uploadDetails: UploadSessionDetails): ResultT[Boolean] =
+    ResultT.fromFuture {
+      collection
+        .insertOne(uploadDetails)
+        .toFuture()
+        .map(_ => Right(true))
+        .recover {
+          case e: MongoWriteException =>
+            Left(
+              MongoError(
+                "MongoWriteException from UpscanSessionRepository .insert - ensure no duplicate uploadId or reference"
+              )
+            )
+          case _                      => Left(MongoError("Failed to call UpscanSessionRepository .insert"))
+        }
+    }
 
 }

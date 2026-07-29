@@ -37,9 +37,10 @@ class UploadCallbackController @Inject() (
       .fold(
         invalid = _ => Future.successful(BadRequest("Could not parse request body as CallbackBody")),
         valid = validCallback =>
-          upscanCallbackDispatcher
-            .handleCallback(validCallback)
-            .map(_ => Ok)
+          upscanCallbackDispatcher.handleCallback(validCallback).value.map {
+            case Right(_)    => Ok
+            case Left(error) => InternalServerError(s"Unexpected error: $error")
+          }
       )
   }
 }

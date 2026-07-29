@@ -19,10 +19,10 @@ package uk.gov.hmrc.carfreporting.services.upscan
 import org.mockito.ArgumentMatchers.{any, argThat, eq as eqTo}
 import org.mockito.Mockito.{reset, times, verify, when}
 import uk.gov.hmrc.carfreporting.base.SpecBase
+import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.repositories.upscan.UpscanSessionRepository
-
-import scala.concurrent.Future
+import uk.gov.hmrc.carfreporting.types.ResultT
 
 class UploadProgressTrackerSpec extends SpecBase {
 
@@ -38,10 +38,26 @@ class UploadProgressTrackerSpec extends SpecBase {
   "UploadProgressTracker" - {
     ".requestUpload" - {
       "must insert an UploadSessionDetails" in {
-        when(mockUpscanSessionRepository.insert(any[UploadSessionDetails]())).thenReturn(Future.successful(true))
+        when(mockUpscanSessionRepository.insert(any[UploadSessionDetails]())).thenReturn(ResultT.fromValue(true))
 
         val result = uploadProgressTracker.requestUpload(testUploadId, testReference)
-        result.futureValue mustBe true
+        result.value.futureValue mustBe Right(true)
+
+        verify(mockUpscanSessionRepository, times(1)).insert(
+          argThat { details =>
+            details.uploadId == testUploadId &&
+            details.reference == testReference &&
+            details.status == InProgress
+          }
+        )
+      }
+
+      "must return an error if UpscanSessionRepository returns an error" in {
+        when(mockUpscanSessionRepository.insert(any[UploadSessionDetails]()))
+          .thenReturn(ResultT.fromError(MongoError("error")))
+
+        val result = uploadProgressTracker.requestUpload(testUploadId, testReference)
+        result.value.futureValue mustBe Left(MongoError("error"))
 
         verify(mockUpscanSessionRepository, times(1)).insert(
           argThat { details =>
@@ -55,10 +71,19 @@ class UploadProgressTrackerSpec extends SpecBase {
 
     ".registerUploadResult" - {
       "must update status" in {
-        when(mockUpscanSessionRepository.updateStatus(any(), any())).thenReturn(Future.successful(true))
+        when(mockUpscanSessionRepository.updateStatus(any(), any())).thenReturn(ResultT.fromValue(true))
 
         val result = uploadProgressTracker.registerUploadResult(testReference, uploadedSuccessfully)
-        result.futureValue mustBe true
+        result.value.futureValue mustBe Right(true)
+
+        verify(mockUpscanSessionRepository, times(1)).updateStatus(eqTo(testReference), eqTo(uploadedSuccessfully))
+      }
+
+      "must return an error if UpscanSessionRepository returns an error" in {
+        when(mockUpscanSessionRepository.updateStatus(any(), any())).thenReturn(ResultT.fromError(MongoError("error")))
+
+        val result = uploadProgressTracker.registerUploadResult(testReference, uploadedSuccessfully)
+        result.value.futureValue mustBe Left(MongoError("error"))
 
         verify(mockUpscanSessionRepository, times(1)).updateStatus(eqTo(testReference), eqTo(uploadedSuccessfully))
       }
@@ -66,10 +91,10 @@ class UploadProgressTrackerSpec extends SpecBase {
 
     ".getUploadResult" - {
       "must return None when no record is found" in {
-        when(mockUpscanSessionRepository.findByUploadId(any())).thenReturn(Future.successful(None))
+        when(mockUpscanSessionRepository.findByUploadId(any())).thenReturn(ResultT.fromValue(None))
 
         val result = uploadProgressTracker.getUploadResult(testUploadId)
-        result.futureValue mustBe None
+        result.value.futureValue mustBe Right(None)
 
         verify(mockUpscanSessionRepository, times(1)).findByUploadId(eqTo(testUploadId))
       }
@@ -77,33 +102,42 @@ class UploadProgressTrackerSpec extends SpecBase {
       "must return the status when a record is found" - {
         "with status UploadedSuccessfully" in {
           when(mockUpscanSessionRepository.findByUploadId(any()))
-            .thenReturn(Future.successful(Some(uploadSessionDetails.copy(status = uploadedSuccessfully))))
+            .thenReturn(ResultT.fromValue(Some(uploadSessionDetails.copy(status = uploadedSuccessfully))))
 
           val result = uploadProgressTracker.getUploadResult(testUploadId)
-          result.futureValue mustBe Some(uploadedSuccessfully)
+          result.value.futureValue mustBe Right(Some(uploadedSuccessfully))
 
           verify(mockUpscanSessionRepository, times(1)).findByUploadId(eqTo(testUploadId))
         }
 
         "with status UploadRejected" in {
           when(mockUpscanSessionRepository.findByUploadId(any()))
-            .thenReturn(Future.successful(Some(uploadSessionDetails.copy(status = uploadRejected))))
+            .thenReturn(ResultT.fromValue(Some(uploadSessionDetails.copy(status = uploadRejected))))
 
           val result = uploadProgressTracker.getUploadResult(testUploadId)
-          result.futureValue mustBe Some(uploadRejected)
+          result.value.futureValue mustBe Right(Some(uploadRejected))
 
           verify(mockUpscanSessionRepository, times(1)).findByUploadId(eqTo(testUploadId))
         }
 
         "with status InProgress" in {
           when(mockUpscanSessionRepository.findByUploadId(any()))
-            .thenReturn(Future.successful(Some(uploadSessionDetails.copy(status = InProgress))))
+            .thenReturn(ResultT.fromValue(Some(uploadSessionDetails.copy(status = InProgress))))
 
           val result = uploadProgressTracker.getUploadResult(testUploadId)
-          result.futureValue mustBe Some(InProgress)
+          result.value.futureValue mustBe Right(Some(InProgress))
 
           verify(mockUpscanSessionRepository, times(1)).findByUploadId(eqTo(testUploadId))
         }
+      }
+
+      "must return return an error if UpscanSessionRepository returns an error" in {
+        when(mockUpscanSessionRepository.findByUploadId(any())).thenReturn(ResultT.fromError(MongoError("error")))
+
+        val result = uploadProgressTracker.getUploadResult(testUploadId)
+        result.value.futureValue mustBe Left(MongoError("error"))
+
+        verify(mockUpscanSessionRepository, times(1)).findByUploadId(eqTo(testUploadId))
       }
     }
   }

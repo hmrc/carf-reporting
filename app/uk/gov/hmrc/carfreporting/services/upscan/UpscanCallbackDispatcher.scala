@@ -18,37 +18,38 @@ package uk.gov.hmrc.carfreporting.services.upscan
 
 import play.api.Logging
 import uk.gov.hmrc.carfreporting.models.upscan.*
+import uk.gov.hmrc.carfreporting.types.ResultT
 
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class UpscanCallbackDispatcher @Inject() (
     uploadProgressTracker: UploadProgressTracker
 )(implicit val ec: ExecutionContext)
     extends Logging {
 
-  def handleCallback(callback: CallbackBody): Future[Boolean] = {
+  def handleCallback(callback: CallbackBody): ResultT[Boolean] = {
     val uploadStatus: UploadStatus = callback match {
 
-      case s: ReadyCallbackBody =>
+      case body: ReadyCallbackBody =>
         UploadedSuccessfully(
-          s.uploadDetails.fileName,
-          s.uploadDetails.fileMimeType,
-          s.downloadUrl,
-          Some(s.uploadDetails.size),
-          Some(s.uploadDetails.checksum)
+          body.uploadDetails.fileName,
+          body.uploadDetails.fileMimeType,
+          body.downloadUrl,
+          Some(body.uploadDetails.size),
+          Some(body.uploadDetails.checksum)
         )
 
-      case q: FailedCallbackBody if q.failureDetails.failureReason == "QUARANTINE" =>
-        logger.warn(s"FailedCallbackBody, QUARANTINE: ${q.reference.value}")
+      case body: FailedCallbackBody if body.failureDetails.failureReason == "QUARANTINE" =>
+        logger.warn(s"FailedCallbackBody, QUARANTINE: ${body.reference.value}")
         Quarantined
 
-      case r: FailedCallbackBody if r.failureDetails.failureReason == "REJECTED" =>
-        logger.warn(s"FailedCallbackBody, REJECTED: ${r.reference.value}")
-        UploadRejected(r.failureDetails)
+      case body: FailedCallbackBody if body.failureDetails.failureReason == "REJECTED" =>
+        logger.warn(s"FailedCallbackBody, REJECTED: ${body.reference.value}")
+        UploadRejected(body.failureDetails)
 
-      case f: FailedCallbackBody =>
-        logger.warn(s"FailedCallbackBody: ${f.reference.value}")
+      case body: FailedCallbackBody =>
+        logger.warn(s"FailedCallbackBody: ${body.reference.value}")
         Failed
     }
 
