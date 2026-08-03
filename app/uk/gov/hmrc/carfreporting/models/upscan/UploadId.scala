@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.controllers
+package uk.gov.hmrc.carfreporting.models.upscan
 
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import play.api.libs.json.*
 
-import javax.inject.{Inject, Singleton}
+case class UploadId(value: String)
 
-@Singleton()
-class MicroserviceHelloWorldController @Inject() (
-    cc: ControllerComponents
-) extends BackendController(cc):
+object UploadId {
 
-  val hello: Action[AnyContent] = Action { implicit request =>
-    Ok("Hello world")
-  }
+  implicit val reads: Reads[UploadId] =
+    Reads.StringReads.map(UploadId(_))
+
+  implicit val writes: Writes[UploadId] =
+    Writes[UploadId](x => JsString(x.value))
+}

@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.config
+package uk.gov.hmrc.carfreporting.models.upscan
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
+import play.api.libs.json.{Json, OFormat}
 
-@Singleton
-class AppConfig @Inject() (config: Configuration) {
+case class UpscanIdentifiers(uploadId: UploadId, fileReference: Reference)
 
-  val appName: String = config.get[String]("appName")
-
-  lazy val cacheTtl: Long = config.get[Long]("mongodb.timeToLiveInSeconds")
+object UpscanIdentifiers {
+  implicit val format: OFormat[UpscanIdentifiers] = Json.format[UpscanIdentifiers]
 }

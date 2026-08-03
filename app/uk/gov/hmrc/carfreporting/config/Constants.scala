@@ -16,13 +16,10 @@
 
 package uk.gov.hmrc.carfreporting.config
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
+import java.time.ZoneId
 
-@Singleton
-class AppConfig @Inject() (config: Configuration) {
+object Constants {
 
-  val appName: String = config.get[String]("appName")
+  val ukZoneId: ZoneId = ZoneId.of("Europe/London")
 
-  lazy val cacheTtl: Long = config.get[Long]("mongodb.timeToLiveInSeconds")
 }

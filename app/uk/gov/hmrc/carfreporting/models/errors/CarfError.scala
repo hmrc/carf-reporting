@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.config
+package uk.gov.hmrc.carfreporting.models.errors
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
+sealed trait CarfError
 
-@Singleton
-class AppConfig @Inject() (config: Configuration) {
+case class MongoError(value: String = "") extends CarfError
 
-  val appName: String = config.get[String]("appName")
+sealed trait ApiError extends CarfError
 
-  lazy val cacheTtl: Long = config.get[Long]("mongodb.timeToLiveInSeconds")
+object ApiError {
+
+  case object BadRequestError extends ApiError
+
+  case object NotFoundError extends ApiError
+
+  case object InternalServerError extends ApiError
+
+  case object JsonValidationError extends ApiError
 }

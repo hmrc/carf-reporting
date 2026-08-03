@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.config
+package uk.gov.hmrc.carfreporting.types
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
+import cats.data.EitherT
+import uk.gov.hmrc.carfreporting.models.errors.CarfError
 
-@Singleton
-class AppConfig @Inject() (config: Configuration) {
+import scala.concurrent.Future
 
-  val appName: String = config.get[String]("appName")
+type ResultT[T] = EitherT[Future, CarfError, T]
 
-  lazy val cacheTtl: Long = config.get[Long]("mongodb.timeToLiveInSeconds")
+object ResultT {
+  def fromFuture[T](value: Future[Either[CarfError, T]]): ResultT[T] =
+    EitherT(value)
+
+  def fromValue[T](value: T): ResultT[T] =
+    EitherT(Future.successful(Right(value)))
+
+  def fromError[T](error: CarfError): ResultT[T] =
+    EitherT[Future, CarfError, T](Future.successful(Left(error)))
 }

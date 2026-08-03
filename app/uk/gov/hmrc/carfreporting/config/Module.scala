@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting
+package uk.gov.hmrc.carfreporting.config
 
-import play.api.{Configuration, Environment}
-import play.api.inject.{Binding, Module => AppModule}
+import com.google.inject.AbstractModule
+import uk.gov.hmrc.carfreporting.controllers.actions.{AuthAction, DefaultAuthAction}
 
-import java.time.Clock
+import java.time.{Clock, ZoneOffset}
 
-class Module extends AppModule:
+class Module extends AbstractModule {
 
-  override def bindings(
-      environment: Environment,
-      configuration: Configuration
-  ): Seq[Binding[_]] =
-    bind[Clock].toInstance(Clock.systemDefaultZone) :: // inject if current time needs to be controlled in unit tests
-      Nil
+  override def configure(): Unit = {
+    bind(classOf[AuthAction]).to(classOf[DefaultAuthAction]).asEagerSingleton()
+    bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
+    bind(classOf[AppConfig]).asEagerSingleton()
+  }
+}

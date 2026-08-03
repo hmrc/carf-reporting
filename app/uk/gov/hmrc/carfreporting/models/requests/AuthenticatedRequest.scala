@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.config
+package uk.gov.hmrc.carfreporting.models.requests
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
+import play.api.mvc.{Request, WrappedRequest}
+import uk.gov.hmrc.auth.core.AffinityGroup
+import uk.gov.hmrc.http.SessionId
 
-@Singleton
-class AppConfig @Inject() (config: Configuration) {
-
-  val appName: String = config.get[String]("appName")
-
-  lazy val cacheTtl: Long = config.get[Long]("mongodb.timeToLiveInSeconds")
-}
+case class AuthenticatedRequest[A](
+    private val request: Request[A],
+    internalId: String,
+    sessionId: SessionId,
+    affinityGroup: AffinityGroup
+) extends WrappedRequest[A](request)

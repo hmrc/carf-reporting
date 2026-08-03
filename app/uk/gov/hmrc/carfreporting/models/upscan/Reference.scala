@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.controllers
+package uk.gov.hmrc.carfreporting.models.upscan
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
-import play.api.http.Status
-import play.api.test.Helpers._
-import play.api.test.{FakeRequest, Helpers}
+import play.api.libs.json.{JsString, Reads, Writes}
 
-class MicroserviceHelloWorldControllerSpec extends AnyWordSpec with Matchers:
+case class Reference(value: String)
 
-  private val fakeRequest = FakeRequest("GET", "/")
-  private val controller  = new MicroserviceHelloWorldController(Helpers.stubControllerComponents())
+object Reference {
 
-  "GET /" should:
-    "return 200" in:
-      val result = controller.hello()(fakeRequest)
-      status(result) shouldBe Status.OK
+  implicit val referenceReads: Reads[Reference] =
+    Reads.StringReads.map(Reference(_))
+
+  implicit val referenceWrites: Writes[Reference] =
+    Writes[Reference](x => JsString(x.value))
+}
