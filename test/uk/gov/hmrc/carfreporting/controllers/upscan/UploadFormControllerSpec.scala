@@ -31,7 +31,7 @@ class UploadFormControllerSpec extends SpecBase {
 
   val mockUploadProgressTracker: UploadProgressTracker = mock[UploadProgressTracker]
 
-  val controller = new UploadFormController(mockUploadProgressTracker, cc)
+  val controller = new UploadFormController(mockUploadProgressTracker, fakeAuthAction, cc)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
