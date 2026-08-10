@@ -18,6 +18,7 @@ package uk.gov.hmrc.carfreporting.config
 
 import com.google.inject.AbstractModule
 import uk.gov.hmrc.carfreporting.controllers.actions.{AuthAction, DefaultAuthAction}
+import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, MainDispatcherName, XmlDispatcher}
 
 import java.time.{Clock, ZoneOffset}
 
@@ -27,5 +28,7 @@ class Module extends AbstractModule {
     bind(classOf[AuthAction]).to(classOf[DefaultAuthAction]).asEagerSingleton()
     bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
     bind(classOf[AppConfig]).asEagerSingleton()
+    bind(classOf[XmlDispatcher]).asEagerSingleton()
+    bind(classOf[DispatcherName]).toInstance(new MainDispatcherName())
   }
 }

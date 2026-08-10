@@ -59,7 +59,7 @@ class XmlParserService @Inject() (implicit xmlDispatcher: XmlDispatcher) extends
   private def validationAndExtraction(
       schema: XMLValidationSchema,
       inputStream: InputStream
-  ): Either[CarfError, Unit] = { // TODO
+  ): Either[CarfError, Unit] = {
     val factory = new WstxInputFactory()
 
     // Security hardening: block XML External Entity (XXE) attacks.

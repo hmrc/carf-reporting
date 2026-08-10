@@ -20,7 +20,9 @@ sealed trait CarfError {
   val message: String
 }
 
-case class MongoError(value: String = "") extends CarfError
+case class MongoError(value: String = "") extends CarfError {
+  override val message: String = value
+}
 
 sealed trait ApiError extends CarfError
 
