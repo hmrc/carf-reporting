@@ -124,12 +124,35 @@ sbt clean compile scalafmtAll coverage test it/test coverageReport
 
 ### StAX
 
+We chose the StAX (Streaming API for XML) over SAX (Simple API for XML) primarily for scalability and maintainability.
 
+- SAX is a "Push" parser: It reads the file and blindly pushes events to a handler (e.g., startElement, endElement). This would force us to build a more complex, mutable implementation making it harder maintain. Furthermore, it would also overload the stream as applying back pressure is impossible when using SAX.
+
+- StAX is a "Pull" parser: The application controls the flow using a standard cursor loop (while(reader.hasNext())). This allows for clean, procedural code where state is managed locally and intuitively. It drastically reduces bugs and cognitive load when extracting specific data from complex XML structures. It also allows the stream to pull elements as it pleases, making it easy to handle large loads.
+
+#### Single-Pass Validation and Extraction with Woodstox
+Processing massive XML payloads efficiently requires strict memory management. We implemented Woodstox (a high-performance, fully compliant StAX2 implementation) because it enables simultaneous streaming validation and extraction without memory bloat.
+
+On-the-Fly XSD Validation: By attaching an XMLValidationSchema directly to the Woodstox XMLStreamReader2, the parser validates the document against our schema simultaneously as our loop pulls data from the stream.
+
+Fail-Fast Efficiency: If the XML violates the schema, Woodstox triggers a validation event immediately. This allows us to abort processing instantly (in our case 100+ errors) and return accumulated errors, rather than wasting CPU cycles parsing the remainder of an invalid megabyte-sized file.
+
+Flat Memory Profile: Because the data is validated and extracted in a single sequential pass, the file is never mapped into a DOM tree or fully loaded into memory. This guarantees a flat, predictable memory footprint regardless of whether the XML payload is 2 MB or 250 MB.
+
+### Apache Pekko
+
+This streaming API was selected as it is already part of the Play Framework infrastructure and was easy to get going out of the box.
+It was also a good choice as Apache Pekko was forked from Akka Streams 2.6 and Akka is a proven fast, scalable asynchronous system.
+
+#### XmlParserService
+
+As you can see in the `XmlParserService` you can see there is a CustomExecutionContext called `XmlDispatcher`, this is to prevent the XML parser starving the rest of the application of threads
+where it can parse XML on it's own execution context keeping the application reactive to all incoming requests.
 
 ## API Design
 
 The API (`carf-reporting/upscan/validate`) was used to test and simulate how the XML parser will be used by future consumers.
-So when implementing [Attach Frontend and xml parsar ticket here] be sure to maintain the structure of the API and add any additional components/logic on top of the current implementation unless specified otherwise.
+So when implementing [CARF-596] be sure to maintain the structure of the API and add any additional components/logic on top of the current implementation unless specified otherwise.
 
 ### Request Body:
 - path:
@@ -147,7 +170,47 @@ success example:
 }
 ```
 
-inv
+invalid xml example:
+```json
+{
+    "Status": 400,
+    "SourcePath": "data/examples/invalid-carf.xml",
+    "ErrorMessage": "The submitted XML failed schema validation.",
+    "XmlErrors": [
+        {
+            "LineNumber": 15,
+            "ErrorCode": null,
+            "ErrorMessage": "tag name \"MessageTypeIndic\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<Warning>"
+        },
+        {
+            "LineNumber": 17,
+            "ErrorCode": null,
+            "ErrorMessage": "tag name \"ReportingPeriod\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<MessageTypeIndic>,<Warning>"
+        },
+        {
+            "LineNumber": 18,
+            "ErrorCode": null,
+            "ErrorMessage": "tag name \"Timestamp\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<MessageTypeIndic>,<ReportingPeriod>,<Warning>"
+        },
+        {
+            "LineNumber": 19,
+            "ErrorCode": null,
+            "ErrorMessage": "uncompleted content model. expecting: <Contact>,<MessageRefId>,<MessageTypeIndic>,<ReportingPeriod>,<Timestamp>,<Warning>"
+        }
+    ]
+}
+```
+
+fatal example:
+```json
+{
+    "Status": 500,
+    "SourcePath": "data/examples/valid-carf.xml",
+    "ErrorMessage": "Something unexpected happened. This can include a completely Malformed XML which is classed a fatal to the parser",
+    "XmlErrors": []
+}
+```
+
 ### License
 
 This code is open source software licensed under
