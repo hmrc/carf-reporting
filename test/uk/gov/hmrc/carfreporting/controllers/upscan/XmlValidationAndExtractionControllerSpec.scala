@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.upscan.controllers
+package uk.gov.hmrc.carfreporting.controllers.upscan
 
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.{reset, verify, when}

@@ -10,7 +10,7 @@ import scala.concurrent.{Await, Future}
 
 class XmlParserPerformanceTestSpec extends NoGuiceSpecBase with BeforeAndAfterEach with BeforeAndAfterAll {
 
-  import Reporter.*
+  import uk.gov.hmrc.carfreporting.itutil.Reporter.*
 
   override def beforeEach(): Unit = {
     println("Cleaning")
@@ -36,10 +36,10 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase with BeforeAndAfterEa
     println("Warm up complete")
   }
 
-  val validCarfXmlSizeOnDisk = 4000L //4kb (size on disk)
-  val invalidCarfXmlSizeOnDisk = 4000L
+  inline val validCarfXmlSizeOnDisk = 4000L //4kb (size on disk)
+  inline val invalidCarfXmlSizeOnDisk = 4000L
   val twoFiftyMbInBytes = 274726912L //262mb (size on disk)
-  val bigInvalidXmlSizeOnDisk = 12000L //12kb (size on disk)
+  inline val bigInvalidXmlSizeOnDisk = 12000L //12kb (size on disk)
 
   "XmlParserService (small thread pool)" - {
     val smallDispatcher = new DispatcherName {
@@ -232,38 +232,3 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase with BeforeAndAfterEa
 }
 
 case class FileInfo(sizeInBytes: Long, nano: Long)
-
-object Reporter {
-  def reportResult(results: Vector[FileInfo],
-                   elapsedNs: Long,
-                   totalBytes: Long,
-                   memBefore: Long,
-                   memAfter: Long): Unit = {
-    val elapsedMs = elapsedNs / 1e6
-    val elapsedS = elapsedNs / 1e9
-
-    val perFileMs = results.map(_.nano / 1e6).sorted
-    val p50 = percentile(perFileMs, 50)
-    val p95 = percentile(perFileMs, 95)
-    val p99 = percentile(perFileMs, 99)
-    val max = perFileMs.lastOption.getOrElse(0.0)
-
-    val mbTotal = totalBytes.toDouble / (1024 * 1024)
-    val filesPerS = results.size / math.max(elapsedS, 1e-9)
-    val mbPerS = mbTotal / math.max(elapsedS, 1e-9)
-
-    println("---")
-    println(f"Wall clock:      $elapsedMs%.0f ms")
-    println(f"Throughput:      $filesPerS%.2f files/s | $mbPerS%.1f MB/s")
-    println(f"Per-file (ms):   p50=$p50%.1f  p95=$p95%.1f  p99=$p99%.1f  max=$max%.1f")
-    println(f"Memory used:     ${memBefore.toDouble / (1024 * 1024)}%.1f MB -> ${memAfter.toDouble / (1024 * 1024)}%.1f MB")
-  }
-
-  private def percentile(sortedMs: Seq[Double], p: Int): Double = {
-    if (sortedMs.isEmpty) 0.0
-    else {
-      val idx = math.min(sortedMs.size - 1, (p.toDouble / 100.0 * sortedMs.size).toInt)
-      sortedMs(idx)
-    }
-  }
-}
