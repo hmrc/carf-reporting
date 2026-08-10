@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.carfreporting.models.errors
 
-sealed trait CarfError
+sealed trait CarfError {
+  val message: String
+}
 
 case class MongoError(value: String = "") extends CarfError
 
@@ -24,11 +26,23 @@ sealed trait ApiError extends CarfError
 
 object ApiError {
 
-  case object BadRequestError extends ApiError
+  case object BadRequestError extends ApiError {
+    override val message: String = "Bad Request"
+  }
 
-  case object NotFoundError extends ApiError
+  case object NotFoundError extends ApiError {
+    override val message: String = "Not Found"
+  }
 
-  case object InternalServerError extends ApiError
+  case class ApiInternalServerError(override val message: String) extends ApiError
 
-  case object JsonValidationError extends ApiError
+  case object JsonValidationError extends ApiError {
+    override val message: String = "Json Validation Error"
+  }
+}
+
+case class InternalServerError(override val message: String) extends CarfError
+
+case class XmlErrors(errors: Vector[XmlError]) extends CarfError {
+  override val message: String = s"Xml error(s) have occurred: \n ${errors.mkString(",\n")}"
 }

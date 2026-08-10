@@ -99,6 +99,55 @@ Run Unit and Integration Tests with coverage report:
 sbt clean compile scalafmtAll coverage test it/test coverageReport 
 ```
 
+# XML Parser for validation and extraction
+
+## How to run locally & staging etc
+
+### Locally
+
+1. Open your Restful Api Client of your choosing
+2. Formulate your JSON Body with the following request body example:
+    ```json
+      {
+        "path": "data/examples/valid-carf.xml"
+      }
+    ```
+   Note: Other XML examples such as an invalid xml are available in `data/examples`
+
+3. Call the API with the url: http://localhost:17005/carf-reporting/upscan/validate
+
+### Staging etc
+
+???
+
+## XML Parser Design Decisions and overview
+
+### StAX
+
+
+
+## API Design
+
+The API (`carf-reporting/upscan/validate`) was used to test and simulate how the XML parser will be used by future consumers.
+So when implementing [Attach Frontend and xml parsar ticket here] be sure to maintain the structure of the API and add any additional components/logic on top of the current implementation unless specified otherwise.
+
+### Request Body:
+- path:
+  - Provide a path that points to the existing file within the repository normally within `data/examples`.
+  - This was a design decision for ease of use and not to parse a whole file here defeating the purpose of the StAX parser
+
+### Response Body
+
+success example:
+```json
+{
+    "Status": 200,
+    "SourcePath": "data/examples/valid-carf.xml",
+    "XmlErrors": []
+}
+```
+
+inv
 ### License
 
 This code is open source software licensed under
