@@ -210,6 +210,17 @@ fatal example:
     "XmlErrors": []
 }
 ```
+## XML Performance tests
+
+How to run perf tests:
+
+1. Navigate to the directory for the performance tests in it/test/uk/gov/hmrc/carfreporting/performance.
+        There is one for API and one for the Service, both tests call the real XmlParserService.
+2. Run the Generator found here: https://github.com/simondrugan16/carf-xml-parser/blob/main/src/main/scala/apps/XmlGenerator.scala
+3. copy over the file named `generated/carf-250mb.xml` to the `data/sized` folder.
+4. Rename `carf-250mb.xml` to `carf-262mb.xml` as that is the real size of the file on disk.
+5. Run the tests as you would normally via IntelliJ or command line
+6. View the results as they output time taken, memory used and other metrics that may be useful.
 
 ### License
 
