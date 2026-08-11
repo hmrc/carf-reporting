@@ -20,7 +20,7 @@ import cats.data.NonEmptyChain
 import cats.syntax.all.*
 import com.ctc.wstx.stax.WstxInputFactory
 import org.codehaus.stax2.XMLStreamReader2
-import org.codehaus.stax2.validation.{ValidationProblemHandler, XMLValidationProblem, XMLValidationSchema, XMLValidationSchemaFactory}
+import org.codehaus.stax2.validation.*
 import play.api.Logging
 import uk.gov.hmrc.carfreporting.dispatchers.XmlDispatcher
 import uk.gov.hmrc.carfreporting.models.errors.*
@@ -28,7 +28,7 @@ import uk.gov.hmrc.carfreporting.types.ResultT
 
 import java.io.{BufferedInputStream, File, FileNotFoundException, InputStream}
 import javax.inject.{Inject, Singleton}
-import javax.xml.stream.XMLInputFactory
+import javax.xml.stream.{XMLInputFactory, XMLStreamConstants}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -72,6 +72,7 @@ class XmlParserService @Inject() (implicit xmlDispatcher: XmlDispatcher) extends
     reader.validateAgainst(schema)
 
     val errors    = ListBuffer.empty[XmlError]
+    val docRefs   = ListBuffer.empty[String]
     var truncated = false
 
     reader.setValidationProblemHandler { (problem: XMLValidationProblem) =>
@@ -87,12 +88,26 @@ class XmlParserService @Inject() (implicit xmlDispatcher: XmlDispatcher) extends
     }
 
     Try {
-      while (reader.hasNext)
-        reader.next()
-        // TODO [CARF-593] Data Extraction - extract data here
-        // TODO list of doc refs
+      while (reader.hasNext) {
+        val event = reader.next()
+        event match {
+          case XMLStreamConstants.START_ELEMENT =>
+            val localName = reader.getLocalName
+
+            if (localName == "DocRefId") {
+              val docRefValue = reader.getElementText.trim
+              if (docRefValue.nonEmpty) {
+                docRefs += docRefValue
+              }
+            }
+          // TODO [CARF-593] Data Extraction - extract data here
+          case _                                => // Nothing
+        }
+      }
+      docRefs
     } match {
       case Success(value)                         =>
+        logger.info(s"Extracted DocRefs:\n${value.mkString(",\n")}")
         reader.close()
         resolveErrors(errors)
       case Failure(e: XmlStreamFailSafeException) =>
@@ -164,7 +179,7 @@ class XmlParserService @Inject() (implicit xmlDispatcher: XmlDispatcher) extends
               )
             )
           )
-        ) // will have to delete schema for test coverage but would rely on test to be guaranteed last
+        ) // Would have to delete schema for test coverage but would rely on test to be guaranteed last, not recommended
     }
   }
 }
