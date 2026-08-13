@@ -21,7 +21,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.{BeforeAndAfterEach, OptionValues, TryValues}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.JsValue
 import play.api.mvc.ControllerComponents
@@ -41,6 +41,7 @@ trait NoGuiceSpecBase
     with ScalaFutures
     with IntegrationPatience
     with BeforeAndAfterEach
+    with BeforeAndAfterAll
     with MockitoSugar {
 
   private val playConfig = ConfigFactory

@@ -164,38 +164,38 @@ So when implementing [CARF-596] be sure to maintain the structure of the API and
 success example:
 ```json
 {
-    "Status": 200,
-    "SourcePath": "data/examples/valid-carf.xml",
-    "XmlErrors": []
+    "status": 200,
+    "sourcePath": "data/examples/valid-carf.xml",
+    "xmlErrors": []
 }
 ```
 
 invalid xml example:
 ```json
 {
-    "Status": 400,
-    "SourcePath": "data/examples/invalid-carf.xml",
-    "ErrorMessage": "The submitted XML failed schema validation.",
-    "XmlErrors": [
+    "status": 400,
+    "sourcePath": "data/examples/invalid-carf.xml",
+    "errorMessage": "The submitted XML failed schema validation.",
+    "xmlErrors": [
         {
-            "LineNumber": 15,
-            "ErrorCode": null,
-            "ErrorMessage": "tag name \"MessageTypeIndic\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<Warning>"
+            "lineNumber": 15,
+            "errorCode": null,
+            "errorMessage": "tag name \"MessageTypeIndic\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<Warning>"
         },
         {
-            "LineNumber": 17,
-            "ErrorCode": null,
-            "ErrorMessage": "tag name \"ReportingPeriod\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<MessageTypeIndic>,<Warning>"
+            "lineNumber": 17,
+            "errorCode": null,
+            "errorMessage": "tag name \"ReportingPeriod\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<MessageTypeIndic>,<Warning>"
         },
         {
-            "LineNumber": 18,
-            "ErrorCode": null,
-            "ErrorMessage": "tag name \"Timestamp\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<MessageTypeIndic>,<ReportingPeriod>,<Warning>"
+            "lineNumber": 18,
+            "errorCode": null,
+            "errorMessage": "tag name \"Timestamp\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<MessageTypeIndic>,<ReportingPeriod>,<Warning>"
         },
         {
-            "LineNumber": 19,
-            "ErrorCode": null,
-            "ErrorMessage": "uncompleted content model. expecting: <Contact>,<MessageRefId>,<MessageTypeIndic>,<ReportingPeriod>,<Timestamp>,<Warning>"
+            "lineNumber": 19,
+            "errorCode": null,
+            "errorMessage": "uncompleted content model. expecting: <Contact>,<MessageRefId>,<MessageTypeIndic>,<ReportingPeriod>,<Timestamp>,<Warning>"
         }
     ]
 }
@@ -204,10 +204,10 @@ invalid xml example:
 fatal example:
 ```json
 {
-    "Status": 500,
-    "SourcePath": "data/examples/valid-carf.xml",
-    "ErrorMessage": "Something unexpected happened. This can include a completely Malformed XML which is classed a fatal to the parser",
-    "XmlErrors": []
+    "status": 500,
+    "sourcePath": "data/examples/valid-carf.xml",
+    "errorMessage": "Something unexpected happened. This can include a completely Malformed XML which is classed a fatal to the parser",
+    "xmlErrors": []
 }
 ```
 ## XML Performance tests

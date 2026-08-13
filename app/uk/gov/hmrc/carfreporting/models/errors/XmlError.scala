@@ -19,9 +19,9 @@ package uk.gov.hmrc.carfreporting.models.errors
 import play.api.libs.json.{Json, OFormat}
 
 case class XmlError(
-    LineNumber: Int,
-    ErrorCode: String,
-    ErrorMessage: String
+    lineNumber: Int,
+    errorCode: String,
+    errorMessage: String
 )
 
 object XmlError {

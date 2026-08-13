@@ -20,10 +20,10 @@ import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.carfreporting.models.errors.XmlError
 
 case class XmlValidationAndExtractionResponse(
-    Status: Int,
-    SourcePath: String,
-    ErrorMessage: Option[String],
-    XmlErrors: Vector[XmlError]
+    status: Int,
+    sourcePath: String,
+    errorMessage: Option[String],
+    xmlErrors: Vector[XmlError]
 )
 
 object XmlValidationAndExtractionResponse {

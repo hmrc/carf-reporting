@@ -36,7 +36,7 @@ import scala.util.{Failure, Success, Try}
 @Singleton
 class XmlParserService @Inject() (implicit xmlDispatcher: XmlDispatcher) extends Logging {
 
-  inline private val maxErrors = 101 // TODO change back to 100
+  inline private val maxErrors = 101
 
   def validateAndExtract(path: String): ResultT[Unit] =
     for {
@@ -71,17 +71,15 @@ class XmlParserService @Inject() (implicit xmlDispatcher: XmlDispatcher) extends
 
     reader.validateAgainst(schema)
 
-    val errors    = ListBuffer.empty[XmlError]
-    val docRefs   = ListBuffer.empty[String]
-    var truncated = false
+    val errors  = ListBuffer.empty[XmlError]
+    val docRefs = ListBuffer.empty[String]
 
     reader.setValidationProblemHandler { (problem: XMLValidationProblem) =>
       val loc  = problem.getLocation
       val line = if (loc != null) loc.getLineNumber else 0
       if (errors.size < maxErrors) {
         errors += XmlError(line, problem.getType, problem.getMessage)
-      } else if (!truncated) {
-        truncated = true
+      } else {
         logger.warn("Truncated: more than $maxErrors schema errors in this file; further errors dropped.")
         throw new XmlStreamFailSafeException
       }
@@ -107,7 +105,7 @@ class XmlParserService @Inject() (implicit xmlDispatcher: XmlDispatcher) extends
       docRefs
     } match {
       case Success(value)                         =>
-        logger.info(s"Extracted DocRefs:\n${value.mkString(",\n")}")
+        logger.debug(s"Extracted DocRefs:\n${value.mkString(",\n")}")
         reader.close()
         resolveErrors(errors)
       case Failure(e: XmlStreamFailSafeException) =>

@@ -21,8 +21,7 @@ import org.mockito.Mockito.{reset, verify, when}
 import org.scalatest.freespec.AnyFreeSpec
 import play.api.libs.json.Json
 import play.api.test.Helpers.*
-import uk.gov.hmrc.carfreporting.controllers.base.SpecBase
-import uk.gov.hmrc.carfreporting.controllers.upscan.XmlValidationAndExtractionController
+import uk.gov.hmrc.carfreporting.base.SpecBase
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.models.responses.XmlValidationAndExtractionResponse
 import uk.gov.hmrc.carfreporting.services.XmlParserService
@@ -55,12 +54,20 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
 
         val result = testController.processXml(fakeRequestWithJsonBody(requestBody))
 
-        status(result) mustEqual OK
+        val expectedResponse = XmlValidationAndExtractionResponse(
+          OK,
+          path,
+          None,
+          Vector.empty
+        )
+
+        status(result)        mustEqual OK
+        contentAsJson(result) mustEqual Json.toJson(expectedResponse)
 
         verify(mockXmlParserService).validateAndExtract(ArgumentMatchers.eq(path))
       }
 
-      "must return Bad Request (400) when the XML parser fails with an XML error" in {
+      "must return Unprocessable Entity (422) when the XML parser fails with an XML error" in {
 
         val invalidPath     = "data/invalid-carf.xml"
         val requestBody     = Json.parse(
@@ -76,7 +83,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
           .thenReturn(ResultT.fromError(XmlErrors(Vector(validationError))))
 
         val expectedResponse = XmlValidationAndExtractionResponse(
-          BAD_REQUEST,
+          UNPROCESSABLE_ENTITY,
           invalidPath,
           Some("The submitted XML failed schema validation."),
           Vector(validationError)
@@ -84,9 +91,28 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
 
         val result = testController.processXml(fakeRequestWithJsonBody(requestBody))
 
-        status(result) mustEqual BAD_REQUEST
+        status(result) mustEqual UNPROCESSABLE_ENTITY
 
         contentAsJson(result) mustEqual Json.toJson(expectedResponse)
+      }
+
+      "must return Bad Request (400) when the Json request is malformed" in {
+
+        val requestBody = Json.parse(
+          s"""
+             |{
+             |  "bad": "invalid"
+             |}
+             |""".stripMargin
+        )
+
+        val expectedResponse = "Request body provided is invalid"
+
+        val result = testController.processXml(fakeRequestWithJsonBody(requestBody))
+
+        status(result) mustEqual BAD_REQUEST
+
+        contentAsString(result) mustEqual expectedResponse
       }
 
       "must return Internal Server Error (500) when the XML parser fails for unknown reasons" in {

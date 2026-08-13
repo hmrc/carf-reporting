@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.carfreporting.services
 
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.IntegrationPatience
 import uk.gov.hmrc.carfreporting.base.NoGuiceSpecBase
 import uk.gov.hmrc.carfreporting.dispatchers.{MainDispatcherName, XmlDispatcher}
 import uk.gov.hmrc.carfreporting.models.errors.{InternalServerError, XmlErrors}
@@ -25,7 +23,7 @@ import uk.gov.hmrc.carfreporting.models.errors.{InternalServerError, XmlErrors}
 import java.io.PrintWriter
 import java.nio.file.{Files, Path}
 
-class XmlParserServiceSpec extends NoGuiceSpecBase with IntegrationPatience with BeforeAndAfterAll {
+class XmlParserServiceSpec extends NoGuiceSpecBase {
 
   val mainDispatcherName = new MainDispatcherName()
   val xmlDispatcher      = new XmlDispatcher(actorSystem, mainDispatcherName)
@@ -54,7 +52,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with IntegrationPatience with
       val result = service.validateAndExtract("invalid/path/nonexistent.xml").value.futureValue
 
       result match {
-        case Left(e: XmlErrors) => e.errors.head.ErrorCode mustBe "file_not_found"
+        case Left(e: XmlErrors) => e.errors.head.errorCode mustBe "file_not_found"
         case _                  => fail()
       }
     }
@@ -76,7 +74,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with IntegrationPatience with
       result match {
         case Left(e: XmlErrors) =>
           e.errors.length          mustBe 3
-          e.errors.head.ErrorMessage must include("InvalidRoot")
+          e.errors.head.errorMessage must include("InvalidRoot")
         case _                  => fail()
       }
     }
@@ -88,7 +86,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with IntegrationPatience with
 
       result match {
         case Left(e: XmlErrors) =>
-          val errorMessages = e.errors.map(_.ErrorMessage)
+          val errorMessages = e.errors.map(_.errorMessage)
           println(errorMessages.mkString(",\n"))
           e.errors.length  mustBe 4
           errorMessages.head must include("\"MessageTypeIndic\" is not allowed.")
@@ -107,7 +105,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with IntegrationPatience with
       result match {
         case Left(e: XmlErrors) =>
           e.errors.length            mustBe 101
-          e.errors.map(_.ErrorMessage) must contain only "the value is not a member of the enumeration."
+          e.errors.map(_.errorMessage) must contain only "the value is not a member of the enumeration."
         case _                  => fail()
       }
     }

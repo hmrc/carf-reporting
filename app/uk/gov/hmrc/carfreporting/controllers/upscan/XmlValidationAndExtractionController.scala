@@ -19,14 +19,14 @@ package uk.gov.hmrc.carfreporting.controllers.upscan
 import play.api.Logging
 import play.api.libs.json.*
 import play.api.mvc.{Action, ControllerComponents}
-import uk.gov.hmrc.carfreporting.services.XmlParserService
+import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.models.requests.XmlValidationRequest
 import uk.gov.hmrc.carfreporting.models.responses.XmlValidationAndExtractionResponse
-import uk.gov.hmrc.carfreporting.models.errors.*
+import uk.gov.hmrc.carfreporting.services.XmlParserService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.Inject
+import scala.concurrent.{ExecutionContext, Future}
 
 class XmlValidationAndExtractionController @Inject() (cc: ControllerComponents, service: XmlParserService)(implicit
     e: ExecutionContext
@@ -38,8 +38,8 @@ class XmlValidationAndExtractionController @Inject() (cc: ControllerComponents, 
       .validate[XmlValidationRequest]
       .fold(
         invalid =>
-          logger.error("[XmlValidationAndExtractionController][validateXml] Failed to parse request body")
-          Future.successful(BadRequest(s"Request body provided is invalid"))
+          logger.error("[XmlValidationAndExtractionController][processXml] Failed to parse request body")
+          Future.successful(BadRequest("Request body provided is invalid"))
         ,
         valid =>
           service.validateAndExtract(valid.path).value.map {
@@ -55,11 +55,14 @@ class XmlValidationAndExtractionController @Inject() (cc: ControllerComponents, 
                 )
               )
             case Left(xmlErrors: XmlErrors) =>
-              logger.warn(s"Failed to validate XML with (${xmlErrors.errors.size}) error(s)")
-              BadRequest(
+              logger.warn(
+                "[XmlValidationAndExtractionController][processXml] Failed to validate XML with " +
+                  s"(${xmlErrors.errors.size}) error(s)"
+              )
+              UnprocessableEntity(
                 Json.toJson(
                   XmlValidationAndExtractionResponse(
-                    BAD_REQUEST,
+                    UNPROCESSABLE_ENTITY,
                     valid.path,
                     Some("The submitted XML failed schema validation."),
                     xmlErrors.errors
@@ -67,7 +70,10 @@ class XmlValidationAndExtractionController @Inject() (cc: ControllerComponents, 
                 )
               )
             case Left(error)                =>
-              logger.error(s"Failed to validate XML with unexpected error with message: ${error.message}")
+              logger.error(
+                s"[XmlValidationAndExtractionController][processXml] Failed to validate XML with unexpected " +
+                  s"error with message: ${error.message}"
+              )
               InternalServerError(
                 Json.toJson(
                   XmlValidationAndExtractionResponse(
