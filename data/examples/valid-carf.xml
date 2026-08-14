@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CARF_OECD xmlns="urn:oecd:ties:carf:v1"
+           xmlns:stf="urn:oecd:ties:carfstf:v5"
+           xmlns:iso="urn:oecd:ties:isocarftypes:v1"
+           version="1.5">
+
+  <MessageSpec>
+    <SendingEntityIN>SENDER-001</SendingEntityIN>
+    <TransmittingCountry>GB</TransmittingCountry>
+    <ReceivingCountry>US</ReceivingCountry>
+    <MessageType>CARF</MessageType>
+    <MessageRefId>MSG-2024-0001</MessageRefId>
+    <MessageTypeIndic>CARF701</MessageTypeIndic>
+    <ReportingPeriod>2024-12-31</ReportingPeriod>
+    <Timestamp>2024-12-31T23:59:59</Timestamp>
+  </MessageSpec>
+
+  <CARFBody>
+
+    <RCASP>
+      <RCASP_ID>
+        <Entity>
+          <ResCountryCode>GB</ResCountryCode>
+          <TIN issuedBy="GB">RCASP-TIN-001</TIN>
+          <Name>Acme Crypto Exchange Ltd</Name>
+          <Address>
+            <CountryCode>GB</CountryCode>
+            <AddressFix>
+              <City>London</City>
+            </AddressFix>
+          </Address>
+        </Entity>
+      </RCASP_ID>
+      <Nexus>CARF901</Nexus>
+      <DocSpec>
+        <stf:DocTypeIndic>OECD1</stf:DocTypeIndic>
+        <stf:DocRefId>DOC-RCASP-001</stf:DocRefId>
+      </DocSpec>
+    </RCASP>
+
+    <CryptoUsers>
+      <UserID>
+        <Individual>
+          <ResCountryCode>GB</ResCountryCode>
+          <TIN issuedBy="GB">USER-TIN-001</TIN>
+          <Name>
+            <FirstName>Alice</FirstName>
+            <LastName>Smith</LastName>
+          </Name>
+          <Address>
+            <CountryCode>GB</CountryCode>
+            <AddressFix>
+              <City>London</City>
+            </AddressFix>
+          </Address>
+          <BirthInfo>
+            <BirthDate>1990-01-15</BirthDate>
+          </BirthInfo>
+        </Individual>
+      </UserID>
+      <RelevantTransactions>
+        <CryptoAsset>BTC</CryptoAsset>
+        <CryptoToCryptoIn>
+          <NumberofTransactions>5</NumberofTransactions>
+          <Amount currCode="USD">1234.56</Amount>
+          <NumberofUnits>0.5</NumberofUnits>
+        </CryptoToCryptoIn>
+      </RelevantTransactions>
+      <RelevantTransactions>
+        <CryptoAsset>ETH</CryptoAsset>
+        <CryptoFiatOut>
+          <NumberofTransactions>3</NumberofTransactions>
+          <Amount currCode="USD">9876.54</Amount>
+          <NumberofUnits>2.25</NumberofUnits>
+        </CryptoFiatOut>
+      </RelevantTransactions>
+      <DocSpec>
+        <stf:DocTypeIndic>OECD1</stf:DocTypeIndic>
+        <stf:DocRefId>DOC-USER-001</stf:DocRefId>
+      </DocSpec>
+    </CryptoUsers>
+
+  </CARFBody>
+
+</CARF_OECD>

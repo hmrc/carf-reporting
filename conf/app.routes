@@ -3,3 +3,5 @@
 POST        /upscan/callback                uk.gov.hmrc.carfreporting.controllers.upscan.UploadCallbackController.callback
 GET         /upscan/status/:uploadId        uk.gov.hmrc.carfreporting.controllers.upscan.UploadFormController.getStatus(uploadId: String)
 POST        /upscan/upload                  uk.gov.hmrc.carfreporting.controllers.upscan.UploadFormController.saveRequestedUpload
+
+POST       /upscan/validate    uk.gov.hmrc.carfreporting.controllers.upscan.XmlValidationAndExtractionController.processXml

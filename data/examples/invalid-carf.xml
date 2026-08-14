@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CARF_OECD xmlns="urn:oecd:ties:carf:v1"
+           xmlns:stf="urn:oecd:ties:carfstf:v5"
+           xmlns:iso="urn:oecd:ties:isocarftypes:v1"
+           version="1.5">
+
+  <!-- Three deliberate errors below, one on each block -->
+  <MessageSpec>
+    <SendingEntityIN>SENDER-001</SendingEntityIN>
+    <TransmittingCountry>GB</TransmittingCountry>
+    <ReceivingCountry>US</ReceivingCountry>
+    <MessageType>CARF</MessageType>
+    <!-- (1) missing MessageRefId (required by the schema) -->
+    <!-- (2) MessageTypeIndic is out of the CARF701..CARF703 enum: Additional note: Changing to valid enum gives same error message -->
+    <MessageTypeIndic>CARF999</MessageTypeIndic>
+    <!-- (3) ReportingPeriod is not a valid xs:date -->
+    <ReportingPeriod>not-a-real-date</ReportingPeriod>
+    <Timestamp>2024-12-31T23:59:59</Timestamp>
+  </MessageSpec>
+
+  <CARFBody>
+    <RCASP>
+      <RCASP_ID>
+        <Entity>
+          <ResCountryCode>GB</ResCountryCode>
+          <TIN issuedBy="GB">RCASP-TIN-001</TIN>
+          <Name>Acme Crypto Exchange Ltd</Name>
+          <Address>
+            <CountryCode>GB</CountryCode>
+            <AddressFix>
+              <City>London</City>
+            </AddressFix>
+          </Address>
+        </Entity>
+      </RCASP_ID>
+      <DocSpec>
+        <stf:DocTypeIndic>OECD1</stf:DocTypeIndic>
+        <stf:DocRefId>DOC-RCASP-001</stf:DocRefId>
+      </DocSpec>
+    </RCASP>
+  </CARFBody>
+
+</CARF_OECD>
