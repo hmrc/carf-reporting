@@ -27,7 +27,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase {
 
   val mainDispatcherName = new MainDispatcherName()
   val xmlDispatcher      = new XmlDispatcher(actorSystem, mainDispatcherName)
-  val service            = new XmlParserService()(xmlDispatcher)
+  val service            = new XmlParserService(testEnv)(xmlDispatcher)
 
   val tempDir: Path = Files.createTempDirectory("carf-xml-tests")
 

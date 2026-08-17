@@ -19,8 +19,9 @@ package uk.gov.hmrc.carfreporting.services
 import cats.data.NonEmptyChain
 import cats.syntax.all.*
 import com.ctc.wstx.stax.WstxInputFactory
-import org.codehaus.stax2.XMLStreamReader2
 import org.codehaus.stax2.validation.*
+import org.codehaus.stax2.XMLStreamReader2
+import play.api.Environment
 import play.api.Logging
 import uk.gov.hmrc.carfreporting.dispatchers.XmlDispatcher
 import uk.gov.hmrc.carfreporting.models.errors.*
@@ -34,7 +35,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class XmlParserService @Inject() (implicit xmlDispatcher: XmlDispatcher) extends Logging {
+class XmlParserService @Inject() (env: Environment)(implicit xmlDispatcher: XmlDispatcher) extends Logging {
 
   inline private val maxErrors = 101
 
@@ -156,28 +157,34 @@ class XmlParserService @Inject() (implicit xmlDispatcher: XmlDispatcher) extends
     }
 
   private def loadSchema: ResultT[XMLValidationSchema] = {
-    val defaultSchemaPath = "./data/schemas/CARFXML_v1.5.xsd"
-    val schemaFile        = new File(defaultSchemaPath)
+    val defaultSchemaPath = "/data/schemas/CARFXML_v1.5.xsd"
+
+    logger.info("Paths:")
+    logger.info(new File(".").getAbsolutePath)
+    logger.info(new File(defaultSchemaPath).getAbsolutePath)
 
     Try {
       val schemaFactory = XMLValidationSchemaFactory
         .newInstance(XMLValidationSchema.SCHEMA_ID_W3C_SCHEMA)
 
-      schemaFactory.createSchema(schemaFile)
+      env.getExistingFile(defaultSchemaPath).map { file =>
+        schemaFactory.createSchema(file)
+      }
     } match {
-      case Success(validationSchema) => ResultT.fromValue(validationSchema)
-      case Failure(e)                =>
-        ResultT.fromError(
-          XmlErrors(
-            Vector(
-              XmlError(
-                0,
-                "unexpected_error",
-                s"Unexpected error when creating Buffered Input Stream with message: ${e.getMessage}"
-              )
-            )
-          )
+      case Success(Some(validationSchema)) => ResultT.fromValue(validationSchema)
+      case Success(None)                   =>
+        resolveError(
+          "file_not_found",
+          s"Schema file cannot be found, current root: ${new File(".").getAbsolutePath}"
         ) // Would have to delete schema for test coverage but would rely on test to be guaranteed last, not recommended
+      case Failure(e)                      =>
+        resolveError(
+          "unexpected_error",
+          s"Unexpected error when creating Buffered Input Stream with message: ${e.getMessage}\n, current root: ${new File(".").getAbsolutePath}"
+        )
     }
   }
+
+  private def resolveError(code: String, message: String): ResultT[XMLValidationSchema] =
+    ResultT.fromError[XMLValidationSchema](XmlErrors(Vector(XmlError(0, code, message))))
 }
