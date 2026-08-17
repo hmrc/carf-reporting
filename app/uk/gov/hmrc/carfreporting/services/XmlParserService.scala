@@ -156,7 +156,7 @@ class XmlParserService @Inject() (implicit xmlDispatcher: XmlDispatcher) extends
     }
 
   private def loadSchema: ResultT[XMLValidationSchema] = {
-    val defaultSchemaPath = "data/schemas/CARFXML_v1.5.xsd"
+    val defaultSchemaPath = "./data/schemas/CARFXML_v1.5.xsd"
     val schemaFile        = new File(defaultSchemaPath)
 
     Try {
