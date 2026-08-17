@@ -39,7 +39,7 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
     }
 
     val xmlDispatcher = new XmlDispatcher(actorSystem, smallDispatcher)
-    val service       = new XmlParserService()(xmlDispatcher)
+    val service       = new XmlParserService(testEnv)(xmlDispatcher)
 
     val validCarfXmlSizeOnDisk = 4000L
 
@@ -63,7 +63,7 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
     }
 
     val xmlDispatcher = new XmlDispatcher(actorSystem, smallDispatcher)
-    val service       = new XmlParserService()(xmlDispatcher)
+    val service       = new XmlParserService(testEnv)(xmlDispatcher)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(service)
@@ -88,7 +88,7 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
     }
 
     val xmlDispatcher = new XmlDispatcher(actorSystem, smallDispatcher)
-    val service       = new XmlParserService()(xmlDispatcher)
+    val service       = new XmlParserService(testEnv)(xmlDispatcher)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(service)
@@ -113,7 +113,7 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
     }
 
     val xmlDispatcher = new XmlDispatcher(actorSystem, smallDispatcher)
-    val service       = new XmlParserService()(xmlDispatcher)
+    val service       = new XmlParserService(testEnv)(xmlDispatcher)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(service)

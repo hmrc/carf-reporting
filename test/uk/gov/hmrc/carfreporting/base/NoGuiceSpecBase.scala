@@ -23,6 +23,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.Environment
 import play.api.libs.json.JsValue
 import play.api.mvc.ControllerComponents
 import play.api.test.Helpers.stubControllerComponents
@@ -52,6 +53,8 @@ trait NoGuiceSpecBase
     "TestSystem",
     playConfig.resolve()
   )
+
+  val testEnv = Environment.simple()
 
   val cc: ControllerComponents = stubControllerComponents()
 

@@ -47,7 +47,7 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
     }
 
     val xmlDispatcher = new XmlDispatcher(actorSystem, smallDispatcher)
-    val service       = new XmlParserService()(xmlDispatcher)
+    val service       = new XmlParserService(testEnv)(xmlDispatcher)
 
     val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service)
 
@@ -68,7 +68,7 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
     }
 
     val xmlDispatcher = new XmlDispatcher(actorSystem, smallDispatcher)
-    val service       = new XmlParserService()(xmlDispatcher)
+    val service       = new XmlParserService(testEnv)(xmlDispatcher)
 
     val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service)
 
@@ -95,7 +95,7 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
     }
 
     val xmlDispatcher = new XmlDispatcher(actorSystem, smallDispatcher)
-    val service       = new XmlParserService()(xmlDispatcher)
+    val service       = new XmlParserService(testEnv)(xmlDispatcher)
 
     val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service)
 
@@ -122,7 +122,7 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
     }
 
     val xmlDispatcher = new XmlDispatcher(actorSystem, smallDispatcher)
-    val service       = new XmlParserService()(xmlDispatcher)
+    val service       = new XmlParserService(testEnv)(xmlDispatcher)
 
     val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service)
 
