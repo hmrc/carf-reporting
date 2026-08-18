@@ -157,18 +157,19 @@ class XmlParserService @Inject() (env: Environment)(implicit xmlDispatcher: XmlD
     }
 
   private def loadSchema: ResultT[XMLValidationSchema] = {
-    val defaultSchemaPath = "/data/schemas/CARFXML_v1.5.xsd"
-
-    logger.info("Paths:")
-    logger.info(new File(".").getAbsolutePath)
-    logger.info(new File(defaultSchemaPath).getAbsolutePath)
+    val defaultSchemaPath = "data/schemas/CARFXML_v1.5.xsd"
 
     Try {
       val schemaFactory = XMLValidationSchemaFactory
         .newInstance(XMLValidationSchema.SCHEMA_ID_W3C_SCHEMA)
 
-      env.getExistingFile(defaultSchemaPath).map { file =>
-        schemaFactory.createSchema(file)
+      env.resource(defaultSchemaPath).map { url =>
+
+        logger.info("Paths:")
+        logger.info(new File(".").getAbsolutePath)
+        logger.info(url.toString)
+
+        schemaFactory.createSchema(url)
       }
     } match {
       case Success(Some(validationSchema)) => ResultT.fromValue(validationSchema)

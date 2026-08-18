@@ -58,7 +58,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase {
     }
 
     "must successfully validate and extract a well-formed XML that matches the schema" in {
-      val path = "data/examples/valid-carf.xml"
+      val path = "conf/data/examples/valid-carf.xml"
 
       val result = service.validateAndExtract(path).value.futureValue
 
@@ -80,7 +80,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase {
     }
 
     "must return XmlErrors when the XML is well-formed but fails schema validation (under 101 errors)" in {
-      val path = "data/examples/invalid-carf.xml"
+      val path = "conf/data/examples/invalid-carf.xml"
 
       val result = service.validateAndExtract(path).value.futureValue
 
@@ -98,7 +98,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase {
     }
 
     "must truncate errors and exit cleanly when schema errors exceed max errors of (101) and xml contains 150 errors" in {
-      val path = "data/examples/too-many-schema-errors.xml"
+      val path = "conf/data/examples/too-many-schema-errors.xml"
 
       val result = service.validateAndExtract(path).value.futureValue
 

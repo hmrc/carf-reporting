@@ -41,7 +41,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
   "XmlValidationAndExtractionController" - {
     "processXml" - {
       "must return OK (200) when the XML parser is successful" in {
-        val path        = "data/examples/valid-carf.xml"
+        val path        = "resources/data/examples/valid-carf.xml"
         val requestBody = Json.parse(
           s"""
              |{
@@ -69,7 +69,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
 
       "must return Unprocessable Entity (422) when the XML parser fails with an XML error" in {
 
-        val invalidPath     = "data/invalid-carf.xml"
+        val invalidPath     = "resources/data/invalid-carf.xml"
         val requestBody     = Json.parse(
           s"""
              |{
@@ -117,7 +117,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
 
       "must return Internal Server Error (500) when the XML parser fails for unknown reasons" in {
 
-        val path        = "data/examples/valid-carf.xml"
+        val path        = "resources/data/examples/valid-carf.xml"
         val requestBody = Json.parse(
           s"""
              |{

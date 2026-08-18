@@ -156,7 +156,7 @@ So when implementing [CARF-596] be sure to maintain the structure of the API and
 
 ### Request Body:
 - path:
-  - Provide a path that points to the existing file within the repository normally within `data/examples`.
+  - Provide a path that points to the existing file within the repository normally within `conf/data/examples`.
   - This was a design decision for ease of use and not to parse a whole file here defeating the purpose of the StAX parser
 
 ### Response Body
@@ -165,7 +165,7 @@ success example:
 ```json
 {
     "status": 200,
-    "sourcePath": "data/examples/valid-carf.xml",
+    "sourcePath": "conf/data/examples/valid-carf.xml",
     "xmlErrors": []
 }
 ```
@@ -174,7 +174,7 @@ invalid xml example:
 ```json
 {
     "status": 400,
-    "sourcePath": "data/examples/invalid-carf.xml",
+    "sourcePath": "conf/data/examples/invalid-carf.xml",
     "errorMessage": "The submitted XML failed schema validation.",
     "xmlErrors": [
         {
@@ -205,7 +205,7 @@ fatal example:
 ```json
 {
     "status": 500,
-    "sourcePath": "data/examples/valid-carf.xml",
+    "sourcePath": "conf/data/examples/valid-carf.xml",
     "errorMessage": "Something unexpected happened. This can include a completely Malformed XML which is classed a fatal to the parser",
     "xmlErrors": []
 }
@@ -217,7 +217,7 @@ How to run perf tests:
 1. Navigate to the directory for the performance tests in it/test/uk/gov/hmrc/carfreporting/performance.
         There is one for API and one for the Service, both tests call the real XmlParserService.
 2. Run the Generator found here: https://github.com/simondrugan16/carf-xml-parser/blob/main/src/main/scala/apps/XmlGenerator.scala
-3. copy over the file named `generated/carf-250mb.xml` to the `data/sized` folder.
+3. copy over the file named `generated/carf-250mb.xml` to the `conf/data/sized` folder.
 4. Rename `carf-250mb.xml` to `carf-262mb.xml` as that is the real size of the file on disk.
 5. Run the tests as you would normally via IntelliJ or command line
 6. View the results as they output time taken, memory used and other metrics that may be useful.
