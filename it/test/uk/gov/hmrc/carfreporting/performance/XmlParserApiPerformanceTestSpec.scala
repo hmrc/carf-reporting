@@ -54,8 +54,8 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
     val validCarfXmlSizeOnDisk = 4000L
 
     lazy val calls = Vector( // keep lazy Futures are eager
-      createAndMeasureExecution("conf/data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, testController),
-      createAndMeasureExecution("conf/data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, testController)
+      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, testController),
+      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, testController)
     )
 
     val _ = Await.result(Future.sequence(calls), timeout)
@@ -147,11 +147,11 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
 
   private def smallBatchOfSmall(controller: XmlValidationAndExtractionController) = {
     lazy val calls = Vector( // keep lazy Futures are eager
-      createAndMeasureExecution("conf/data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, controller),
-      createAndMeasureExecution("conf/data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, controller),
-      createAndMeasureExecution("conf/data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, controller),
-      createAndMeasureExecution("conf/data/examples/invalid-carf.xml", invalidCarfXmlSizeOnDisk, controller),
-      createAndMeasureExecution("conf/data/examples/invalid-carf.xml", invalidCarfXmlSizeOnDisk, controller)
+      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, controller),
+      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, controller),
+      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, controller),
+      createAndMeasureExecution("data/examples/invalid-carf.xml", invalidCarfXmlSizeOnDisk, controller),
+      createAndMeasureExecution("data/examples/invalid-carf.xml", invalidCarfXmlSizeOnDisk, controller)
     )
 
     val runtime = Runtime.getRuntime
@@ -172,10 +172,10 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
 
   private def largeBatchOfSmall(controller: XmlValidationAndExtractionController) = {
     lazy val validFiles =
-      (1 to 25).map(_ => createAndMeasureExecution("conf/data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, controller))
+      (1 to 25).map(_ => createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, controller))
 
     lazy val invalidFiles = (1 to 25).map(_ =>
-      createAndMeasureExecution("conf/data/examples/invalid-carf.xml", invalidCarfXmlSizeOnDisk, controller)
+      createAndMeasureExecution("data/examples/invalid-carf.xml", invalidCarfXmlSizeOnDisk, controller)
     )
 
     lazy val calls = (validFiles ++ invalidFiles).toVector
@@ -198,11 +198,11 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
 
   private def smallBatchOfLarge(controller: XmlValidationAndExtractionController) = {
     lazy val calls = Vector(
-      createAndMeasureExecution("conf/data/sized/carf-262mb.xml", twoFiftyMbInBytes, controller),
-      createAndMeasureExecution("conf/data/sized/carf-262mb.xml", twoFiftyMbInBytes, controller),
-      createAndMeasureExecution("conf/data/sized/carf-262mb.xml", twoFiftyMbInBytes, controller),
-      createAndMeasureExecution("conf/data/examples/too-many-schema-errors.xml", bigInvalidXmlSizeOnDisk, controller),
-      createAndMeasureExecution("conf/data/examples/too-many-schema-errors.xml", bigInvalidXmlSizeOnDisk, controller)
+      createAndMeasureExecution("data/sized/carf-262mb.xml", twoFiftyMbInBytes, controller),
+      createAndMeasureExecution("data/sized/carf-262mb.xml", twoFiftyMbInBytes, controller),
+      createAndMeasureExecution("data/sized/carf-262mb.xml", twoFiftyMbInBytes, controller),
+      createAndMeasureExecution("data/examples/too-many-schema-errors.xml", bigInvalidXmlSizeOnDisk, controller),
+      createAndMeasureExecution("data/examples/too-many-schema-errors.xml", bigInvalidXmlSizeOnDisk, controller)
     )
 
     val runtime = Runtime.getRuntime
@@ -223,10 +223,10 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
 
   private def largeBatchOfLarge(controller: XmlValidationAndExtractionController) = {
     lazy val validFiles =
-      (1 to 25).map(_ => createAndMeasureExecution("conf/data/sized/carf-262mb.xml", twoFiftyMbInBytes, controller))
+      (1 to 25).map(_ => createAndMeasureExecution("data/sized/carf-262mb.xml", twoFiftyMbInBytes, controller))
 
     lazy val invalidFiles = (1 to 25).map(_ =>
-      createAndMeasureExecution("conf/data/examples/too-many-schema-errors.xml", bigInvalidXmlSizeOnDisk, controller)
+      createAndMeasureExecution("data/examples/too-many-schema-errors.xml", bigInvalidXmlSizeOnDisk, controller)
     )
 
     lazy val calls = (validFiles ++ invalidFiles).toVector

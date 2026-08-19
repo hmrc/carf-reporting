@@ -19,15 +19,14 @@ package uk.gov.hmrc.carfreporting.services
 import cats.data.NonEmptyChain
 import cats.syntax.all.*
 import com.ctc.wstx.stax.WstxInputFactory
-import org.codehaus.stax2.validation.*
 import org.codehaus.stax2.XMLStreamReader2
-import play.api.Environment
-import play.api.Logging
+import org.codehaus.stax2.validation.*
+import play.api.{Environment, Logging}
 import uk.gov.hmrc.carfreporting.dispatchers.XmlDispatcher
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.types.ResultT
 
-import java.io.{BufferedInputStream, File, FileNotFoundException, InputStream}
+import java.io.{BufferedInputStream, InputStream}
 import javax.inject.{Inject, Singleton}
 import javax.xml.stream.{XMLInputFactory, XMLStreamConstants}
 import scala.collection.mutable.ListBuffer
@@ -126,23 +125,24 @@ class XmlParserService @Inject() (env: Environment)(implicit xmlDispatcher: XmlD
 
   private def openInputStream(path: String): ResultT[InputStream] =
     Try {
-      val file = new File(path)
-      new java.io.BufferedInputStream(new java.io.FileInputStream(file))
+      env.resource(path).map { url =>
+        new java.io.BufferedInputStream(url.openStream())
+      }
     } match {
-      case Success(in)                       => ResultT.fromValue(in)
-      case Failure(e: FileNotFoundException) =>
+      case Success(Some(in)) => ResultT.fromValue(in)
+      case Success(None)     =>
         ResultT.fromError(
           XmlErrors(
             Vector(
               XmlError(
                 0,
                 "file_not_found",
-                s"File cannot be found with path provided with message: ${e.getMessage}"
+                "File cannot be found with path provided"
               )
             )
           )
         )
-      case Failure(e)                        =>
+      case Failure(e)        =>
         ResultT.fromError(
           XmlErrors(
             Vector(
@@ -164,11 +164,6 @@ class XmlParserService @Inject() (env: Environment)(implicit xmlDispatcher: XmlD
         .newInstance(XMLValidationSchema.SCHEMA_ID_W3C_SCHEMA)
 
       env.resource(defaultSchemaPath).map { url =>
-
-        logger.info("Paths:")
-        logger.info(new File(".").getAbsolutePath)
-        logger.info(url.toString)
-
         schemaFactory.createSchema(url)
       }
     } match {
@@ -176,12 +171,12 @@ class XmlParserService @Inject() (env: Environment)(implicit xmlDispatcher: XmlD
       case Success(None)                   =>
         resolveError(
           "file_not_found",
-          s"Schema file cannot be found, current root: ${new File(".").getAbsolutePath}"
+          s"Schema file cannot be found"
         ) // Would have to delete schema for test coverage but would rely on test to be guaranteed last, not recommended
       case Failure(e)                      =>
         resolveError(
           "unexpected_error",
-          s"Unexpected error when creating Buffered Input Stream with message: ${e.getMessage}\n, current root: ${new File(".").getAbsolutePath}"
+          s"Unexpected error when creating Buffered Input Stream with message: ${e.getMessage}"
         )
     }
   }

@@ -29,22 +29,9 @@ class XmlParserServiceSpec extends NoGuiceSpecBase {
   val xmlDispatcher      = new XmlDispatcher(actorSystem, mainDispatcherName)
   val service            = new XmlParserService(testEnv)(xmlDispatcher)
 
-  val tempDir: Path = Files.createTempDirectory("carf-xml-tests")
+  val tempDir: Path = Files.createTempDirectory("conf.carf-xml-tests")
 
   override def beforeAll(): Unit = super.beforeAll()
-
-  override def afterAll(): Unit = {
-    tempDir.toFile.listFiles().foreach(_.delete())
-    tempDir.toFile.delete()
-  }
-
-  private def createTempXml(fileName: String, content: String): String = {
-    val file   = tempDir.resolve(fileName).toFile
-    val writer = new PrintWriter(file)
-    writer.write(content)
-    writer.close()
-    file.getAbsolutePath
-  }
 
   "XmlParserService" - {
 
@@ -58,7 +45,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase {
     }
 
     "must successfully validate and extract a well-formed XML that matches the schema" in {
-      val path = "conf/data/examples/valid-carf.xml"
+      val path = "data/examples/valid-carf.xml"
 
       val result = service.validateAndExtract(path).value.futureValue
 
@@ -66,8 +53,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase {
     }
 
     "must return XmlErrors when the XML is well-formed but has invalid root" in {
-      val invalidXml = """<?xml version="1.0" encoding="UTF-8"?><InvalidRoot>Data</InvalidRoot>"""
-      val path       = createTempXml("schema_invalid.xml", invalidXml)
+      val path = "data/examples/invalid-xml.xml"
 
       val result = service.validateAndExtract(path).value.futureValue
 
@@ -80,7 +66,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase {
     }
 
     "must return XmlErrors when the XML is well-formed but fails schema validation (under 101 errors)" in {
-      val path = "conf/data/examples/invalid-carf.xml"
+      val path = "data/examples/invalid-carf.xml"
 
       val result = service.validateAndExtract(path).value.futureValue
 
@@ -98,7 +84,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase {
     }
 
     "must truncate errors and exit cleanly when schema errors exceed max errors of (101) and xml contains 150 errors" in {
-      val path = "conf/data/examples/too-many-schema-errors.xml"
+      val path = "data/examples/too-many-schema-errors.xml"
 
       val result = service.validateAndExtract(path).value.futureValue
 
@@ -111,9 +97,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase {
     }
 
     "must return an InternalServerError when the XML is completely malformed (Fatal XML Stream Error)" in {
-      val malformedXml = """<?xml version="1.0" encoding="UTF-8"?><Root>Unclosed tag"""
-      val path         = createTempXml("malformed.xml", malformedXml)
-
+      val path   = "data/examples/malformed-xml.xml"
       val result = service.validateAndExtract(path).value.futureValue
 
       result match {
