@@ -165,7 +165,7 @@ success example:
 ```json
 {
     "status": 200,
-    "sourcePath": "conf/data/examples/valid-carf.xml",
+    "sourcePath": "data/examples/valid-carf.xml",
     "xmlErrors": []
 }
 ```
@@ -174,7 +174,7 @@ invalid xml example:
 ```json
 {
     "status": 400,
-    "sourcePath": "conf/data/examples/invalid-carf.xml",
+    "sourcePath": "data/examples/invalid-carf.xml",
     "errorMessage": "The submitted XML failed schema validation.",
     "xmlErrors": [
         {
@@ -205,7 +205,7 @@ fatal example:
 ```json
 {
     "status": 500,
-    "sourcePath": "conf/data/examples/valid-carf.xml",
+    "sourcePath": "data/examples/valid-carf.xml",
     "errorMessage": "Something unexpected happened. This can include a completely Malformed XML which is classed a fatal to the parser",
     "xmlErrors": []
 }
