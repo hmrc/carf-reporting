@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.carfreporting.controllers.actions
 
-import play.api.mvc.{PlayBodyParsers, Request, Result}
+import play.api.mvc.{AnyContent, BodyParser, PlayBodyParsers, Request, Result}
 import uk.gov.hmrc.auth.core.AffinityGroup
 import uk.gov.hmrc.auth.core.AffinityGroup.Organisation
 import uk.gov.hmrc.carfreporting.models.requests.AuthenticatedRequest
@@ -29,7 +29,7 @@ class FakeAuthAction(
     testAffinityGroup: AffinityGroup = Organisation
 ) extends AuthAction {
 
-  override def parser = bodyParsers.default
+  override def parser: BodyParser[AnyContent] = bodyParsers.default
 
   override def invokeBlock[A](request: Request[A], block: AuthenticatedRequest[A] => Future[Result]): Future[Result] =
     block(

@@ -6,11 +6,11 @@ automatically as long as sibling files stay put.
 
 ## What's here
 
-| File | Namespace | Role |
-| --- | --- | --- |
+| File                     | Namespace                       | Role                                                                                                                               |
+|--------------------------|---------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | `CARFXML_v1.5.xsd`       | `urn:oecd:ties:carf:v1`         | **Root schema** — defines `<CARF_OECD>`, `<MessageSpec>`, `<CARFBody>`, `<RCASP>`, `<CryptoUsers>`, `<RelevantTransactions>`, etc. |
-| `oecdcarftypes_v5.0.xsd` | `urn:oecd:ties:carfstf:v5`      | Common STF types — `DocSpec`, `DocTypeIndic` enum, string-length restrictions. |
-| `isocarftypes_v1.1.xsd`  | `urn:oecd:ties:isocarftypes:v1` | ISO 3166-1 alpha-2 country codes and ISO 4217 currency codes. |
+| `oecdcarftypes_v5.0.xsd` | `urn:oecd:ties:carfstf:v5`      | Common STF types — `DocSpec`, `DocTypeIndic` enum, string-length restrictions.                                                     |
+| `isocarftypes_v1.1.xsd`  | `urn:oecd:ties:isocarftypes:v1` | ISO 3166-1 alpha-2 country codes and ISO 4217 currency codes.                                                                      |
 
 ## Root schema
 

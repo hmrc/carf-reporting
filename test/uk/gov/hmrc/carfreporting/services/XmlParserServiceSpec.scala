@@ -20,7 +20,6 @@ import uk.gov.hmrc.carfreporting.base.NoGuiceSpecBase
 import uk.gov.hmrc.carfreporting.dispatchers.{MainDispatcherName, XmlDispatcher}
 import uk.gov.hmrc.carfreporting.models.errors.{InternalServerError, XmlErrors}
 
-import java.io.PrintWriter
 import java.nio.file.{Files, Path}
 
 class XmlParserServiceSpec extends NoGuiceSpecBase {

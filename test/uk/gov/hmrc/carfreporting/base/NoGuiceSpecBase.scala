@@ -54,7 +54,7 @@ trait NoGuiceSpecBase
     playConfig.resolve()
   )
 
-  val testEnv = Environment.simple()
+  val testEnv: Environment = Environment.simple()
 
   val cc: ControllerComponents = stubControllerComponents()
 
