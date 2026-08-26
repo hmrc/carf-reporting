@@ -22,21 +22,22 @@ import org.codehaus.stax2.XMLStreamReader2
 import org.codehaus.stax2.validation.{XMLValidationProblem, XMLValidationSchema}
 import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.Constants.*
-import uk.gov.hmrc.carfreporting.models.{DocTypeIndic, ExtractedFileDetails, MessageTypeIndic}
+import uk.gov.hmrc.carfreporting.config.Constants.XmlElements.CarfBody.*
+import uk.gov.hmrc.carfreporting.config.Constants.XmlElements.CarfBody.RcaspName.*
+import uk.gov.hmrc.carfreporting.config.Constants.XmlElements.MessageSpec.*
+import uk.gov.hmrc.carfreporting.models.ExtractedFileDetails
 import uk.gov.hmrc.carfreporting.models.errors.*
 
 import java.io.InputStream
+import javax.inject.{Inject, Singleton}
 import javax.xml.stream.{XMLInputFactory, XMLStreamConstants}
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
-class XmlDataHandler extends Logging {
+@Singleton
+class XmlDataHandlerService @Inject() extends Logging {
 
   inline private val maxErrors = 101
-
-  private val errors = ListBuffer.empty[XmlError]
-
-  private val path = ListBuffer.empty[String]
 
   private case class CarfBodyRcaspName(
       var firstName: String = "",
@@ -46,31 +47,35 @@ class XmlDataHandler extends Logging {
     def individualName: String = s"$firstName $lastName"
   }
 
-  private val carfBodyRcaspName = CarfBodyRcaspName()
-
-  private var sendingEntityIn: String  = ""
-  private var messageType: String      = ""
-  private var messageRefId: String     = ""
-  private var messageTypeIndic: String = ""
-
-  private var rcaspName: Option[String]         = None
-  private var rcaspDocTypeIndic: Option[String] = None
-
-  private val cryptoUserDocTypeIndics = ListBuffer.empty[String]
-
-  private var hasOtherNexus: Boolean  = false
-  private var hasCryptoUsers: Boolean = false
-
-  private var carfBodyCompleted: Boolean = false
-
-  private def currentPath: List[String] = path.reverse.toList
-
-  private def pathEndsWith(expected: String*): Boolean = currentPath.startsWith(expected.toList)
-
   def validationAndExtraction(
       schema: XMLValidationSchema,
       inputStream: InputStream
   ): Either[CarfError, ExtractedFileDetails] = {
+    val errors = ListBuffer.empty[XmlError]
+
+    val path = ListBuffer.empty[String]
+
+    val carfBodyRcaspName = CarfBodyRcaspName()
+
+    var sendingEntityIn: String  = ""
+    var messageType: String      = ""
+    var messageRefId: String     = ""
+    var messageTypeIndic: String = ""
+
+    var rcaspName: Option[String]         = None
+    var rcaspDocTypeIndic: Option[String] = None
+
+    val cryptoUserDocTypeIndics = ListBuffer.empty[String]
+
+    var hasOtherNexus: Boolean  = false
+    var hasCryptoUsers: Boolean = false
+
+    var carfBodyCompleted: Boolean = false
+
+    def currentPath: List[String] = path.reverse.toList
+
+    def pathEndsWith(expected: String*): Boolean = currentPath.startsWith(expected.toList)
+
     val factory = new WstxInputFactory()
 
     // Security hardening: block XML External Entity (XXE) attacks.
@@ -99,6 +104,31 @@ class XmlDataHandler extends Logging {
       value
     }
 
+    def resolveErrors(errors: ListBuffer[XmlError]): Either[CarfError, ExtractedFileDetails] =
+      NonEmptyChain.fromSeq(errors.toSeq) match {
+        case Some(nec) => Left(XmlErrors(nec.toNonEmptyVector.toVector))
+        case None      =>
+          Right(
+            ExtractedFileDetails(
+              messageRefId = messageRefId,
+              sendingEntityIn = if sendingEntityIn.isEmpty then "missing" else sendingEntityIn,
+              rcaspName = if messageTypeIndic == nilReportMessageTypeIndic then None else rcaspName,
+              messageTypeIndic = messageTypeIndic, // TODO: Will be changed to an enum later (CARF-611)
+              hasOtherNexus = hasOtherNexus,
+              hasCryptoUsers = hasCryptoUsers,
+              docTypeIndic = rcaspDocTypeIndic, // TODO: Will be changed to an enum later (CARF-611)
+              isTestData = {
+                val docTypeIndics = rcaspDocTypeIndic.fold(List.empty)(List(_)) ++ cryptoUserDocTypeIndics
+                docTypeIndics.exists(docTypeIndic => testDataDocTypeIndics.contains(docTypeIndic))
+              },
+              allCryptoUsersAreCorrections =
+                cryptoUserDocTypeIndics.nonEmpty && cryptoUserDocTypeIndics.forall(_ == correctionDocTypeIndic),
+              allCryptoUsersAreDeletions =
+                cryptoUserDocTypeIndics.nonEmpty && cryptoUserDocTypeIndics.forall(_ == deletionDocTypeIndic)
+            )
+          )
+      }
+
     Try {
       while (reader.hasNext)
         reader.next() match {
@@ -107,32 +137,30 @@ class XmlDataHandler extends Logging {
             path += localName
 
             localName match {
-              // MessageSpec data
-              case "SendingEntityIN" if pathEndsWith("SendingEntityIN", "MessageSpec")   =>
+              case SENDING_ENTITY_IN if pathEndsWith(SENDING_ENTITY_IN, MESSAGE_SPEC)   =>
                 sendingEntityIn = readElement()
-              case "MessageType" if pathEndsWith("MessageType", "MessageSpec")           =>
+              case MESSAGE_TYPE if pathEndsWith(MESSAGE_TYPE, MESSAGE_SPEC)             =>
                 messageType = readElement()
-              case "MessageRefId" if pathEndsWith("MessageRefId", "MessageSpec")         =>
+              case MESSAGE_REF_ID if pathEndsWith(MESSAGE_REF_ID, MESSAGE_SPEC)         =>
                 messageRefId = readElement()
-              case "MessageTypeIndic" if pathEndsWith("MessageTypeIndic", "MessageSpec") =>
+              case MESSAGE_TYPE_INDIC if pathEndsWith(MESSAGE_TYPE_INDIC, MESSAGE_SPEC) =>
                 messageTypeIndic = readElement()
 
-              case "DocTypeIndic" if pathEndsWith("DocTypeIndic", "DocSpec", "RCASP", "CARFBody")                  =>
+              case DOC_TYPE_INDIC if pathEndsWith(DOC_TYPE_INDIC, DOC_SPEC, RCASP, CARF_BODY)        =>
                 rcaspDocTypeIndic = Some(readElement())
-              case "DocTypeIndic" if pathEndsWith("DocTypeIndic", "DocSpec", "CryptoUsers", "CARFBody")            =>
+              case DOC_TYPE_INDIC if pathEndsWith(DOC_TYPE_INDIC, DOC_SPEC, CRYPTO_USERS, CARF_BODY) =>
                 cryptoUserDocTypeIndics += readElement()
 
-              // RCASP name
-              case "FirstName" if pathEndsWith("FirstName", "Name", "Individual", "RCASP_ID", "RCASP", "CARFBody") =>
+              case FIRST_NAME if pathEndsWith(FIRST_NAME, NAME, INDIVIDUAL, RCASP_ID, RCASP, CARF_BODY) =>
                 carfBodyRcaspName.firstName = readElement()
-              case "LastName" if pathEndsWith("LastName", "Name", "Individual", "RCASP_ID", "RCASP", "CARFBody")   =>
+              case LAST_NAME if pathEndsWith(LAST_NAME, NAME, INDIVIDUAL, RCASP_ID, RCASP, CARF_BODY)   =>
                 carfBodyRcaspName.lastName = readElement()
-              case "Name" if pathEndsWith("Name", "Entity", "RCASP_ID", "RCASP", "CARFBody")                       =>
+              case NAME if pathEndsWith(NAME, ENTITY, RCASP_ID, RCASP, CARF_BODY)                       =>
                 carfBodyRcaspName.entityName = readElement()
 
-              case "CryptoUsers" if pathEndsWith("CryptoUsers", "CARFBody")        =>
+              case CRYPTO_USERS if pathEndsWith(CRYPTO_USERS, CARF_BODY)      =>
                 hasCryptoUsers = true
-              case "OtherNexus" if pathEndsWith("OtherNexus", "RCASP", "CARFBody") =>
+              case OTHER_NEXUS if pathEndsWith(OTHER_NEXUS, RCASP, CARF_BODY) =>
                 hasOtherNexus = true
 
               case _ => // Nothing
@@ -140,7 +168,7 @@ class XmlDataHandler extends Logging {
 
           case XMLStreamConstants.END_ELEMENT if !carfBodyCompleted =>
             val localName = reader.getLocalName
-            if (localName == "CARFBody") {
+            if (localName == CARF_BODY) {
               val name =
                 if (carfBodyRcaspName.entityName.nonEmpty) carfBodyRcaspName.entityName
                 else carfBodyRcaspName.individualName
@@ -163,29 +191,4 @@ class XmlDataHandler extends Logging {
         Left(InternalServerError(e.getMessage))
     }
   }
-
-  private def resolveErrors(errors: ListBuffer[XmlError]): Either[CarfError, ExtractedFileDetails] =
-    NonEmptyChain.fromSeq(errors.toSeq) match {
-      case Some(nec) => Left(XmlErrors(nec.toNonEmptyVector.toVector))
-      case None      =>
-        Right(
-          ExtractedFileDetails(
-            messageRefId = messageRefId,
-            sendingEntityIn = if sendingEntityIn.isEmpty then "missing" else sendingEntityIn,
-            rcaspName = if messageTypeIndic == nilReportMessageTypeIndic then None else rcaspName,
-            messageTypeIndic = MessageTypeIndic.valueOf(messageTypeIndic),
-            hasOtherNexus = hasOtherNexus,
-            hasCryptoUsers = hasCryptoUsers,
-            docTypeIndic = rcaspDocTypeIndic.map(DocTypeIndic.valueOf),
-            isTestData = {
-              val docTypeIndics = rcaspDocTypeIndic.fold(List.empty)(List(_)) ++ cryptoUserDocTypeIndics
-              docTypeIndics.exists(docTypeIndic => testDataDocTypeIndics.contains(docTypeIndic))
-            },
-            allCryptoUsersAreCorrections =
-              cryptoUserDocTypeIndics.nonEmpty && cryptoUserDocTypeIndics.forall(_ == correctionDocTypeIndic),
-            allCryptoUsersAreDeletions =
-              cryptoUserDocTypeIndics.nonEmpty && cryptoUserDocTypeIndics.forall(_ == deletionDocTypeIndic)
-          )
-        )
-    }
 }

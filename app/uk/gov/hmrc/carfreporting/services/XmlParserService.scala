@@ -29,7 +29,10 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class XmlParserService @Inject() (env: Environment)(implicit xmlDispatcher: XmlDispatcher) extends Logging {
+class XmlParserService @Inject (
+    dataHandlerService: XmlDataHandlerService
+)(env: Environment)(implicit xmlDispatcher: XmlDispatcher)
+    extends Logging {
 
   def validateAndExtract(path: String): ResultT[ExtractedFileDetails] =
     for {
@@ -41,8 +44,7 @@ class XmlParserService @Inject() (env: Environment)(implicit xmlDispatcher: XmlD
   private def initiate(schema: XMLValidationSchema, inputStream: InputStream): ResultT[ExtractedFileDetails] =
     ResultT.fromFuture {
       Future {
-        val handler = new XmlDataHandler
-        handler.validationAndExtraction(schema, inputStream)
+        dataHandlerService.validationAndExtraction(schema, inputStream)
       } andThen { _ =>
         inputStream.close()
       } recover { e =>

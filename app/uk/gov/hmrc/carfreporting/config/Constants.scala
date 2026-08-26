@@ -27,4 +27,33 @@ object Constants {
   val deletionDocTypeIndic: String       = "OECD3"
   val nilReportMessageTypeIndic: String  = "CARF703"
 
+  object XmlElements {
+
+    object MessageSpec {
+      val MESSAGE_SPEC       = "MessageSpec"
+      val SENDING_ENTITY_IN  = "SendingEntityIN"
+      val MESSAGE_TYPE       = "MessageType"
+      val MESSAGE_REF_ID     = "MessageRefId"
+      val MESSAGE_TYPE_INDIC = "MessageTypeIndic"
+    }
+
+    object CarfBody {
+      val CARF_BODY      = "CARFBody"
+      val RCASP          = "RCASP"
+      val DOC_SPEC       = "DocSpec"
+      val DOC_TYPE_INDIC = "DocTypeIndic"
+      val CRYPTO_USERS   = "CryptoUsers"
+      val OTHER_NEXUS    = "OtherNexus"
+
+      object RcaspName {
+        val RCASP_ID   = "RCASP_ID"
+        val INDIVIDUAL = "Individual"
+        val ENTITY     = "Entity"
+        val NAME       = "Name"
+        val FIRST_NAME = "FirstName"
+        val LAST_NAME  = "LastName"
+      }
+    }
+  }
+
 }

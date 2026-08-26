@@ -18,7 +18,7 @@ package uk.gov.hmrc.carfreporting.performance
 
 import uk.gov.hmrc.carfreporting.base.NoGuiceSpecBase
 import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, XmlDispatcher}
-import uk.gov.hmrc.carfreporting.services.XmlParserService
+import uk.gov.hmrc.carfreporting.services.{XmlDataHandlerService, XmlParserService}
 
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
@@ -38,8 +38,9 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
       val name: String = "small-xml-dispatcher"
     }
 
-    val xmlDispatcher = new XmlDispatcher(actorSystem, smallDispatcher)
-    val service       = new XmlParserService(testEnv)(xmlDispatcher)
+    val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
+    val dataHandlerService = new XmlDataHandlerService
+    val service            = new XmlParserService(dataHandlerService)(testEnv)(xmlDispatcher)
 
     val validCarfXmlSizeOnDisk = 4000L
 
@@ -63,8 +64,9 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
       val name: String = "small-xml-dispatcher"
     }
 
-    val xmlDispatcher = new XmlDispatcher(actorSystem, smallDispatcher)
-    val service       = new XmlParserService(testEnv)(xmlDispatcher)
+    val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
+    val dataHandlerService = new XmlDataHandlerService
+    val service            = new XmlParserService(dataHandlerService)(testEnv)(xmlDispatcher)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(service)
@@ -88,8 +90,9 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
       val name: String = "xml-dispatcher"
     }
 
-    val xmlDispatcher = new XmlDispatcher(actorSystem, smallDispatcher)
-    val service       = new XmlParserService(testEnv)(xmlDispatcher)
+    val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
+    val dataHandlerService = new XmlDataHandlerService
+    val service            = new XmlParserService(dataHandlerService)(testEnv)(xmlDispatcher)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(service)
@@ -113,8 +116,9 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
       val name: String = "large-xml-dispatcher"
     }
 
-    val xmlDispatcher = new XmlDispatcher(actorSystem, smallDispatcher)
-    val service       = new XmlParserService(testEnv)(xmlDispatcher)
+    val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
+    val dataHandlerService = new XmlDataHandlerService
+    val service            = new XmlParserService(dataHandlerService)(testEnv)(xmlDispatcher)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(service)

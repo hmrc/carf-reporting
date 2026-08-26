@@ -21,9 +21,7 @@ import org.mockito.Mockito.{reset, verify, when}
 import play.api.libs.json.Json
 import play.api.test.Helpers.*
 import uk.gov.hmrc.carfreporting.base.SpecBase
-import uk.gov.hmrc.carfreporting.models.DocTypeIndic.OECD1
 import uk.gov.hmrc.carfreporting.models.ExtractedFileDetails
-import uk.gov.hmrc.carfreporting.models.MessageTypeIndic.CARF701
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.models.responses.XmlValidationAndExtractionResponse
 import uk.gov.hmrc.carfreporting.services.XmlParserService
@@ -52,25 +50,12 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
              |""".stripMargin
         )
 
-        val extractedFileDetails = ExtractedFileDetails(
-          messageRefId = "MSG-2024-0001",
-          sendingEntityIn = "SENDER-001",
-          rcaspName = Some("Acme Crypto Exchange Ltd"),
-          messageTypeIndic = CARF701,
-          hasOtherNexus = false,
-          hasCryptoUsers = true,
-          docTypeIndic = Some(OECD1),
-          isTestData = false,
-          allCryptoUsersAreCorrections = false,
-          allCryptoUsersAreDeletions = false
-        )
-
-        when(mockXmlParserService.validateAndExtract(path)).thenReturn(ResultT.fromValue(extractedFileDetails))
+        when(mockXmlParserService.validateAndExtract(path)).thenReturn(ResultT.fromValue(extractedFileDetailsValidCarf))
 
         val result = testController.processXml(fakeRequestWithJsonBody(requestBody))
 
         status(result)        mustEqual OK
-        contentAsJson(result) mustEqual Json.toJson(extractedFileDetails)
+        contentAsJson(result) mustEqual Json.toJson(extractedFileDetailsValidCarf)
 
         verify(mockXmlParserService).validateAndExtract(ArgumentMatchers.eq(path))
       }

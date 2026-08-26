@@ -18,6 +18,8 @@ package uk.gov.hmrc.carfreporting.base
 
 import org.bson.types.ObjectId
 import uk.gov.hmrc.carfreporting.config.Constants.ukZoneId
+import uk.gov.hmrc.carfreporting.models.ExtractedFileDetails
+import uk.gov.hmrc.carfreporting.models.errors.{XmlError, XmlErrors}
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
 
@@ -79,4 +81,41 @@ trait TestData {
 
   val uploadRejected: UploadStatus.UploadRejected = UploadRejected(errorDetails("REJECTED"))
 
+  val extractedFileDetailsValidCarf = ExtractedFileDetails(
+    messageRefId = "MSG-2024-0001",
+    sendingEntityIn = "SENDER-001",
+    rcaspName = Some("Acme Crypto Exchange Ltd"),
+    messageTypeIndic = "CARF701",
+    hasOtherNexus = false,
+    hasCryptoUsers = true,
+    docTypeIndic = Some("OECD1"),
+    isTestData = false,
+    allCryptoUsersAreCorrections = false,
+    allCryptoUsersAreDeletions = false
+  )
+
+  val xmlErrors = XmlErrors(
+    errors = Vector(
+      XmlError(
+        15,
+        null,
+        "tag name \"MessageTypeIndic\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<Warning>"
+      ),
+      XmlError(
+        17,
+        null,
+        "tag name \"ReportingPeriod\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<MessageTypeIndic>,<Warning>"
+      ),
+      XmlError(
+        18,
+        null,
+        "tag name \"Timestamp\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<MessageTypeIndic>,<ReportingPeriod>,<Warning>"
+      ),
+      XmlError(
+        19,
+        null,
+        "uncompleted content model. expecting: <Contact>,<MessageRefId>,<MessageTypeIndic>,<ReportingPeriod>,<Timestamp>,<Warning>"
+      )
+    )
+  )
 }
