@@ -24,7 +24,6 @@ import uk.gov.hmrc.carfreporting.models.errors.{InternalServerError, XmlErrors}
 import java.io.InputStream
 
 class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
-
   private val defaultSchemaPath = "data/schemas/CARFXML_v1.5.xsd"
 
   private def getSchema: XMLValidationSchema = {
@@ -43,20 +42,11 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
       .map(url => new java.io.BufferedInputStream(url.openStream()))
       .getOrElse(fail("Failed to open input stream"))
 
-  override def beforeAll(): Unit = {
-    println("Warming up")
-    testEnv
-      .resource("data/examples/valid-carf.xml")
-      .map(url => new java.io.BufferedInputStream(url.openStream()))
-      .getOrElse(println("Warmup: Failed to open input stream"))
-    println("Warmup complete")
-  }
-
   "XmlDataHandlerService" - {
     ".validationAndExtraction" - {
       "must successfully validate and extract a well-formed XML that matches the schema" - {
         "given an XML file containing test data" in {
-          val path        = "data/examples/test-data-OECD10-rcasp.xml"
+          val path        = "data/examples/test-data.xml"
           val inputStream = getInputStream(path)
 
           val service = new XmlDataHandlerService
@@ -311,6 +301,32 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
               isTestData = false,
               allCryptoUsersAreCorrections = false,
               allCryptoUsersAreDeletions = true
+            )
+          )
+        }
+
+        "given an XML file containing no SendingEntityIN (RCASP ID)" in {
+          val path        = "data/examples/no-rcasp-id.xml"
+          val inputStream = getInputStream(path)
+
+          val service = new XmlDataHandlerService
+
+          val result = service.validationAndExtraction(getSchema, inputStream)
+
+          inputStream.close()
+
+          result mustBe Right(
+            ExtractedFileDetails(
+              messageRefId = "MSG-2024-0001",
+              sendingEntityIn = "missing",
+              rcaspName = Some("Acme Crypto Exchange Ltd"),
+              messageTypeIndic = "CARF701",
+              hasOtherNexus = false,
+              hasCryptoUsers = true,
+              docTypeIndic = Some("OECD1"),
+              isTestData = false,
+              allCryptoUsersAreCorrections = false,
+              allCryptoUsersAreDeletions = false
             )
           )
         }
