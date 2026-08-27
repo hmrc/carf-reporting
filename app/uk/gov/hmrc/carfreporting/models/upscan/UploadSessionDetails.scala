@@ -43,7 +43,7 @@ object UploadSessionDetails {
         (__ \ "lastUpdated").read(MongoJavatimeFormats.instantFormat)
     )(UploadSessionDetails.apply _)
 
-  val writes: OWrites[UploadSessionDetails] =
+  private val writes: OWrites[UploadSessionDetails] =
     (
       (__ \ "_id").write(MongoFormats.objectIdFormat) and
         (__ \ "uploadId").write[UploadId] and
