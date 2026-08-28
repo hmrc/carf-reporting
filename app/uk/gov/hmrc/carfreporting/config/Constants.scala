@@ -22,4 +22,9 @@ object Constants {
 
   val ukZoneId: ZoneId = ZoneId.of("Europe/London")
 
+  val testDataDocTypeIndics: Set[String] = Set("OECD10", "OECD11", "OECD12", "OECD13")
+  val correctionDocTypeIndic: String     = "OECD2"
+  val deletionDocTypeIndic: String       = "OECD3"
+  val nilReportMessageTypeIndic: String  = "CARF703"
+
 }
