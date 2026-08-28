@@ -23,6 +23,7 @@ import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, XmlDispatcher}
 import uk.gov.hmrc.carfreporting.itutil.Reporter.*
 import uk.gov.hmrc.carfreporting.services.{XmlDataHandlerService, XmlParserService}
 
+import java.nio.file.Paths
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
 
@@ -55,8 +56,16 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
     val validCarfXmlSizeOnDisk = 4000L
 
     lazy val calls = Vector( // keep lazy Futures are eager
-      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, testController),
-      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, testController)
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        validCarfXmlSizeOnDisk,
+        testController
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        validCarfXmlSizeOnDisk,
+        testController
+      )
     )
 
     val _ = Await.result(Future.sequence(calls), timeout)
@@ -151,11 +160,31 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
 
   private def smallBatchOfSmall(controller: XmlValidationAndExtractionController) = {
     lazy val calls = Vector( // keep lazy Futures are eager
-      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, controller),
-      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, controller),
-      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, controller),
-      createAndMeasureExecution("data/examples/invalid-carf.xml", invalidCarfXmlSizeOnDisk, controller),
-      createAndMeasureExecution("data/examples/invalid-carf.xml", invalidCarfXmlSizeOnDisk, controller)
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        validCarfXmlSizeOnDisk,
+        controller
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        validCarfXmlSizeOnDisk,
+        controller
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        validCarfXmlSizeOnDisk,
+        controller
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/invalid-carf.xml").toUri.toString,
+        invalidCarfXmlSizeOnDisk,
+        controller
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/invalid-carf.xml").toUri.toString,
+        invalidCarfXmlSizeOnDisk,
+        controller
+      )
     )
 
     val runtime = Runtime.getRuntime
@@ -176,10 +205,20 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
 
   private def largeBatchOfSmall(controller: XmlValidationAndExtractionController) = {
     lazy val validFiles =
-      (1 to 25).map(_ => createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, controller))
+      (1 to 25).map(_ =>
+        createAndMeasureExecution(
+          Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+          validCarfXmlSizeOnDisk,
+          controller
+        )
+      )
 
     lazy val invalidFiles = (1 to 25).map(_ =>
-      createAndMeasureExecution("data/examples/invalid-carf.xml", invalidCarfXmlSizeOnDisk, controller)
+      createAndMeasureExecution(
+        Paths.get("data/examples/invalid-carf.xml").toUri.toString,
+        invalidCarfXmlSizeOnDisk,
+        controller
+      )
     )
 
     lazy val calls = (validFiles ++ invalidFiles).toVector
@@ -202,11 +241,31 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
 
   private def smallBatchOfLarge(controller: XmlValidationAndExtractionController) = {
     lazy val calls = Vector(
-      createAndMeasureExecution("data/sized/carf-262mb.xml", twoFiftyMbInBytes, controller),
-      createAndMeasureExecution("data/sized/carf-262mb.xml", twoFiftyMbInBytes, controller),
-      createAndMeasureExecution("data/sized/carf-262mb.xml", twoFiftyMbInBytes, controller),
-      createAndMeasureExecution("data/examples/too-many-schema-errors.xml", bigInvalidXmlSizeOnDisk, controller),
-      createAndMeasureExecution("data/examples/too-many-schema-errors.xml", bigInvalidXmlSizeOnDisk, controller)
+      createAndMeasureExecution(
+        Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString,
+        twoFiftyMbInBytes,
+        controller
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString,
+        twoFiftyMbInBytes,
+        controller
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString,
+        twoFiftyMbInBytes,
+        controller
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/too-many-schema-errors.xml").toUri.toString,
+        bigInvalidXmlSizeOnDisk,
+        controller
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/too-many-schema-errors.xml").toUri.toString,
+        bigInvalidXmlSizeOnDisk,
+        controller
+      )
     )
 
     val runtime = Runtime.getRuntime
@@ -227,10 +286,20 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
 
   private def largeBatchOfLarge(controller: XmlValidationAndExtractionController) = {
     lazy val validFiles =
-      (1 to 25).map(_ => createAndMeasureExecution("data/sized/carf-262mb.xml", twoFiftyMbInBytes, controller))
+      (1 to 25).map(_ =>
+        createAndMeasureExecution(
+          Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString,
+          twoFiftyMbInBytes,
+          controller
+        )
+      )
 
     lazy val invalidFiles = (1 to 25).map(_ =>
-      createAndMeasureExecution("data/examples/too-many-schema-errors.xml", bigInvalidXmlSizeOnDisk, controller)
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/too-many-schema-errors.xml").toUri.toString,
+        bigInvalidXmlSizeOnDisk,
+        controller
+      )
     )
 
     lazy val calls = (validFiles ++ invalidFiles).toVector

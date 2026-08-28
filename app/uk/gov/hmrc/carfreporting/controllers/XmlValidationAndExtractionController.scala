@@ -21,7 +21,6 @@ import play.api.libs.json.*
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.models.requests.XmlValidationRequest
-import uk.gov.hmrc.carfreporting.models.responses.XmlValidationAndExtractionResponse
 import uk.gov.hmrc.carfreporting.services.XmlParserService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -47,34 +46,17 @@ class XmlValidationAndExtractionController @Inject() (cc: ControllerComponents, 
               Ok(Json.toJson(extractedFileDetails))
             case Left(xmlErrors: XmlErrors)  =>
               logger.warn(
-                "[XmlValidationAndExtractionController][processXml] Failed to validate XML with " +
-                  s"(${xmlErrors.errors.size}) error(s)"
+                s"[XmlValidationAndExtractionController][processXml] Failed to validate XML with (${xmlErrors.errors.size}) error(s)"
               )
-              UnprocessableEntity(
-                Json.toJson(
-                  XmlValidationAndExtractionResponse(
-                    UNPROCESSABLE_ENTITY,
-                    valid.path,
-                    Some("The submitted XML failed schema validation."),
-                    xmlErrors.errors
-                  )
-                )
-              )
+              UnprocessableEntity(Json.toJson(xmlErrors: XmlValidationError))
+            case Left(InvalidXmlError)       =>
+              logger.warn("[XmlValidationAndExtractionController][processXml] Error parsing XML file")
+              UnprocessableEntity(Json.toJson(InvalidXmlError: XmlValidationError))
             case Left(error)                 =>
               logger.error(
-                s"[XmlValidationAndExtractionController][processXml] Failed to validate XML with unexpected " +
-                  s"error with message: ${error.message}"
+                s"[XmlValidationAndExtractionController][processXml] Unexpected error with message: ${error.message}"
               )
-              InternalServerError(
-                Json.toJson(
-                  XmlValidationAndExtractionResponse(
-                    INTERNAL_SERVER_ERROR,
-                    valid.path,
-                    Some("Unexpected error"),
-                    Vector.empty
-                  )
-                )
-              )
+              InternalServerError("Unexpected error")
           }
       )
   }
