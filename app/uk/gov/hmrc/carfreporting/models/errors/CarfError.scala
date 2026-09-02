@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.carfreporting.models.errors
 
+import play.api.libs.json.*
+
 sealed trait CarfError {
   val message: String
 }
@@ -45,6 +47,24 @@ object ApiError {
 
 case class InternalServerError(override val message: String) extends CarfError
 
-case class XmlErrors(errors: Vector[XmlError]) extends CarfError {
+sealed trait XmlValidationError extends CarfError
+
+object XmlValidationError {
+
+  private val xmlErrorsFormat: OFormat[XmlErrors] = Json.format[XmlErrors]
+
+  implicit val writes: Writes[XmlValidationError] = {
+    case InvalidXmlError   => JsObject(Map("_type" -> JsString("InvalidXmlError")))
+    case errors: XmlErrors =>
+      Json.toJson(errors)(xmlErrorsFormat).as[JsObject] + ("_type" -> JsString("XmlErrors"))
+  }
+
+}
+
+case object InvalidXmlError extends XmlValidationError {
+  override val message: String = "Invalid XML"
+}
+
+case class XmlErrors(errors: Vector[XmlError]) extends XmlValidationError {
   override val message: String = s"Xml error(s) have occurred: \n ${errors.mkString(",\n")}"
 }

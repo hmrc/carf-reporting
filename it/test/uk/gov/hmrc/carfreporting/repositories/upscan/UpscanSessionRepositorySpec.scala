@@ -22,7 +22,6 @@ import org.scalatest.OptionValues
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.matchers.must.Matchers.*
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.carfreporting.base.TestData
 import uk.gov.hmrc.carfreporting.config.AppConfig

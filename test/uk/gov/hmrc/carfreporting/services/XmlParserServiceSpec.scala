@@ -21,7 +21,9 @@ import org.mockito.Mockito.{reset, times, verify, when}
 import uk.gov.hmrc.carfreporting.base.{NoGuiceSpecBase, TestData}
 import uk.gov.hmrc.carfreporting.dispatchers.{MainDispatcherName, XmlDispatcher}
 import uk.gov.hmrc.carfreporting.models.ExtractedFileDetails
-import uk.gov.hmrc.carfreporting.models.errors.{InternalServerError, XmlErrors}
+import uk.gov.hmrc.carfreporting.models.errors.{InternalServerError, InvalidXmlError, XmlErrors}
+
+import java.nio.file.Paths
 
 class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
 
@@ -39,12 +41,12 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
   "XmlParserService" - {
 
     "must return file_not_found error when the XML file does not exist" in {
-      val result = service.validateAndExtract("invalid/path/nonexistent.xml").value.futureValue
+      val fileName = "invalid/path/nonexistent.xml"
+      val path     = Paths.get(fileName).toUri.toString
 
-      result match {
-        case Left(e: XmlErrors) => e.errors.head.errorCode mustBe "file_not_found"
-        case _                  => fail()
-      }
+      val result = service.validateAndExtract(path).value.futureValue
+
+      result mustBe Left(InternalServerError("XML file cannot be found with path provided"))
 
       verify(mockXmlDataHandlerService, times(0)).validationAndExtraction(any(), any())
     }
@@ -53,7 +55,8 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
       when(mockXmlDataHandlerService.validationAndExtraction(any(), any()))
         .thenReturn(Right(extractedFileDetailsValidCarf))
 
-      val path = "data/examples/valid-carf.xml"
+      val fileName = "conf/data/examples/valid-carf.xml"
+      val path     = Paths.get(fileName).toUri.toString
 
       val result = service.validateAndExtract(path).value.futureValue
 
@@ -65,7 +68,8 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
     "must return XmlErrors when XmlDataHandlerService returns schema errors (the XML is well-formed but fails schema validation)" in {
       when(mockXmlDataHandlerService.validationAndExtraction(any(), any())).thenReturn(Left(xmlErrors))
 
-      val path = "data/examples/invalid-carf.xml"
+      val fileName = "conf/data/examples/invalid-carf.xml"
+      val path     = Paths.get(fileName).toUri.toString
 
       val result = service.validateAndExtract(path).value.futureValue
 
@@ -83,18 +87,15 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
       verify(mockXmlDataHandlerService, times(1)).validationAndExtraction(any(), any())
     }
 
-    "must return an InternalServerError when XmlDataHandlerService returns InternalServerError (the XML is completely malformed)" in {
-      when(mockXmlDataHandlerService.validationAndExtraction(any(), any()))
-        .thenReturn(Left(InternalServerError("Unexpected EOF; was expecting a close tag for element <Root>")))
+    "must return an InvalidXmlError when XmlDataHandlerService returns InvalidXmlError (the XML is completely malformed)" in {
+      when(mockXmlDataHandlerService.validationAndExtraction(any(), any())).thenReturn(Left(InvalidXmlError))
 
-      val path   = "data/examples/malformed-xml.xml"
+      val fileName = "conf/data/examples/malformed-xml.xml"
+      val path     = Paths.get(fileName).toUri.toString
+
       val result = service.validateAndExtract(path).value.futureValue
 
-      result match {
-        case Left(e: InternalServerError) =>
-          e.message must include("Unexpected EOF; was expecting a close tag for element <Root>")
-        case _                            => fail()
-      }
+      result mustBe Left(InvalidXmlError)
 
       verify(mockXmlDataHandlerService, times(1)).validationAndExtraction(any(), any())
     }

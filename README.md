@@ -7,6 +7,7 @@ This is the Backend repository for the Crypto Asset Reporting Framework (CARF) t
 - REST API endpoints for file upload data
 - Data retrieval from MongoDB
 - Integration with HMRC downstream services (ETMP, DES) and audit integration
+- XML validation and data extraction
 - Processes file upload submission
 
 ### Running the service locally
@@ -101,24 +102,22 @@ sbt clean compile scalafmtAll coverage test it/test coverageReport
 
 # XML Parser for validation and extraction
 
-## How to run locally & staging etc
-
-### Locally
+## How to run locally
 
 1. Open your Restful Api Client of your choosing
-2. Formulate your JSON Body with the following request body example:
-    ```json
-      {
-        "path": "data/examples/valid-carf.xml"
-      }
-    ```
-   Note: Other XML examples such as an invalid xml are available in `data/examples`
+2. Formulate your JSON Body with the following request body example (replacing the local path to this repository):
+```json
+{
+  "path": "file:///Users/user.name/Documents/CARF/carf-reporting/conf/data/examples/additional-info.xml"
+}
+```
+   Note: Other XML examples such as an invalid xml are available in `conf/data/examples`
 
-3. Call the API with the url: http://localhost:17005/carf-reporting/upscan/validate
+3. Call the API with the url: http://localhost:17005/carf-reporting/validate-xml
 
-### Staging etc
-
-???
+Note that this endpoint is called automatically by the frontend, with the download URL in the request body,
+after an XML file is uploaded and has passed Upscan checks.
+This is the case both locally (using upscan-stub) and in staging/QA (using the actual implementation of Upscan).
 
 ## XML Parser Design Decisions and overview
 
@@ -151,65 +150,68 @@ where it can parse XML on it's own execution context keeping the application rea
 
 ## API Design
 
-The API (`carf-reporting/upscan/validate`) was used to test and simulate how the XML parser will be used by future consumers.
-So when implementing [CARF-596] be sure to maintain the structure of the API and add any additional components/logic on top of the current implementation unless specified otherwise.
+The API (`carf-reporting/validate-xml`) was used to test and simulate how the XML parser will be used by future consumers.
+Any future work requiring the parser should maintain the structure of the API and add any additional components/logic on top of the current implementation unless specified otherwise.
 
 ### Request Body:
 - path:
-  - Provide a path that points to the existing file within the repository normally within `conf/data/examples`.
+  - Provide a download URL for the XML file to be parsed. This can be a path pointing to an existing file within the repository, normally within `conf/data/examples`.
   - This was a design decision for ease of use and not to parse a whole file here defeating the purpose of the StAX parser
 
 ### Response Body
 
-success example:
+success example - status 200:
 ```json
 {
-    "status": 200,
-    "sourcePath": "data/examples/valid-carf.xml",
-    "xmlErrors": []
+  "messageRefId": "MSG-2024-0001",
+  "sendingEntityIn": "SENDER-001",
+  "rcaspName": "Acme Crypto Exchange Ltd",
+  "messageTypeIndic": "CARF701",
+  "hasOtherNexus": false,
+  "hasCryptoUsers": true,
+  "docTypeIndic": "OECD1",
+  "isTestData": false,
+  "allCryptoUsersAreCorrections": false,
+  "allCryptoUsersAreDeletions": false
 }
 ```
 
-invalid xml example:
+invalid xml example (schema errors) - status 422:
 ```json
 {
-    "status": 400,
-    "sourcePath": "data/examples/invalid-carf.xml",
-    "errorMessage": "The submitted XML failed schema validation.",
-    "xmlErrors": [
-        {
-            "lineNumber": 15,
-            "errorCode": null,
-            "errorMessage": "tag name \"MessageTypeIndic\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<Warning>"
-        },
-        {
-            "lineNumber": 17,
-            "errorCode": null,
-            "errorMessage": "tag name \"ReportingPeriod\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<MessageTypeIndic>,<Warning>"
-        },
-        {
-            "lineNumber": 18,
-            "errorCode": null,
-            "errorMessage": "tag name \"Timestamp\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<MessageTypeIndic>,<ReportingPeriod>,<Warning>"
-        },
-        {
-            "lineNumber": 19,
-            "errorCode": null,
-            "errorMessage": "uncompleted content model. expecting: <Contact>,<MessageRefId>,<MessageTypeIndic>,<ReportingPeriod>,<Timestamp>,<Warning>"
-        }
-    ]
+  "errors": [
+    {
+      "lineNumber": 15,
+      "errorCode": null,
+      "errorMessage": "tag name \"MessageTypeIndic\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<Warning>"
+    },
+    {
+      "lineNumber": 17,
+      "errorCode": null,
+      "errorMessage": "tag name \"ReportingPeriod\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<MessageTypeIndic>,<Warning>"
+    },
+    {
+      "lineNumber": 18,
+      "errorCode": null,
+      "errorMessage": "tag name \"Timestamp\" is not allowed. Possible tag names are: <Contact>,<MessageRefId>,<MessageTypeIndic>,<ReportingPeriod>,<Warning>"
+    },
+    {
+      "lineNumber": 19,
+      "errorCode": null,
+      "errorMessage": "uncompleted content model. expecting: <Contact>,<MessageRefId>,<MessageTypeIndic>,<ReportingPeriod>,<Timestamp>,<Warning>"
+    }
+  ],
+  "_type": "XmlErrors"
 }
 ```
 
-fatal example:
+fatal example (malformed xml) - status 422:
 ```json
-{
-    "status": 500,
-    "sourcePath": "data/examples/valid-carf.xml",
-    "errorMessage": "Something unexpected happened. This can include a completely Malformed XML which is classed a fatal to the parser",
-    "xmlErrors": []
+{ 
+  "_type": "InvalidXmlError"
 }
 ```
+
 ## XML Performance tests
 
 How to run perf tests:

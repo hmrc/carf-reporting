@@ -23,7 +23,8 @@ import uk.gov.hmrc.carfreporting.models.ExtractedFileDetails
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.types.ResultT
 
-import java.io.{BufferedInputStream, InputStream}
+import java.io.{FileNotFoundException, InputStream}
+import java.net.URI
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -55,34 +56,14 @@ class XmlParserService @Inject (
 
   private def openInputStream(path: String): ResultT[InputStream] =
     Try {
-      env.resource(path).map { url =>
-        new java.io.BufferedInputStream(url.openStream())
-      }
+      new java.io.BufferedInputStream(new URI(path).toURL.openStream())
     } match {
-      case Success(Some(in)) => ResultT.fromValue(in)
-      case Success(None)     =>
+      case Success(in)                       => ResultT.fromValue(in)
+      case Failure(_: FileNotFoundException) =>
+        ResultT.fromError(InternalServerError("XML file cannot be found with path provided"))
+      case Failure(e)                        =>
         ResultT.fromError(
-          XmlErrors(
-            Vector(
-              XmlError(
-                0,
-                "file_not_found",
-                "File cannot be found with path provided"
-              )
-            )
-          )
-        )
-      case Failure(e)        =>
-        ResultT.fromError(
-          XmlErrors(
-            Vector(
-              XmlError(
-                0,
-                "unexpected_error",
-                s"Unexpected error when creating Buffered Input Stream with message: ${e.getMessage}"
-              )
-            )
-          )
+          InternalServerError(s"Unexpected error when creating Buffered Input Stream: ${e.getMessage}")
         )
     }
 
@@ -99,18 +80,12 @@ class XmlParserService @Inject (
     } match {
       case Success(Some(validationSchema)) => ResultT.fromValue(validationSchema)
       case Success(None)                   =>
-        resolveError(
-          "file_not_found",
-          s"Schema file cannot be found"
-        ) // Would have to delete schema for test coverage but would rely on test to be guaranteed last, not recommended
+        // Would have to delete schema for test coverage but would rely on test to be guaranteed last, not recommended
+        ResultT.fromError(InternalServerError("Schema file cannot be found"))
       case Failure(e)                      =>
-        resolveError(
-          "unexpected_error",
-          s"Unexpected error when creating Buffered Input Stream with message: ${e.getMessage}"
+        ResultT.fromError(
+          InternalServerError(s"Unexpected error when creating Buffered Input Stream: ${e.getMessage}")
         )
     }
   }
-
-  private def resolveError(code: String, message: String): ResultT[XMLValidationSchema] =
-    ResultT.fromError[XMLValidationSchema](XmlErrors(Vector(XmlError(0, code, message))))
 }
