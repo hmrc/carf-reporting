@@ -23,8 +23,9 @@ import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Updates.set
 import org.mongodb.scala.model.{FindOneAndUpdateOptions, IndexModel, IndexOptions, Updates}
 import uk.gov.hmrc.carfreporting.config.AppConfig
-import uk.gov.hmrc.carfreporting.models.errors.MongoError
-import uk.gov.hmrc.carfreporting.models.submission.FileDetails
+import uk.gov.hmrc.carfreporting.models.errors.{BusinessError, MongoError, ValidationErrors}
+import uk.gov.hmrc.carfreporting.models.submission.FileStatus.{Pending, Rejected}
+import uk.gov.hmrc.carfreporting.models.submission.{CarfId, FileDetails, FileStatus}
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.types.ResultT
 import uk.gov.hmrc.mongo.MongoComponent
@@ -36,59 +37,67 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class SubmissionRepository @Inject()(
-                                      mongoComponent: MongoComponent,
-                                      clock: Clock,
-                                      appConfig: AppConfig
-                                    )(implicit ec: ExecutionContext)
-  extends PlayMongoRepository[FileDetails](
-    mongoComponent = mongoComponent,
-    collectionName = "submissionRepository",
-    domainFormat = FileDetails.format,
-    indexes = Seq(
-      IndexModel(
-        ascending("submissionTime"),
-        IndexOptions()
-          .name("submission-time-index")
-          .expireAfter(appConfig.cacheTtlSeconds, TimeUnit.SECONDS)
-          .expireAfter(appConfig.cacheTtlSeconds, TimeUnit.DAYS)
-
+class SubmissionRepository @Inject() (
+    mongoComponent: MongoComponent,
+    clock: Clock,
+    appConfig: AppConfig
+)(implicit ec: ExecutionContext)
+    extends PlayMongoRepository[FileDetails](
+      mongoComponent = mongoComponent,
+      collectionName = "submissionRepository",
+      domainFormat = FileDetails.format,
+      indexes = Seq(
+        IndexModel(
+          ascending("submissionTime"),
+          IndexOptions()
+            .name("submission-time-index")
+            .expireAfter(appConfig.submissionTtlDays, TimeUnit.DAYS)
+        ),
+        IndexModel(
+          ascending("uploadId"),
+          IndexOptions()
+            .name("uploadId-index")
+            .unique(true)
+        ),
+        IndexModel(
+          ascending("carfId"),
+          IndexOptions()
+            .name("carfId-index")
+        )
       ),
-      IndexModel(
-        ascending("uploadId"),
-        IndexOptions()
-          .name("uploadId-index")
-          .unique(true)
-      ),
-      IndexModel(
-        ascending("reference"),
-        IndexOptions()
-          .name("reference-index")
-          .unique(true)
-      )
-    ),
-    replaceIndexes = true
-  ) {
+      replaceIndexes = true
+    ) {
 
-  def findByUploadId(uploadId: UploadId): ResultT[Option[UploadSessionDetails]] =
+  def findByUploadId(uploadId: UploadId): ResultT[Option[FileDetails]] =
     ResultT.fromFuture {
       collection
         .find(equal("uploadId", Codecs.toBson(uploadId.value)))
         .headOption()
         .map(Right(_))
         .recover { case _ =>
-          Left(MongoError("Failed to call UpscanSessionRepository .findByUploadId"))
+          Left(MongoError("Failed to call SubmissionRepository .findByUploadId"))
+        }
+    }
+
+  def findByCarfId(carfId: CarfId): ResultT[Seq[FileDetails]] =
+    ResultT.fromFuture {
+      collection
+        .find(equal("carfId", Codecs.toBson(carfId.value)))
+        .toFuture()
+        .map(Right(_))
+        .recover { case _ =>
+          Left(MongoError("Failed to call SubmissionRepository .findByCarfId"))
         }
     }
 
   def updateStatus(
-                    reference: Reference,
-                    newStatus: UploadStatus
-                  ): ResultT[Boolean] = {
-    val filter: Bson = equal("reference", Codecs.toBson(reference.value))
-    val modifier: Bson = Updates.combine(
-      set("status", Codecs.toBson(newStatus)),
-      set("lastUpdated", Instant.now(clock))
+      uploadId: UploadId,
+      newStatus: FileStatus
+  ): ResultT[Boolean] = {
+    val filter: Bson                     = equal("uploadId", Codecs.toBson(uploadId.value))
+    val modifier: Bson                   = Updates.combine(
+      set("fileStatus", Codecs.toBson(newStatus)),
+      set("lastStatusUpdateTime", Instant.now(clock))
     )
     val options: FindOneAndUpdateOptions = FindOneAndUpdateOptions().upsert(true)
 
@@ -98,27 +107,62 @@ class SubmissionRepository @Inject()(
         .toFuture()
         .map(_ => Right(true))
         .recover { case _ =>
-          Left(MongoError("Failed to call UpscanSessionRepository .updateStatus"))
+          Left(MongoError("Failed to call SubmissionRepository .updateStatus"))
         }
     }
 
   }
 
-  def insert(uploadDetails: UploadSessionDetails): ResultT[Boolean] =
-    ResultT.fromFuture {
-      collection
-        .insertOne(uploadDetails)
-        .toFuture()
-        .map(_ => Right(true))
-        .recover {
-          case e: MongoWriteException =>
-            Left(
-              MongoError(
-                "MongoWriteException from UpscanSessionRepository .insert - ensure no duplicate uploadId or reference"
+  def updateStatusWithErrors(
+      uploadId: UploadId,
+      newStatus: FileStatus,
+      businessRuleErrors: ValidationErrors
+  ): ResultT[Boolean] =
+    if (newStatus == Rejected) {
+      val filter: Bson                     = equal("uploadId", Codecs.toBson(uploadId.value))
+      val modifier: Bson                   = Updates.combine(
+        set("fileStatus", Codecs.toBson(newStatus)),
+        set("lastStatusUpdateTime", Instant.now(clock)),
+        set("businessRuleErrors", businessRuleErrors)
+      )
+      val options: FindOneAndUpdateOptions = FindOneAndUpdateOptions().upsert(true)
+
+      ResultT.fromFuture {
+        collection
+          .findOneAndUpdate(filter, modifier, options)
+          .toFuture()
+          .map(_ => Right(true))
+          .recover { case _ =>
+            Left(MongoError("Failed to call SubmissionRepository .updateStatus"))
+          }
+      }
+    } else
+      ResultT.fromError(
+        BusinessError(
+          "Error status update called without rejected status in SubmissionRepository .updateStatusWithErrors"
+        )
+      )
+
+  def insert(fileDetails: FileDetails): ResultT[Boolean] =
+    if (fileDetails.fileStatus == Pending) {
+      ResultT.fromFuture {
+        collection
+          .insertOne(fileDetails)
+          .toFuture()
+          .map(_ => Right(true))
+          .recover {
+            case e: MongoWriteException =>
+              Left(
+                MongoError(
+                  "MongoWriteException from SubmissionRepository .insert - ensure no duplicate uploadId"
+                )
               )
-            )
-          case _ => Left(MongoError("Failed to call UpscanSessionRepository .insert"))
-        }
-    }
+            case _                      => Left(MongoError("Failed to call SubmissionRepository .insert"))
+          }
+      }
+    } else
+      ResultT.fromError(
+        BusinessError("Tried to insert file with a status that is not Pending in SubmissionRepository .insert")
+      )
 
 }

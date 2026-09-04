@@ -12,9 +12,9 @@ import java.time.Instant
 case class FileDetails(
     _id: ObjectId,
     uploadId: UploadId,
-    carfId: String,
+    carfId: CarfId,
     fileStatus: FileStatus,
-    fileName: String,
+    fileName: FileName,
     extractedFileDetails: ExtractedFileDetails,
     rcaspDetails: RcaspDetails,
     subscriptionDetails: SubscriptionDetails,
@@ -22,6 +22,18 @@ case class FileDetails(
     lastStatusUpdateTime: Instant,
     businessRuleErrors: Option[ValidationErrors] = None
 )
+
+case class CarfId(value: String) extends AnyVal
+
+object CarfId {
+  implicit val carfIdFormat: Format[CarfId] = Json.valueFormat[CarfId]
+}
+
+case class FileName(value: String) extends AnyVal
+
+object FileName {
+  implicit val fileNameFormat: Format[FileName] = Json.valueFormat[FileName]
+}
 
 object FileDetails {
 
@@ -31,9 +43,9 @@ object FileDetails {
     (
       (__ \ "_id").read(MongoFormats.objectIdFormat) and
         (__ \ "uploadId").read[UploadId] and
-        (__ \ "carfId").read[String] and
+        (__ \ "carfId").read[CarfId] and
         (__ \ "fileStatus").read[FileStatus] and
-        (__ \ "fileName").read[String] and
+        (__ \ "fileName").read[FileName] and
         (__ \ "extractedFileDetails").read[ExtractedFileDetails] and
         (__ \ "rcaspDetails").read[RcaspDetails] and
         (__ \ "subscriptionDetails").read[SubscriptionDetails] and
@@ -46,9 +58,9 @@ object FileDetails {
     (
       (__ \ "_id").write(MongoFormats.objectIdFormat) and
         (__ \ "uploadId").write[UploadId] and
-        (__ \ "carfId").write[String] and
+        (__ \ "carfId").write[CarfId] and
         (__ \ "fileStatus").write[FileStatus] and
-        (__ \ "fileName").write[String] and
+        (__ \ "fileName").write[FileName] and
         (__ \ "extractedFileDetails").write[ExtractedFileDetails] and
         (__ \ "rcaspDetails").write[RcaspDetails] and
         (__ \ "subscriptionDetails").write[SubscriptionDetails] and
