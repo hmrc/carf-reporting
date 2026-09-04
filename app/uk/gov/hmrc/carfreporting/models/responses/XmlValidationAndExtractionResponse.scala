@@ -19,6 +19,9 @@ package uk.gov.hmrc.carfreporting.models.responses
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.carfreporting.models.errors.XmlError
 
+/**
+ * attribute: xmlErrors - will only contain errors that violate the schema the file was validated against
+ */
 case class XmlValidationAndExtractionResponse(
     status: Int,
     sourcePath: String,

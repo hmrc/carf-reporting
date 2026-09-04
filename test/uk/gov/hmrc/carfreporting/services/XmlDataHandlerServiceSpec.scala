@@ -17,21 +17,20 @@
 package uk.gov.hmrc.carfreporting.services
 
 import org.codehaus.stax2.validation.{XMLValidationSchema, XMLValidationSchemaFactory}
-import uk.gov.hmrc.carfreporting.base.NoGuiceSpecBase
-import uk.gov.hmrc.carfreporting.models.ExtractedFileDetails
+import uk.gov.hmrc.carfreporting.base.{NoGuiceSpecBase, TestData}
+import uk.gov.hmrc.carfreporting.models.ExtractedCarfFileDetails
 import uk.gov.hmrc.carfreporting.models.errors.{InternalServerError, XmlErrors}
 
 import java.io.InputStream
 
-class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
-  private val defaultSchemaPath = "data/schemas/CARFXML_v1.5.xsd"
-
-  private def getSchema: XMLValidationSchema = {
+class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
+  
+  private def getSchema(schemaPath: String): XMLValidationSchema = {
     val schemaFactory = XMLValidationSchemaFactory
       .newInstance(XMLValidationSchema.SCHEMA_ID_W3C_SCHEMA)
 
     testEnv
-      .resource(defaultSchemaPath)
+      .resource(schemaPath)
       .map(url => schemaFactory.createSchema(url))
       .getOrElse(fail("Failed to load CARF schema"))
   }
@@ -43,7 +42,8 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
       .getOrElse(fail("Failed to open input stream"))
 
   "XmlDataHandlerService" - {
-    ".validationAndExtraction" - {
+    "carfValidationAndExtraction" - {
+      val schemaPath = "data/schemas/CARFXML_v1.5.xsd"
       "must successfully validate and extract a well-formed XML that matches the schema" - {
         "given an XML file containing test data" in {
           val path        = "data/examples/test-data.xml"
@@ -51,12 +51,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
           val service = new XmlDataHandlerService
 
-          val result = service.validationAndExtraction(getSchema, inputStream)
+          val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
           inputStream.close()
 
           result mustBe Right(
-            ExtractedFileDetails(
+            ExtractedCarfFileDetails(
               messageRefId = "MSG-TESTDATA-RCASP",
               sendingEntityIn = "ZMCAR0123456786",
               rcaspName = Some("Test-Only Exchange Ltd"),
@@ -77,12 +77,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
           val service = new XmlDataHandlerService
 
-          val result = service.validationAndExtraction(getSchema, inputStream)
+          val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
           inputStream.close()
 
           result mustBe Right(
-            ExtractedFileDetails(
+            ExtractedCarfFileDetails(
               messageRefId = "MSG-NO-USERS",
               sendingEntityIn = "ZMCAR0123456787",
               rcaspName = None,
@@ -103,12 +103,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
           val service = new XmlDataHandlerService
 
-          val result = service.validationAndExtraction(getSchema, inputStream)
+          val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
           inputStream.close()
 
           result mustBe Right(
-            ExtractedFileDetails(
+            ExtractedCarfFileDetails(
               messageRefId = "MSG-OTHER-NEXUS",
               sendingEntityIn = "ZMCAR0123456787",
               rcaspName = Some("Cross-Border Exchange Ltd"),
@@ -129,12 +129,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
           val service = new XmlDataHandlerService
 
-          val result = service.validationAndExtraction(getSchema, inputStream)
+          val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
           inputStream.close()
 
           result mustBe Right(
-            ExtractedFileDetails(
+            ExtractedCarfFileDetails(
               messageRefId = "MSG-NEW-INFO",
               sendingEntityIn = "ZMCAR0123456782",
               rcaspName = Some("Production Typical Exchange Ltd"),
@@ -155,12 +155,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
           val service = new XmlDataHandlerService
 
-          val result = service.validationAndExtraction(getSchema, inputStream)
+          val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
           inputStream.close()
 
           result mustBe Right(
-            ExtractedFileDetails(
+            ExtractedCarfFileDetails(
               messageRefId = "MSG-ADDITIONAL-INFO",
               sendingEntityIn = "ZMCAR0123456782",
               rcaspName = Some("Production Typical Exchange Ltd"),
@@ -181,12 +181,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
           val service = new XmlDataHandlerService
 
-          val result = service.validationAndExtraction(getSchema, inputStream)
+          val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
           inputStream.close()
 
           result mustBe Right(
-            ExtractedFileDetails(
+            ExtractedCarfFileDetails(
               messageRefId = "MSG-DELETE-REPORT",
               sendingEntityIn = "ZMCAR0123456788",
               rcaspName = Some("Deletions Exchange Ltd"),
@@ -207,12 +207,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
           val service = new XmlDataHandlerService
 
-          val result = service.validationAndExtraction(getSchema, inputStream)
+          val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
           inputStream.close()
 
           result mustBe Right(
-            ExtractedFileDetails(
+            ExtractedCarfFileDetails(
               messageRefId = "MSG-ALL-CORRECTIONS",
               sendingEntityIn = "ZMCAR0123456788",
               rcaspName = Some("Corrections Exchange Ltd"),
@@ -233,12 +233,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
           val service = new XmlDataHandlerService
 
-          val result = service.validationAndExtraction(getSchema, inputStream)
+          val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
           inputStream.close()
 
           result mustBe Right(
-            ExtractedFileDetails(
+            ExtractedCarfFileDetails(
               messageRefId = "MSG-ALL-DELETIONS",
               sendingEntityIn = "ZMCAR0123456788",
               rcaspName = Some("Deletions Exchange Ltd"),
@@ -259,12 +259,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
           val service = new XmlDataHandlerService
 
-          val result = service.validationAndExtraction(getSchema, inputStream)
+          val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
           inputStream.close()
 
           result mustBe Right(
-            ExtractedFileDetails(
+            ExtractedCarfFileDetails(
               messageRefId = "MSG-CORRECTIONS-AND-DELETIONS",
               sendingEntityIn = "ZMCAR0123456788",
               rcaspName = Some("John Smith"),
@@ -285,12 +285,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
           val service = new XmlDataHandlerService
 
-          val result = service.validationAndExtraction(getSchema, inputStream)
+          val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
           inputStream.close()
 
           result mustBe Right(
-            ExtractedFileDetails(
+            ExtractedCarfFileDetails(
               messageRefId = "MSG-FALLBACK",
               sendingEntityIn = "ZMCAR0123456780",
               rcaspName = Some("John Smith"),
@@ -311,12 +311,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
           val service = new XmlDataHandlerService
 
-          val result = service.validationAndExtraction(getSchema, inputStream)
+          val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
           inputStream.close()
 
           result mustBe Right(
-            ExtractedFileDetails(
+            ExtractedCarfFileDetails(
               messageRefId = "MSG-2024-0001",
               sendingEntityIn = "missing",
               rcaspName = Some("Acme Crypto Exchange Ltd"),
@@ -338,7 +338,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
         val service = new XmlDataHandlerService
 
-        val result = service.validationAndExtraction(getSchema, inputStream)
+        val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
         inputStream.close()
 
@@ -356,7 +356,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
         val service = new XmlDataHandlerService
 
-        val result = service.validationAndExtraction(getSchema, inputStream)
+        val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
         inputStream.close()
 
@@ -379,7 +379,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
         val service = new XmlDataHandlerService
 
-        val result = service.validationAndExtraction(getSchema, inputStream)
+        val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
 
         inputStream.close()
 
@@ -397,7 +397,93 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
         val service = new XmlDataHandlerService
 
-        val result = service.validationAndExtraction(getSchema, inputStream)
+        val result = service.carfValidationAndExtraction(getSchema(schemaPath), inputStream)
+
+        inputStream.close()
+
+        result match {
+          case Left(e: InternalServerError) =>
+            println(e.message)
+            e.message must include("Unexpected EOF; was expecting a close tag for element <Root>")
+          case _                            => fail()
+        }
+      }
+    }
+    
+    "aeoiValidationAndExtraction" - {
+      val schemaPath = "data/schemas/AEOI_Business_Rule_Result_schema_v0.3.xsd"
+      "must successfully validate and extract a valid XML that matches the schema" in {
+          val path        = "data/examples/aeoi/BusinessRuleCheckSampleRequest_ValidFile_v0.3.xml"
+          val inputStream = getInputStream(path)
+
+          val service = new XmlDataHandlerService
+
+          val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
+
+          inputStream.close()
+
+          result mustBe Right(validExtractedAEOIFileDetails)
+      }
+      
+      "must successfully validate and extract a valid XML that matches the schema but contains errors from AEOI" in {
+          val path        = "data/examples/aeoi/BusinessRuleCheckSampleRequest_validFile_with_errors.xml"
+          val inputStream = getInputStream(path)
+
+          val service = new XmlDataHandlerService
+
+          val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
+
+          inputStream.close()
+
+          result mustBe Right(
+            invalidExtractedAEOIFileDetails
+          )
+      }
+
+      "must return XmlErrors when the XML is well-formed but violates the schema (under 101 errors)" in {
+        val path        = "data/examples/aeoi/BusinessRuleCheckSampleRequest_invalidFile_schema__errors.xml"
+        val inputStream = getInputStream(path)
+
+        val service = new XmlDataHandlerService
+
+        val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
+
+        inputStream.close()
+
+        result match {
+          case Left(e: XmlErrors) =>
+            e.errors.length          mustBe 1
+            e.errors.head.errorMessage must include("""the value is not a member of the enumeration: ("Rejected"/"Accepted")""" )
+          case _                  => fail()
+        }
+      }
+
+
+      "must truncate errors and exit cleanly when schema errors exceed max errors of (101) and xml contains 150 errors" in {
+        val path        = "data/examples/aeoi/BusinessRuleCheckSampleRequest_validFile_with_150_errors.xml"
+        val inputStream = getInputStream(path)
+
+        val service = new XmlDataHandlerService
+
+        val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
+
+        inputStream.close()
+
+        result match {
+          case Left(e: XmlErrors) =>
+            e.errors.length            mustBe 101
+            e.errors.map(_.errorMessage) must contain only """Unknown reason (at end element </Code>)"""
+          case _                  => fail()
+        }
+      }
+
+      "must return an InternalServerError when the XML is completely malformed (Fatal XML Stream Error)" in {
+        val path        = "data/examples/malformed-xml.xml"
+        val inputStream = getInputStream(path)
+
+        val service = new XmlDataHandlerService
+
+        val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
 
         inputStream.close()
 

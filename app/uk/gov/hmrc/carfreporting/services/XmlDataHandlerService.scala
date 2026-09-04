@@ -25,7 +25,7 @@ import uk.gov.hmrc.carfreporting.config.Constants.*
 import uk.gov.hmrc.carfreporting.services.xmlElements.CarfBody.*
 import uk.gov.hmrc.carfreporting.services.xmlElements.CarfBody.RcaspName.*
 import uk.gov.hmrc.carfreporting.services.xmlElements.MessageSpec.*
-import uk.gov.hmrc.carfreporting.models.ExtractedFileDetails
+import uk.gov.hmrc.carfreporting.models.{ExtractedAEOIFileDetails, ExtractedCarfFileDetails, FileError, RecordError, ValidationErrors, ValidationResult}
 import uk.gov.hmrc.carfreporting.models.errors.*
 
 import java.io.InputStream
@@ -47,10 +47,20 @@ class XmlDataHandlerService @Inject() extends Logging {
     def individualName: String = s"$firstName $lastName"
   }
 
-  def validationAndExtraction(
+  def carfValidationAndExtraction(
       schema: XMLValidationSchema,
       inputStream: InputStream
-  ): Either[CarfError, ExtractedFileDetails] = {
+  ): Either[CarfError, ExtractedCarfFileDetails] =
+    validateAndExtract(schema, inputStream)(readCarfXml)
+
+  def aeoiValidationAndExtraction(
+                                   schema: XMLValidationSchema,
+                                   inputStream: InputStream
+                                 ): Either[CarfError, ExtractedAEOIFileDetails] =
+    validateAndExtract(schema, inputStream)(readAEOIXml)
+  
+  private def validateAndExtract[A](schema: XMLValidationSchema,
+                                    inputStream: InputStream)(readXml: XMLStreamReader2 => A) = {
     val errors = ListBuffer.empty[XmlError]
 
     val factory = new WstxInputFactory()
@@ -65,7 +75,7 @@ class XmlDataHandlerService @Inject() extends Logging {
     reader.validateAgainst(schema)
 
     reader.setValidationProblemHandler { (problem: XMLValidationProblem) =>
-      val loc  = problem.getLocation
+      val loc = problem.getLocation
       val line = if (loc != null) loc.getLineNumber else 0
       if (errors.size < maxErrors) {
         errors += XmlError(line, problem.getType, problem.getMessage)
@@ -78,19 +88,19 @@ class XmlDataHandlerService @Inject() extends Logging {
     Try {
       readXml(reader)
     } match {
-      case Success(extractedFileDetails)          =>
+      case Success(extractedFileDetails) =>
         reader.close()
         resolveErrors(errors, Right(extractedFileDetails))
       case Failure(e: XmlStreamFailSafeException) =>
         reader.close()
         resolveErrors(errors, Left(XmlErrors(Vector.empty)))
-      case Failure(e)                             =>
+      case Failure(e) =>
         reader.close()
         Left(InternalServerError(e.getMessage))
     }
   }
 
-  private def readXml(reader: XMLStreamReader2): ExtractedFileDetails = {
+  private def readCarfXml(reader: XMLStreamReader2): ExtractedCarfFileDetails = {
     val path = ListBuffer.empty[String]
 
     val carfBodyRcaspName = CarfBodyRcaspName()
@@ -170,7 +180,7 @@ class XmlDataHandlerService @Inject() extends Logging {
         case _ => // Nothing
       }
 
-    ExtractedFileDetails(
+    ExtractedCarfFileDetails(
       messageRefId = messageRefId,
       sendingEntityIn = if sendingEntityIn.isEmpty then "missing" else sendingEntityIn,
       rcaspName = if messageTypeIndic == nilReportMessageTypeIndic then None else rcaspName,
@@ -188,11 +198,97 @@ class XmlDataHandlerService @Inject() extends Logging {
         cryptoUserDocTypeIndics.nonEmpty && cryptoUserDocTypeIndics.forall(_ == deletionDocTypeIndic)
     )
   }
+  
+  private def readAEOIXml(reader: XMLStreamReader2): ExtractedAEOIFileDetails = {
+    import xmlElements.AEOIRequestDetail._
 
-  private def resolveErrors(
+    val path = ListBuffer.empty[String]
+
+    val fileErrors = ListBuffer.empty[FileError]
+    val recordErrors = ListBuffer.empty[RecordError]
+
+    var currentFileErrorCode: String = ""
+    var currentFileErrorDetails: Option[String] = None
+
+    var currentRecordErrorCode: String = ""
+    var currentRecordErrorDetails: Option[String] = None
+    val currentDocRefIDs = ListBuffer.empty[String]
+
+    var status: String = ""
+
+    var requestDetailCompleted: Boolean = false
+
+    def currentPath: List[String] = path.reverse.toList
+
+    def pathEndsWith(expected: String*): Boolean = currentPath.startsWith(expected.toList)
+
+    def readElement(): String = {
+      val value = reader.getElementText.trim
+      if (path.nonEmpty) path.remove(path.size - 1)
+      value
+    }
+
+    while (reader.hasNext)
+      reader.next() match {
+        case XMLStreamConstants.START_ELEMENT if !requestDetailCompleted =>
+          val localName = reader.getLocalName
+          path += localName
+
+          localName match {
+            case CODE if pathEndsWith(CODE, FILE_ERROR, VALIDATION_ERRORS, GENERIC_STATUS_MESSAGE, REQUEST_DETAIL) =>
+              currentFileErrorCode = readElement()
+            case DETAILS if pathEndsWith(DETAILS, FILE_ERROR, VALIDATION_ERRORS, GENERIC_STATUS_MESSAGE, REQUEST_DETAIL) =>
+              currentFileErrorDetails = Some(readElement())
+            case CODE if pathEndsWith(CODE, RECORD_ERROR, VALIDATION_ERRORS, GENERIC_STATUS_MESSAGE, REQUEST_DETAIL) =>
+              currentRecordErrorCode = readElement()
+            case DETAILS if pathEndsWith(DETAILS, RECORD_ERROR, VALIDATION_ERRORS, GENERIC_STATUS_MESSAGE, REQUEST_DETAIL) =>
+              currentRecordErrorDetails = Some(readElement())
+            case DOC_REF_ID_IN_ERROR if pathEndsWith(DOC_REF_ID_IN_ERROR, RECORD_ERROR, VALIDATION_ERRORS, GENERIC_STATUS_MESSAGE, REQUEST_DETAIL) =>
+              currentDocRefIDs += readElement()
+            case STATUS if pathEndsWith(STATUS, VALIDATION_RESULT, GENERIC_STATUS_MESSAGE, REQUEST_DETAIL) =>
+              status = readElement()
+            case _ => // Nothing
+          }
+
+        case XMLStreamConstants.END_ELEMENT if !requestDetailCompleted =>
+          val localName = reader.getLocalName
+
+          localName match {
+            case FILE_ERROR =>
+              fileErrors += FileError(currentFileErrorCode, currentFileErrorDetails)
+              currentFileErrorCode = ""
+              currentFileErrorDetails = None
+            case RECORD_ERROR =>
+              recordErrors += RecordError(currentRecordErrorCode, currentRecordErrorDetails, currentDocRefIDs.toSeq)
+              currentRecordErrorCode = ""
+              currentRecordErrorDetails = None
+              currentDocRefIDs.clear()
+            case REQUEST_DETAIL =>
+              requestDetailCompleted = true
+
+            case _ => // Nothing
+          }
+
+          if (path.nonEmpty) path.remove(path.size - 1)
+
+        case _ => // Nothing
+      }
+
+    ExtractedAEOIFileDetails(
+      validationErrors = ValidationErrors(
+        fileError = fileErrors.toSeq,
+        recordError = recordErrors.toSeq
+      ),
+      validationResult = ValidationResult(
+        status = status //TODO convert to enum here when implemented
+      )
+    )
+  }
+
+  private def resolveErrors[A](
       errors: ListBuffer[XmlError],
-      responseWithoutErrors: => Either[XmlErrors, ExtractedFileDetails]
-  ): Either[XmlErrors, ExtractedFileDetails] =
+      responseWithoutErrors: => Either[XmlErrors, A]
+  ): Either[XmlErrors, A] =
     NonEmptyChain
       .fromSeq(errors.toSeq)
       .fold(responseWithoutErrors)(nec => Left(XmlErrors(nec.toNonEmptyVector.toVector)))

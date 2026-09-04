@@ -18,10 +18,10 @@ package uk.gov.hmrc.carfreporting.base
 
 import org.bson.types.ObjectId
 import uk.gov.hmrc.carfreporting.config.Constants.ukZoneId
-import uk.gov.hmrc.carfreporting.models.ExtractedFileDetails
 import uk.gov.hmrc.carfreporting.models.errors.{XmlError, XmlErrors}
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
+import uk.gov.hmrc.carfreporting.models.*
 
 import java.time.*
 import java.util.UUID
@@ -81,7 +81,7 @@ trait TestData {
 
   val uploadRejected: UploadStatus.UploadRejected = UploadRejected(errorDetails("REJECTED"))
 
-  val extractedFileDetailsValidCarf = ExtractedFileDetails(
+  val extractedFileDetailsCarf = ExtractedCarfFileDetails(
     messageRefId = "MSG-2024-0001",
     sendingEntityIn = "SENDER-001",
     rcaspName = Some("Acme Crypto Exchange Ltd"),
@@ -117,5 +117,35 @@ trait TestData {
         "uncompleted content model. expecting: <Contact>,<MessageRefId>,<MessageTypeIndic>,<ReportingPeriod>,<Timestamp>,<Warning>"
       )
     )
+  )
+
+  val validExtractedAEOIFileDetails = ExtractedAEOIFileDetails(
+    ValidationErrors(
+      Seq.empty,
+      Seq.empty
+    ),
+    ValidationResult("Accepted")
+  )
+
+  val invalidExtractedAEOIFileDetails = ExtractedAEOIFileDetails(
+    ValidationErrors(
+      fileError = Seq(
+        FileError(
+          code = "50009",
+          details = Some("Duplicate message ref IDs")
+        )
+      ),
+      recordError = Seq(
+        RecordError(
+          code = "80000",
+          details = Some("Duplicate doc ref IDs"),
+          docRefIDInError = Seq(
+            "CBCUSER001DHSJEURUT20001",
+            "CBCUSER001DHSJEURUT20002"
+          )
+        )
+      )
+    ),
+    ValidationResult("Rejected")
   )
 }

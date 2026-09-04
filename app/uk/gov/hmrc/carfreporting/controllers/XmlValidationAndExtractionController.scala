@@ -20,6 +20,8 @@ import play.api.Logging
 import play.api.libs.json.*
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.carfreporting.models.errors.*
+import uk.gov.hmrc.carfreporting.models.ExtractedCarfFileDetails
+import uk.gov.hmrc.carfreporting.models.ValidationType.{AEOI, CARF}
 import uk.gov.hmrc.carfreporting.models.requests.XmlValidationRequest
 import uk.gov.hmrc.carfreporting.models.responses.XmlValidationAndExtractionResponse
 import uk.gov.hmrc.carfreporting.services.XmlParserService
@@ -42,7 +44,7 @@ class XmlValidationAndExtractionController @Inject() (cc: ControllerComponents, 
           Future.successful(BadRequest("Request body provided is invalid"))
         ,
         valid =>
-          service.validateAndExtract(valid.path).value.map {
+          service.validateAndExtractCARF(valid.path).value.map {
             case Right(extractedFileDetails) =>
               Ok(Json.toJson(extractedFileDetails))
             case Left(xmlErrors: XmlErrors)  =>
@@ -63,6 +65,52 @@ class XmlValidationAndExtractionController @Inject() (cc: ControllerComponents, 
             case Left(error)                 =>
               logger.error(
                 s"[XmlValidationAndExtractionController][processXml] Failed to validate XML with unexpected " +
+                  s"error with message: ${error.message}"
+              )
+              InternalServerError(
+                Json.toJson(
+                  XmlValidationAndExtractionResponse(
+                    INTERNAL_SERVER_ERROR,
+                    valid.path,
+                    Some("Unexpected error"),
+                    Vector.empty
+                  )
+                )
+              )
+          }
+      )
+  }
+  
+  def processAEOIXml: Action[JsValue] = Action.async(parse.json) { implicit request =>
+    request.body
+      .validate[XmlValidationRequest]
+      .fold(
+        invalid =>
+          logger.error("[XmlValidationAndExtractionController][processAEOIXml] Failed to parse request body")
+          Future.successful(BadRequest("Request body provided is invalid"))
+        ,
+        valid =>
+          service.validateAndExtractAEOI(valid.path).value.map {
+            case Right(extractedFileDetails) =>
+              Ok(Json.toJson(extractedFileDetails))
+            case Left(xmlErrors: XmlErrors)  =>
+              logger.warn(
+                "[XmlValidationAndExtractionController][processAEOIXml] Failed to validate XML with " +
+                  s"(${xmlErrors.errors.size}) error(s)"
+              )
+              UnprocessableEntity(
+                Json.toJson(
+                  XmlValidationAndExtractionResponse(
+                    UNPROCESSABLE_ENTITY,
+                    valid.path,
+                    Some("The submitted XML failed schema validation."),
+                    xmlErrors.errors
+                  )
+                )
+              )
+            case Left(error)                 =>
+              logger.error(
+                s"[XmlValidationAndExtractionController][processAEOIXml] Failed to validate XML with unexpected " +
                   s"error with message: ${error.message}"
               )
               InternalServerError(

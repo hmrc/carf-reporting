@@ -43,4 +43,17 @@ object xmlElements {
       val LAST_NAME  = "LastName"
     }
   }
+
+  object AEOIRequestDetail {
+    val REQUEST_DETAIL = "requestDetail"
+    val GENERIC_STATUS_MESSAGE = "GenericStatusMessage"
+    val VALIDATION_ERRORS = "ValidationErrors"
+    val FILE_ERROR = "FileError"
+    val RECORD_ERROR = "RecordError"
+    val CODE = "Code"
+    val DETAILS = "Details"
+    val DOC_REF_ID_IN_ERROR = "DocRefIDInError"
+    val VALIDATION_RESULT = "ValidationResult"
+    val STATUS = "Status"
+  }
 }

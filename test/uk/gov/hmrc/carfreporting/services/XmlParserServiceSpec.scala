@@ -20,7 +20,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{reset, times, verify, when}
 import uk.gov.hmrc.carfreporting.base.{NoGuiceSpecBase, TestData}
 import uk.gov.hmrc.carfreporting.dispatchers.{MainDispatcherName, XmlDispatcher}
-import uk.gov.hmrc.carfreporting.models.ExtractedFileDetails
+import uk.gov.hmrc.carfreporting.models.ExtractedCarfFileDetails
 import uk.gov.hmrc.carfreporting.models.errors.{InternalServerError, XmlErrors}
 
 class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
@@ -37,66 +37,126 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
   }
 
   "XmlParserService" - {
+    "validateAndExtractCARF" - {
+      "must return file_not_found error when the XML file does not exist" in {
+        val result = service.validateAndExtractCARF("invalid/path/nonexistent.xml").value.futureValue
 
-    "must return file_not_found error when the XML file does not exist" in {
-      val result = service.validateAndExtract("invalid/path/nonexistent.xml").value.futureValue
+        result match {
+          case Left(e: XmlErrors) => e.errors.head.errorCode mustBe "file_not_found"
+          case _ => fail()
+        }
 
-      result match {
-        case Left(e: XmlErrors) => e.errors.head.errorCode mustBe "file_not_found"
-        case _                  => fail()
+        verify(mockXmlDataHandlerService, times(0)).carfValidationAndExtraction(any(), any())
       }
 
-      verify(mockXmlDataHandlerService, times(0)).validationAndExtraction(any(), any())
-    }
+      "must return an ExtractedFileDetails when returned by XmlDataHandlerService" in {
+        when(mockXmlDataHandlerService.carfValidationAndExtraction(any(), any()))
+          .thenReturn(Right(extractedFileDetailsCarf))
 
-    "must return an ExtractedFileDetails when returned by XmlDataHandlerService" in {
-      when(mockXmlDataHandlerService.validationAndExtraction(any(), any()))
-        .thenReturn(Right(extractedFileDetailsValidCarf))
+        val path = "data/examples/valid-carf.xml"
 
-      val path = "data/examples/valid-carf.xml"
+        val result = service.validateAndExtractCARF(path).value.futureValue
 
-      val result = service.validateAndExtract(path).value.futureValue
+        result mustBe Right(extractedFileDetailsCarf)
 
-      result mustBe Right(extractedFileDetailsValidCarf)
-
-      verify(mockXmlDataHandlerService, times(1)).validationAndExtraction(any(), any())
-    }
-
-    "must return XmlErrors when XmlDataHandlerService returns schema errors (the XML is well-formed but fails schema validation)" in {
-      when(mockXmlDataHandlerService.validationAndExtraction(any(), any())).thenReturn(Left(xmlErrors))
-
-      val path = "data/examples/invalid-carf.xml"
-
-      val result = service.validateAndExtract(path).value.futureValue
-
-      result match {
-        case Left(e: XmlErrors) =>
-          val errorMessages = e.errors.map(_.errorMessage)
-          e.errors.length  mustBe 4
-          errorMessages.head must include("\"MessageTypeIndic\" is not allowed.")
-          errorMessages(1)   must include("\"ReportingPeriod\" is not allowed.")
-          errorMessages(2)   must include("\"Timestamp\" is not allowed.")
-          errorMessages(3)   must include("uncompleted content model.")
-        case _                  => fail()
+        verify(mockXmlDataHandlerService, times(1)).carfValidationAndExtraction(any(), any())
       }
 
-      verify(mockXmlDataHandlerService, times(1)).validationAndExtraction(any(), any())
-    }
+      "must return XmlErrors when XmlDataHandlerService returns schema errors (the XML is well-formed but fails schema validation)" in {
+        when(mockXmlDataHandlerService.carfValidationAndExtraction(any(), any())).thenReturn(Left(xmlErrors))
 
-    "must return an InternalServerError when XmlDataHandlerService returns InternalServerError (the XML is completely malformed)" in {
-      when(mockXmlDataHandlerService.validationAndExtraction(any(), any()))
-        .thenReturn(Left(InternalServerError("Unexpected EOF; was expecting a close tag for element <Root>")))
+        val path = "data/examples/invalid-carf.xml"
 
-      val path   = "data/examples/malformed-xml.xml"
-      val result = service.validateAndExtract(path).value.futureValue
+        val result = service.validateAndExtractCARF(path).value.futureValue
 
-      result match {
-        case Left(e: InternalServerError) =>
-          e.message must include("Unexpected EOF; was expecting a close tag for element <Root>")
-        case _                            => fail()
+        result match {
+          case Left(e: XmlErrors) =>
+            val errorMessages = e.errors.map(_.errorMessage)
+            e.errors.length mustBe 4
+            errorMessages.head must include("\"MessageTypeIndic\" is not allowed.")
+            errorMessages(1) must include("\"ReportingPeriod\" is not allowed.")
+            errorMessages(2) must include("\"Timestamp\" is not allowed.")
+            errorMessages(3) must include("uncompleted content model.")
+          case _ => fail()
+        }
+
+        verify(mockXmlDataHandlerService, times(1)).carfValidationAndExtraction(any(), any())
       }
 
-      verify(mockXmlDataHandlerService, times(1)).validationAndExtraction(any(), any())
+      "must return an InternalServerError when XmlDataHandlerService returns InternalServerError (the XML is completely malformed)" in {
+        when(mockXmlDataHandlerService.carfValidationAndExtraction(any(), any()))
+          .thenReturn(Left(InternalServerError("Unexpected EOF; was expecting a close tag for element <Root>")))
+
+        val path = "data/examples/malformed-xml.xml"
+        val result = service.validateAndExtractCARF(path).value.futureValue
+
+        result match {
+          case Left(e: InternalServerError) =>
+            e.message must include("Unexpected EOF; was expecting a close tag for element <Root>")
+          case _ => fail()
+        }
+
+        verify(mockXmlDataHandlerService, times(1)).carfValidationAndExtraction(any(), any())
+      }
+    }
+
+    "validateAndExtractAEOI" - {
+      "must return file_not_found error when the XML file does not exist" in {
+        val result = service.validateAndExtractAEOI("invalid/path/nonexistent.xml").value.futureValue
+
+        result match {
+          case Left(e: XmlErrors) => e.errors.head.errorCode mustBe "file_not_found"
+          case _ => fail()
+        }
+
+        verify(mockXmlDataHandlerService, times(0)).aeoiValidationAndExtraction(any(), any())
+      }
+
+      "must return ExtractedAEOIFileDetails when returned by XmlDataHandlerService" in {
+        when(mockXmlDataHandlerService.aeoiValidationAndExtraction(any(), any()))
+          .thenReturn(Right(validExtractedAEOIFileDetails))
+
+        val path = "data/examples/aeoi/BusinessRuleCheckSampleRequest_ValidFile_v0.3.xml"
+
+        val result = service.validateAndExtractAEOI(path).value.futureValue
+
+        result mustBe Right(validExtractedAEOIFileDetails)
+
+        verify(mockXmlDataHandlerService, times(1)).aeoiValidationAndExtraction(any(), any())
+      }
+
+      "must return an InternalServerError when XmlDataHandlerService returns InternalServerError (the XML is completely " +
+        "malformed)" in {
+        when(mockXmlDataHandlerService.aeoiValidationAndExtraction(any(), any()))
+          .thenReturn(Left(InternalServerError("Unexpected EOF; was expecting a close tag for element <Root>")))
+
+        val path = "data/examples/malformed-xml.xml"
+        val result = service.validateAndExtractAEOI(path).value.futureValue
+
+        result match {
+          case Left(e: InternalServerError) =>
+            e.message must include("Unexpected EOF; was expecting a close tag for element <Root>")
+          case _ => fail()
+        }
+
+        verify(mockXmlDataHandlerService, times(1)).aeoiValidationAndExtraction(any(), any())
+      }
+      
+      "must return an InternalServerError when aeoiValidationAndExtraction throws an exception" in {
+        when(mockXmlDataHandlerService.aeoiValidationAndExtraction(any(), any()))
+          .thenThrow(new RuntimeException("unexpected explosion"))
+
+        val path = "data/examples/malformed-xml.xml"
+        val result = service.validateAndExtractAEOI(path).value.futureValue
+
+        result match {
+          case Left(e: InternalServerError) =>
+            e.message must include("unexpected explosion")
+          case _ => fail()
+        }
+
+        verify(mockXmlDataHandlerService, times(1)).aeoiValidationAndExtraction(any(), any())
+      }
     }
   }
 }
