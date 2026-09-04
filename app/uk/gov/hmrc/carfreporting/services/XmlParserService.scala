@@ -56,12 +56,16 @@ class XmlParserService @Inject (
 
   private def openInputStream(path: String): ResultT[InputStream] =
     Try {
-      new java.io.BufferedInputStream(new URI(path).toURL.openStream())
+      Try(new URI(path).toURL).toOption
+        .orElse(env.resource(path))
+        .map { url =>
+          new java.io.BufferedInputStream(url.openStream())
+        }
     } match {
-      case Success(in)                       => ResultT.fromValue(in)
-      case Failure(_: FileNotFoundException) =>
+      case Success(Some(in))                                 => ResultT.fromValue(in)
+      case Success(None) | Failure(_: FileNotFoundException) =>
         ResultT.fromError(InternalServerError("XML file cannot be found with path provided"))
-      case Failure(e)                        =>
+      case Failure(e)                                        =>
         ResultT.fromError(
           InternalServerError(s"Unexpected error when creating Buffered Input Stream: ${e.getMessage}")
         )

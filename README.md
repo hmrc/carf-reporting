@@ -102,22 +102,30 @@ sbt clean compile scalafmtAll coverage test it/test coverageReport
 
 # XML Parser for validation and extraction
 
-## How to run locally
+## How to run locally & staging etc
+
+### Locally
 
 1. Open your Restful Api Client of your choosing
-2. Formulate your JSON Body with the following request body example (replacing the local path to this repository):
+2. Formulate your JSON Body with the following request body example:
 ```json
 {
-  "path": "file:///Users/user.name/Documents/CARF/carf-reporting/conf/data/examples/additional-info.xml"
+  "path": "data/examples/valid-carf.xml"
 }
 ```
    Note: Other XML examples such as an invalid xml are available in `conf/data/examples`
 
-3. Call the API with the url: http://localhost:17005/carf-reporting/validate-xml
+3. Call the API with the url: http://localhost:17005/carf-reporting/validate-extract-xml
 
 Note that this endpoint is called automatically by the frontend, with the download URL in the request body,
 after an XML file is uploaded and has passed Upscan checks.
 This is the case both locally (using upscan-stub) and in staging/QA (using the actual implementation of Upscan).
+
+### Staging etc
+Use curl-microservice and build with parameters:
+https://build.tax.service.gov.uk/job/PlatformTools/job/curl-microservice/
+
+For URL, use: https://carf-reporting.protected.mdtp/carf-reporting/validate-extract-xml
 
 ## XML Parser Design Decisions and overview
 
@@ -150,7 +158,7 @@ where it can parse XML on it's own execution context keeping the application rea
 
 ## API Design
 
-The API (`carf-reporting/validate-xml`) was used to test and simulate how the XML parser will be used by future consumers.
+The API (`carf-reporting/validate-extract-xml`) was used to test and simulate how the XML parser will be used by future consumers.
 Any future work requiring the parser should maintain the structure of the API and add any additional components/logic on top of the current implementation unless specified otherwise.
 
 ### Request Body:

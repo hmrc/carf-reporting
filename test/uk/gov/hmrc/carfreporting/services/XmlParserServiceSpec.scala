@@ -40,7 +40,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
 
   "XmlParserService" - {
 
-    "must return file_not_found error when the XML file does not exist" in {
+    "must return InternalServerError when the XML file does not exist (given a url)" in {
       val fileName = "invalid/path/nonexistent.xml"
       val path     = Paths.get(fileName).toUri.toString
 
@@ -51,12 +51,35 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
       verify(mockXmlDataHandlerService, times(0)).validationAndExtraction(any(), any())
     }
 
-    "must return an ExtractedFileDetails when returned by XmlDataHandlerService" in {
+    "must return InternalServerError when the XML file does not exist (given a path to a file in this repository)" in {
+      val path = "invalid/path/nonexistent.xml"
+
+      val result = service.validateAndExtract(path).value.futureValue
+
+      result mustBe Left(InternalServerError("XML file cannot be found with path provided"))
+
+      verify(mockXmlDataHandlerService, times(0)).validationAndExtraction(any(), any())
+    }
+
+    "must return an ExtractedFileDetails when returned by XmlDataHandlerService (given a url)" in {
       when(mockXmlDataHandlerService.validationAndExtraction(any(), any()))
         .thenReturn(Right(extractedFileDetailsValidCarf))
 
       val fileName = "conf/data/examples/valid-carf.xml"
       val path     = Paths.get(fileName).toUri.toString
+
+      val result = service.validateAndExtract(path).value.futureValue
+
+      result mustBe Right(extractedFileDetailsValidCarf)
+
+      verify(mockXmlDataHandlerService, times(1)).validationAndExtraction(any(), any())
+    }
+
+    "must return an ExtractedFileDetails when returned by XmlDataHandlerService (given a path to a file in this repository)" in {
+      when(mockXmlDataHandlerService.validationAndExtraction(any(), any()))
+        .thenReturn(Right(extractedFileDetailsValidCarf))
+
+      val path = "data/examples/valid-carf.xml"
 
       val result = service.validateAndExtract(path).value.futureValue
 
