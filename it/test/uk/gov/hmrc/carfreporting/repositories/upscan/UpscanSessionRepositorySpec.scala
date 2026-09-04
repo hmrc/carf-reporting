@@ -28,6 +28,7 @@ import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
+import uk.gov.hmrc.carfreporting.repositories.UpscanSessionRepository
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import java.time.Instant
@@ -45,7 +46,7 @@ class UpscanSessionRepositorySpec
   private val instant = Instant.now(clock)
 
   private val mockAppConfig = mock[AppConfig]
-  when(mockAppConfig.cacheTtl) thenReturn 1L
+  when(mockAppConfig.cacheTtlSeconds) thenReturn 1L
 
   override protected val repository: UpscanSessionRepository = new UpscanSessionRepository(
     mongoComponent = mongoComponent,

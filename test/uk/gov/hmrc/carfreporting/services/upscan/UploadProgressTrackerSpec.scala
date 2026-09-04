@@ -22,7 +22,7 @@ import uk.gov.hmrc.carfreporting.base.SpecBase
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.InProgress
-import uk.gov.hmrc.carfreporting.repositories.upscan.UpscanSessionRepository
+import uk.gov.hmrc.carfreporting.repositories.UpscanSessionRepository
 import uk.gov.hmrc.carfreporting.types.ResultT
 
 class UploadProgressTrackerSpec extends SpecBase {

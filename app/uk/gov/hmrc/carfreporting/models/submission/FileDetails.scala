@@ -23,7 +23,7 @@ case class FileDetails(
     businessRuleErrors: Option[ValidationErrors] = None
 )
 
-object UploadSessionDetails {
+object FileDetails {
 
   import play.api.libs.functional.syntax.*
 

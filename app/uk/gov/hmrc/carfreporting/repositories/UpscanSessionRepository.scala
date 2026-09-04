@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.repositories.upscan
+package uk.gov.hmrc.carfreporting.repositories
 
 import com.mongodb.MongoWriteException
 import org.mongodb.scala.bson.conversions.Bson
@@ -49,7 +49,7 @@ class UpscanSessionRepository @Inject() (
           ascending("lastUpdated"),
           IndexOptions()
             .name("upscan-last-updated-index")
-            .expireAfter(appConfig.cacheTtl, TimeUnit.SECONDS)
+            .expireAfter(appConfig.cacheTtlSeconds, TimeUnit.SECONDS)
         ),
         IndexModel(
           ascending("uploadId"),
