@@ -14,17 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.models.upscan
+package uk.gov.hmrc.carfreporting.models
 
-import play.api.libs.json.*
-
-case class UploadId(value: String)
-
-object UploadId {
-
-  implicit val reads: Reads[UploadId] =
-    Reads.StringReads.map(UploadId(_))
-
-  implicit val writes: Writes[UploadId] =
-    Writes[UploadId](x => JsString(x.value))
+enum ValidationType {
+  case CARF
+  case AEOI
 }

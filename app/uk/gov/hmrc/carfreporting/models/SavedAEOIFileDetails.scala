@@ -14,45 +14,37 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.models.upscan
+package uk.gov.hmrc.carfreporting.models
 
 import org.bson.types.ObjectId
 import play.api.libs.json.*
-import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.mongo.play.json.formats.{MongoFormats, MongoJavatimeFormats}
 
 import java.time.Instant
 
-case class UploadSessionDetails(
+case class SavedAEOIFileDetails(
     _id: ObjectId,
-    uploadId: UploadId,
-    reference: Reference,
-    status: UploadStatus,
+    extractedAEOIFileDetails: ExtractedAEOIFileDetails,
     lastUpdated: Instant = Instant.now
 )
 
-object UploadSessionDetails {
+object SavedAEOIFileDetails {
 
   import play.api.libs.functional.syntax.*
 
-  val reads: Reads[UploadSessionDetails] =
+  val reads: Reads[SavedAEOIFileDetails] =
     (
       (__ \ "_id").read(MongoFormats.objectIdFormat) and
-        (__ \ "uploadId").read[UploadId] and
-        (__ \ "reference").read[Reference] and
-        (__ \ "status").read[UploadStatus] and
+        (__ \ "extractedAEOIFileDetails").read[ExtractedAEOIFileDetails] and
         (__ \ "lastUpdated").read(MongoJavatimeFormats.instantFormat)
-    )(UploadSessionDetails.apply _)
+    )(SavedAEOIFileDetails.apply _)
 
-  private val writes: OWrites[UploadSessionDetails] =
+  private val writes: OWrites[SavedAEOIFileDetails] =
     (
       (__ \ "_id").write(MongoFormats.objectIdFormat) and
-        (__ \ "uploadId").write[UploadId] and
-        (__ \ "reference").write[Reference] and
-        (__ \ "status").write[UploadStatus] and
+        (__ \ "extractedAEOIFileDetails").write[ExtractedAEOIFileDetails] and
         (__ \ "lastUpdated").write(MongoJavatimeFormats.instantFormat)
     )(o => Tuple.fromProductTyped(o))
 
-  implicit val format: OFormat[UploadSessionDetails] = OFormat(reads, writes)
-
+  val mongoFormat: OFormat[SavedAEOIFileDetails] = OFormat(reads, writes)
 }

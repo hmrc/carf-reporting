@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.repositories.upscan
+package uk.gov.hmrc.carfreporting.repositories
 
 import org.mockito.Mockito.when
 import org.mongodb.scala.model.Filters
@@ -25,6 +25,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.carfreporting.base.TestData
 import uk.gov.hmrc.carfreporting.config.AppConfig
+import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*

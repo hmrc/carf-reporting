@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.models.upscan
+package uk.gov.hmrc.carfreporting.models
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.*
 import uk.gov.hmrc.carfreporting.models.UploadId
 
-case class UpscanIdentifiers(uploadId: UploadId, fileReference: Reference)
+case class UploadId(value: String)
 
-object UpscanIdentifiers {
-  implicit val format: OFormat[UpscanIdentifiers] = Json.format[UpscanIdentifiers]
+object UploadId {
+
+  implicit val reads: Reads[UploadId] =
+    Reads.StringReads.map(UploadId(_))
+
+  implicit val writes: Writes[UploadId] =
+    Writes[UploadId](x => JsString(x.value))
 }

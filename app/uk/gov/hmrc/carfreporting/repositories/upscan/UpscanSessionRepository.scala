@@ -25,6 +25,7 @@ import org.mongodb.scala.model.{FindOneAndUpdateOptions, IndexModel, IndexOption
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.upscan.*
+import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.carfreporting.types.ResultT
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
