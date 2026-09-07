@@ -45,9 +45,9 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
 
   "XmlParserService" - {
     "validateAndExtractCARF" - {
-    "must return InternalServerError when the XML file does not exist (given a url)" in {
-      val fileName = "invalid/path/nonexistent.xml"
-      val path     = Paths.get(fileName).toUri.toString
+      "must return InternalServerError when the XML file does not exist (given a url)" in {
+        val fileName = "invalid/path/nonexistent.xml"
+        val path     = Paths.get(fileName).toUri.toString
 
         val result = service.validateAndExtractCARF(path).value.futureValue
 
@@ -63,16 +63,16 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
 
         result mustBe Left(InternalServerError("XML file cannot be found with path provided"))
 
-        verify(mockXmlDataHandlerService, times(0)).validationAndExtraction(any(), any())
-      }  
-    "must return an ExtractedFileDetails when returned by XmlDataHandlerService (given a url)" in {
-      when(mockXmlDataHandlerService.validationAndExtraction(any(), any()))
-        .thenReturn(Right(extractedFileDetailsValidCarf))
+        verify(mockXmlDataHandlerService, times(0)).carfValidationAndExtraction(any(), any())
+      }
+      "must return an ExtractedFileDetails when returned by XmlDataHandlerService (given a url)" in {
+        when(mockXmlDataHandlerService.carfValidationAndExtraction(any(), any()))
+          .thenReturn(Right(extractedFileDetailsCarf))
 
         val fileName = "conf/data/examples/valid-carf.xml"
         val path     = Paths.get(fileName).toUri.toString
 
-      val result = service.validateAndExtractCARF(path).value.futureValue
+        val result = service.validateAndExtractCARF(path).value.futureValue
 
         result mustBe Right(extractedFileDetailsCarf)
 
@@ -80,22 +80,20 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
       }
 
       "must return an ExtractedFileDetails when returned by XmlDataHandlerService (given a path to a file in this repository)" in {
-        when(mockXmlDataHandlerService.validationAndExtraction(any(), any()))
-          .thenReturn(Right(extractedFileDetailsValidCarf))
+        when(mockXmlDataHandlerService.carfValidationAndExtraction(any(), any()))
+          .thenReturn(Right(extractedFileDetailsCarf))
 
         val path = "data/examples/valid-carf.xml"
 
         val result = service.validateAndExtractCARF(path).value.futureValue
 
-        result mustBe Right(extractedFileDetailsValidCarf)
+        result mustBe Right(extractedFileDetailsCarf)
 
         verify(mockXmlDataHandlerService, times(1)).carfValidationAndExtraction(any(), any())
       }
-      
+
       "must return XmlErrors when XmlDataHandlerService returns schema errors (the XML is well-formed but fails schema validation)" in {
         when(mockXmlDataHandlerService.carfValidationAndExtraction(any(), any())).thenReturn(Left(xmlErrors))
-        when(mockSubmissionRepository.insert(any()))
-          .thenReturn(ResultT.fromValue(true))
 
         val fileName = "conf/data/examples/invalid-carf.xml"
         val path     = Paths.get(fileName).toUri.toString
