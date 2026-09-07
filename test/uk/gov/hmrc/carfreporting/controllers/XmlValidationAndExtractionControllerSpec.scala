@@ -232,7 +232,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
         val expectedResponse = XmlValidationAndExtractionResponse(
           INTERNAL_SERVER_ERROR,
           path,
-          Some("Unexpected error"),
+          Some("Unexpected error with message: message"),
           Vector.empty
         )
 

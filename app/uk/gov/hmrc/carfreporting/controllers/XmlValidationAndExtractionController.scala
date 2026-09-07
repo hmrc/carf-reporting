@@ -100,7 +100,7 @@ class XmlValidationAndExtractionController @Inject() (cc: ControllerComponents, 
                   XmlValidationAndExtractionResponse(
                     INTERNAL_SERVER_ERROR,
                     valid.path,
-                    Some("Unexpected error"),
+                    Some(s"Unexpected error with message: ${error.message}"),
                     Vector.empty
                   )
                 )

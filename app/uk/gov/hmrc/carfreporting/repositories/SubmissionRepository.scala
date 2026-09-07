@@ -19,6 +19,7 @@ package uk.gov.hmrc.carfreporting.repositories
 import com.mongodb.MongoWriteException
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import play.api.Logging
 import uk.gov.hmrc.carfreporting.models.SavedAEOIFileDetails
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.types.ResultT
@@ -36,14 +37,15 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent)(implicit e
       domainFormat = SavedAEOIFileDetails.mongoFormat,
       indexes = Seq(
         IndexModel(
-          ascending("uploadId"),
+          ascending("extractedAEOIFileDetails.uploadId"),
           IndexOptions()
             .name("uploadId-index")
             .unique(true)
         )
       ),
       replaceIndexes = true
-    ) {
+    )
+    with Logging {
 
   def insert(fileDetails: SavedAEOIFileDetails): ResultT[Boolean] =
     ResultT.fromFuture {
@@ -53,12 +55,16 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent)(implicit e
         .map(_ => Right(true))
         .recover {
           case e: MongoWriteException =>
+            val errorMessage =
+              s"Exception from SubmissionRepository.insert with message: ${e.getMessage}"
+            logger.error(errorMessage)
             Left(
-              MongoError(
-                "MongoWriteException from SubmissionRepository .insert - ensure no duplicate uploadId or reference"
-              )
+              MongoError(errorMessage)
             )
-          case _                      => Left(MongoError("Failed to call SubmissionRepository .insert"))
+          case e                      =>
+            val errorMessage = s"Failed to call SubmissionRepository .insert with message: ${e.getMessage}"
+            logger.error(errorMessage)
+            Left(MongoError(errorMessage))
         }
     }
 

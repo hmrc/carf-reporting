@@ -67,7 +67,7 @@ class XmlParserService @Inject (
               s"saving status to database as $savedStatus"
           )
 
-          val failedSubmission = SavedAEOIFileDetails(
+          val submissionUponFailure = SavedAEOIFileDetails(
             ObjectId.get(),
             ExtractedAEOIFileDetails(
               uploadId = UploadId(UUID.randomUUID().toString),
@@ -81,9 +81,16 @@ class XmlParserService @Inject (
             )
           )
           submissionRepository
-            .insert(failedSubmission)
+            .insert(submissionUponFailure)
             .flatMap { _ =>
               ResultT.fromError(initiateError)
+            }
+            .leftMap { e =>
+              logger.warn(
+                s"[XmlParserService][validateAndExtractAEOI] Repository call to submissionRepository.insert threw " +
+                  s"an error but initial error is being returned"
+              )
+              initiateError
             }
         }
       _                    <-

@@ -21,12 +21,15 @@ import org.scalatest.OptionValues
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+
 import uk.gov.hmrc.carfreporting.base.TestData
 import uk.gov.hmrc.carfreporting.models.SavedAEOIFileDetails
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
+import scala.concurrent.duration.*
 
 class SubmissionRepositorySpec
   extends AnyFreeSpec
@@ -54,14 +57,11 @@ class SubmissionRepositorySpec
 
       "must return a MongoError if there is already a record with the same uploadId" in {
         val setResult1 = repository.insert(testSavedAEOIFileDetails).value.futureValue
-        val setResult2 = repository.insert(testSavedAEOIFileDetails.copy(_id = org.bson.types.ObjectId.get())).value.futureValue
+        val Left(setResult2) =
+          repository.insert(testSavedAEOIFileDetails.copy(_id = org.bson.types.ObjectId.get())).value.futureValue
 
         setResult1 mustBe Right(true)
-        setResult2 mustBe Left(
-          MongoError(
-            "MongoWriteException from SubmissionRepository .insert - ensure no duplicate uploadId or reference"
-          )
-        )
+        setResult2.message.contains("duplicate key error collection") mustBe true
       }
     }
   }
