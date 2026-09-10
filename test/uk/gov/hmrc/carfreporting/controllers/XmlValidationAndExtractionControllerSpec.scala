@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.carfreporting.controllers
 
-import org.mockito.ArgumentMatchers
-import org.mockito.Mockito.{reset, verify, when}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito.{never, reset, verify, when}
 import play.api.libs.json.Json
 import play.api.test.Helpers.*
 import uk.gov.hmrc.carfreporting.base.SpecBase
 import uk.gov.hmrc.carfreporting.models.ExtractedFileDetails
 import uk.gov.hmrc.carfreporting.models.errors.*
-import uk.gov.hmrc.carfreporting.models.responses.XmlValidationAndExtractionResponse
 import uk.gov.hmrc.carfreporting.services.XmlParserService
 import uk.gov.hmrc.carfreporting.types.ResultT
 
@@ -40,7 +39,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
 
   "XmlValidationAndExtractionController" - {
     "processXml" - {
-      "must return OK (200) when the XML parser is successful" in {
+      "must return OK (200) with ExtractedFileDetails when the XML parser is successful" in {
         val path        = "resources/data/examples/valid-carf.xml"
         val requestBody = Json.parse(
           s"""
@@ -57,11 +56,10 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
         status(result)        mustEqual OK
         contentAsJson(result) mustEqual Json.toJson(extractedFileDetailsValidCarf)
 
-        verify(mockXmlParserService).validateAndExtract(ArgumentMatchers.eq(path))
+        verify(mockXmlParserService).validateAndExtract(eqTo(path))
       }
 
-      "must return Unprocessable Entity (422) when the XML parser fails with an XML error" in {
-
+      "must return Unprocessable Entity (422) with XML errors when the XML fails with a schema error" in {
         val invalidPath     = "resources/data/invalid-carf.xml"
         val requestBody     = Json.parse(
           s"""
@@ -72,25 +70,39 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
         )
         val validationError = XmlError(1, "cvc-complex-type.2.4.a", "Invalid element found at line 1")
 
-        when(mockXmlParserService.validateAndExtract(ArgumentMatchers.eq(invalidPath)))
+        when(mockXmlParserService.validateAndExtract(eqTo(invalidPath)))
           .thenReturn(ResultT.fromError(XmlErrors(Vector(validationError))))
-
-        val expectedResponse = XmlValidationAndExtractionResponse(
-          UNPROCESSABLE_ENTITY,
-          invalidPath,
-          Some("The submitted XML failed schema validation."),
-          Vector(validationError)
-        )
 
         val result = testController.processXml(fakeRequestWithJsonBody(requestBody))
 
-        status(result) mustEqual UNPROCESSABLE_ENTITY
+        status(result)        mustEqual UNPROCESSABLE_ENTITY
+        contentAsJson(result) mustEqual Json.toJson(XmlErrors(Vector(validationError)): XmlValidationError)
 
-        contentAsJson(result) mustEqual Json.toJson(expectedResponse)
+        verify(mockXmlParserService).validateAndExtract(eqTo(invalidPath))
+      }
+
+      "must return Unprocessable Entity (422) when there is an error parsing the XML file" in {
+        val invalidPath = "resources/data/invalid-carf.xml"
+        val requestBody = Json.parse(
+          s"""
+             |{
+             |  "path": "$invalidPath"
+             |}
+             |""".stripMargin
+        )
+
+        when(mockXmlParserService.validateAndExtract(eqTo(invalidPath)))
+          .thenReturn(ResultT.fromError(InvalidXmlError))
+
+        val result = testController.processXml(fakeRequestWithJsonBody(requestBody))
+
+        status(result)        mustEqual UNPROCESSABLE_ENTITY
+        contentAsJson(result) mustEqual Json.toJson(InvalidXmlError: XmlValidationError)
+
+        verify(mockXmlParserService).validateAndExtract(eqTo(invalidPath))
       }
 
       "must return Bad Request (400) when the Json request is malformed" in {
-
         val requestBody = Json.parse(
           s"""
              |{
@@ -103,13 +115,13 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
 
         val result = testController.processXml(fakeRequestWithJsonBody(requestBody))
 
-        status(result) mustEqual BAD_REQUEST
-
+        status(result)          mustEqual BAD_REQUEST
         contentAsString(result) mustEqual expectedResponse
+
+        verify(mockXmlParserService, never).validateAndExtract(any())
       }
 
-      "must return Internal Server Error (500) when the XML parser fails for unknown reasons" in {
-
+      "must return Internal Server Error (500) when the XML parser fails for another reason" in {
         val path        = "resources/data/examples/valid-carf.xml"
         val requestBody = Json.parse(
           s"""
@@ -119,21 +131,14 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
              |""".stripMargin
         )
 
-        when(mockXmlParserService.validateAndExtract(ArgumentMatchers.eq(path)))
+        when(mockXmlParserService.validateAndExtract(eqTo(path)))
           .thenReturn(ResultT.fromError(InternalServerError("message")))
-
-        val expectedResponse = XmlValidationAndExtractionResponse(
-          INTERNAL_SERVER_ERROR,
-          path,
-          Some("Unexpected error"),
-          Vector.empty
-        )
 
         val result = testController.processXml(fakeRequestWithJsonBody(requestBody))
 
         status(result) mustEqual INTERNAL_SERVER_ERROR
 
-        contentAsJson(result) mustEqual Json.toJson(expectedResponse)
+        verify(mockXmlParserService).validateAndExtract(eqTo(path))
       }
     }
   }

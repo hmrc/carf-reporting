@@ -86,7 +86,7 @@ class XmlDataHandlerService @Inject() extends Logging {
         resolveErrors(errors, Left(XmlErrors(Vector.empty)))
       case Failure(e)                             =>
         reader.close()
-        Left(InternalServerError(e.getMessage))
+        Left(InvalidXmlError)
     }
   }
 
@@ -96,7 +96,6 @@ class XmlDataHandlerService @Inject() extends Logging {
     val carfBodyRcaspName = CarfBodyRcaspName()
 
     var sendingEntityIn: String  = ""
-    var messageType: String      = ""
     var messageRefId: String     = ""
     var messageTypeIndic: String = ""
 
@@ -129,8 +128,6 @@ class XmlDataHandlerService @Inject() extends Logging {
           localName match {
             case SENDING_ENTITY_IN if pathEndsWith(SENDING_ENTITY_IN, MESSAGE_SPEC)   =>
               sendingEntityIn = readElement()
-            case MESSAGE_TYPE if pathEndsWith(MESSAGE_TYPE, MESSAGE_SPEC)             =>
-              messageType = readElement()
             case MESSAGE_REF_ID if pathEndsWith(MESSAGE_REF_ID, MESSAGE_SPEC)         =>
               messageRefId = readElement()
             case MESSAGE_TYPE_INDIC if pathEndsWith(MESSAGE_TYPE_INDIC, MESSAGE_SPEC) =>

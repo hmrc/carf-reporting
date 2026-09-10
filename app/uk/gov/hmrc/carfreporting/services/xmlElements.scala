@@ -21,7 +21,6 @@ object xmlElements {
   object MessageSpec {
     val MESSAGE_SPEC       = "MessageSpec"
     val SENDING_ENTITY_IN  = "SendingEntityIN"
-    val MESSAGE_TYPE       = "MessageType"
     val MESSAGE_REF_ID     = "MessageRefId"
     val MESSAGE_TYPE_INDIC = "MessageTypeIndic"
   }

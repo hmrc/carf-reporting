@@ -19,7 +19,7 @@ package uk.gov.hmrc.carfreporting.services
 import org.codehaus.stax2.validation.{XMLValidationSchema, XMLValidationSchemaFactory}
 import uk.gov.hmrc.carfreporting.base.NoGuiceSpecBase
 import uk.gov.hmrc.carfreporting.models.ExtractedFileDetails
-import uk.gov.hmrc.carfreporting.models.errors.{InternalServerError, XmlErrors}
+import uk.gov.hmrc.carfreporting.models.errors.{InvalidXmlError, XmlErrors}
 
 import java.io.InputStream
 
@@ -391,7 +391,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
         }
       }
 
-      "must return an InternalServerError when the XML is completely malformed (Fatal XML Stream Error)" in {
+      "must return an InvalidXmlError when the XML is completely malformed (Fatal XML Stream Error)" in {
         val path        = "data/examples/malformed-xml.xml"
         val inputStream = getInputStream(path)
 
@@ -401,12 +401,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase {
 
         inputStream.close()
 
-        result match {
-          case Left(e: InternalServerError) =>
-            println(e.message)
-            e.message must include("Unexpected EOF; was expecting a close tag for element <Root>")
-          case _                            => fail()
-        }
+        result mustBe Left(InvalidXmlError)
       }
     }
   }

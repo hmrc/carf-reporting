@@ -20,6 +20,7 @@ import uk.gov.hmrc.carfreporting.base.NoGuiceSpecBase
 import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, XmlDispatcher}
 import uk.gov.hmrc.carfreporting.services.{XmlDataHandlerService, XmlParserService}
 
+import java.nio.file.Paths
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
 
@@ -45,8 +46,16 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
     val validCarfXmlSizeOnDisk = 4000L
 
     lazy val calls = Vector(
-      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, service),
-      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, service)
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        validCarfXmlSizeOnDisk,
+        service
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        validCarfXmlSizeOnDisk,
+        service
+      )
     )
     val _          = Await.result(Future.sequence(calls), timeout)
     println("Warm up complete")
@@ -149,11 +158,31 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
 
   private def smallBatchOfSmall(service: XmlParserService) = {
     lazy val calls = Vector( // keep lazy Futures are eager
-      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, service),
-      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, service),
-      createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, service),
-      createAndMeasureExecution("data/examples/invalid-carf.xml", invalidCarfXmlSizeOnDisk, service),
-      createAndMeasureExecution("data/examples/invalid-carf.xml", invalidCarfXmlSizeOnDisk, service)
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        validCarfXmlSizeOnDisk,
+        service
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        validCarfXmlSizeOnDisk,
+        service
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        validCarfXmlSizeOnDisk,
+        service
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/invalid-carf.xml").toUri.toString,
+        invalidCarfXmlSizeOnDisk,
+        service
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/invalid-carf.xml").toUri.toString,
+        invalidCarfXmlSizeOnDisk,
+        service
+      )
     )
 
     val runtime = Runtime.getRuntime
@@ -174,10 +203,22 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
 
   private def largeBatchOfSmall(service: XmlParserService) = {
     lazy val validFiles =
-      (1 to 25).map(_ => createAndMeasureExecution("data/examples/valid-carf.xml", validCarfXmlSizeOnDisk, service))
+      (1 to 25).map(_ =>
+        createAndMeasureExecution(
+          Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+          validCarfXmlSizeOnDisk,
+          service
+        )
+      )
 
     lazy val invalidFiles =
-      (1 to 25).map(_ => createAndMeasureExecution("data/examples/invalid-carf.xml", invalidCarfXmlSizeOnDisk, service))
+      (1 to 25).map(_ =>
+        createAndMeasureExecution(
+          Paths.get("conf/data/examples/invalid-carf.xml").toUri.toString,
+          invalidCarfXmlSizeOnDisk,
+          service
+        )
+      )
 
     lazy val calls = (validFiles ++ invalidFiles).toVector
 
@@ -199,11 +240,19 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
 
   private def smallBatchOfLarge(service: XmlParserService) = {
     lazy val calls = Vector(
-      createAndMeasureExecution("data/sized/carf-262mb.xml", twoFiftyMbInBytes, service),
-      createAndMeasureExecution("data/sized/carf-262mb.xml", twoFiftyMbInBytes, service),
-      createAndMeasureExecution("data/sized/carf-262mb.xml", twoFiftyMbInBytes, service),
-      createAndMeasureExecution("data/examples/too-many-schema-errors.xml", bigInvalidXmlSizeOnDisk, service),
-      createAndMeasureExecution("data/examples/too-many-schema-errors.xml", bigInvalidXmlSizeOnDisk, service)
+      createAndMeasureExecution(Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString, twoFiftyMbInBytes, service),
+      createAndMeasureExecution(Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString, twoFiftyMbInBytes, service),
+      createAndMeasureExecution(Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString, twoFiftyMbInBytes, service),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/too-many-schema-errors.xml").toUri.toString,
+        bigInvalidXmlSizeOnDisk,
+        service
+      ),
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/too-many-schema-errors.xml").toUri.toString,
+        bigInvalidXmlSizeOnDisk,
+        service
+      )
     )
 
     val runtime = Runtime.getRuntime
@@ -224,10 +273,20 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
 
   private def largeBatchOfLarge(service: XmlParserService) = {
     lazy val validFiles =
-      (1 to 25).map(_ => createAndMeasureExecution("data/sized/carf-262mb.xml", twoFiftyMbInBytes, service))
+      (1 to 25).map(_ =>
+        createAndMeasureExecution(
+          Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString,
+          twoFiftyMbInBytes,
+          service
+        )
+      )
 
     lazy val invalidFiles = (1 to 25).map(_ =>
-      createAndMeasureExecution("data/examples/too-many-schema-errors.xml", bigInvalidXmlSizeOnDisk, service)
+      createAndMeasureExecution(
+        Paths.get("conf/data/examples/too-many-schema-errors.xml").toUri.toString,
+        bigInvalidXmlSizeOnDisk,
+        service
+      )
     )
 
     lazy val calls = (validFiles ++ invalidFiles).toVector

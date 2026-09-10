@@ -20,7 +20,6 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.{reset, times, verify, when}
 import uk.gov.hmrc.carfreporting.base.SpecBase
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
-import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
 import uk.gov.hmrc.carfreporting.types.ResultT
 
