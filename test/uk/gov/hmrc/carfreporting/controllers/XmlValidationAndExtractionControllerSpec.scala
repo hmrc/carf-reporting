@@ -17,12 +17,11 @@
 package uk.gov.hmrc.carfreporting.controllers
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.mockito.Mockito.{never, reset, verify, when}
+import org.mockito.Mockito.{never, reset, times, verify, when}
 import play.api.libs.json.Json
 import play.api.test.Helpers.*
 import uk.gov.hmrc.carfreporting.base.SpecBase
 import uk.gov.hmrc.carfreporting.models.ExtractedCarfFileDetails
-import uk.gov.hmrc.carfreporting.models.ValidationType.{AEOI, CARF}
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.models.responses.XmlValidationAndExtractionResponse
 import uk.gov.hmrc.carfreporting.services.XmlParserService
@@ -194,6 +193,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
         status(result) mustEqual UNPROCESSABLE_ENTITY
 
         contentAsJson(result) mustEqual Json.toJson(expectedResponse)
+        verify(mockXmlParserService).validateAndExtractAEOI(eqTo(invalidPath))
       }
 
       "must return Bad Request (400) when the Json request is malformed" in {
@@ -213,6 +213,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
         status(result) mustEqual BAD_REQUEST
 
         contentAsString(result) mustEqual expectedResponse
+        verify(mockXmlParserService, times(0)).validateAndExtractAEOI(any())
       }
 
       "must return Internal Server Error (500) when the XML parser fails for unknown reasons" in {
@@ -241,6 +242,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
         status(result) mustEqual INTERNAL_SERVER_ERROR
 
         contentAsJson(result) mustEqual Json.toJson(expectedResponse)
+        verify(mockXmlParserService).validateAndExtractAEOI(eqTo(path))
       }
     }
   }

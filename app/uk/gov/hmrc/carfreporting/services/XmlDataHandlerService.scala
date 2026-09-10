@@ -215,8 +215,6 @@ class XmlDataHandlerService @Inject() extends Logging {
 
     var status: String = ""
 
-    var requestDetailCompleted: Boolean = false
-
     def currentPath: List[String] = path.reverse.toList
 
     def pathEndsWith(expected: String*): Boolean = currentPath.startsWith(expected.toList)
@@ -229,7 +227,7 @@ class XmlDataHandlerService @Inject() extends Logging {
 
     while (reader.hasNext)
       reader.next() match {
-        case XMLStreamConstants.START_ELEMENT if !requestDetailCompleted =>
+        case XMLStreamConstants.START_ELEMENT =>
           val localName = reader.getLocalName
           path += localName
 
@@ -258,23 +256,20 @@ class XmlDataHandlerService @Inject() extends Logging {
             case _                                                                                                   => // Nothing
           }
 
-        case XMLStreamConstants.END_ELEMENT if !requestDetailCompleted =>
+        case XMLStreamConstants.END_ELEMENT =>
           val localName = reader.getLocalName
 
           localName match {
-            case FILE_ERROR     =>
+            case FILE_ERROR   =>
               fileErrors += FileError(currentFileErrorCode, currentFileErrorDetails)
               currentFileErrorCode = ""
               currentFileErrorDetails = None
-            case RECORD_ERROR   =>
+            case RECORD_ERROR =>
               recordErrors += RecordError(currentRecordErrorCode, currentRecordErrorDetails, currentDocRefIDs.toSeq)
               currentRecordErrorCode = ""
               currentRecordErrorDetails = None
               currentDocRefIDs.clear()
-            case REQUEST_DETAIL =>
-              requestDetailCompleted = true
-
-            case _ => // Nothing
+            case _            => // Nothing
           }
 
           if (path.nonEmpty) path.remove(path.size - 1)

@@ -413,11 +413,14 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
 
         val service = new XmlDataHandlerService
 
-        val Right(result) = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
+        val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
 
         inputStream.close()
 
-        result mustBe validExtractedAEOIFileDetails.copy(uploadId = result.uploadId)
+        result match {
+          case Right(result) => result mustBe validExtractedAEOIFileDetails.copy(uploadId = result.uploadId)
+          case _             => fail()
+        }
       }
 
       "must successfully validate and extract a valid XML that matches the schema but contains errors from AEOI" in {
@@ -426,11 +429,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
 
         val service = new XmlDataHandlerService
 
-        val Right(result) = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
-
+        val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
         inputStream.close()
-
-        result mustBe invalidExtractedAEOIFileDetails.copy(uploadId = result.uploadId)
+        result match {
+          case Right(result) => result mustBe invalidExtractedAEOIFileDetails.copy(uploadId = result.uploadId)
+          case _             => fail()
+        }
       }
 
       "must return XmlErrors when the XML is well-formed but violates the schema (under 101 errors)" in {
@@ -471,7 +475,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
         }
       }
 
-      "must return an InternalServerError when the XML is completely malformed (Fatal XML Stream Error)" in {
+      "must return an InvalidXmlError when the XML is completely malformed (Fatal XML Stream Error)" in {
         val path        = "data/examples/malformed-xml.xml"
         val inputStream = getInputStream(path)
 

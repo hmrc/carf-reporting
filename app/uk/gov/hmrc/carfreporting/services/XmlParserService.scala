@@ -52,47 +52,11 @@ class XmlParserService @Inject (
   def validateAndExtractAEOI(path: String): ResultT[ExtractedAEOIFileDetails] =
     for {
       schema               <- loadSchema(AEOI)
-      inputStream          <- openInputStream(path)
+      inputStream          <- openInputStream(path).leftFlatMap(saveToRepository)
       extractedFileDetails <-
         initiate(schema, inputStream) { (schema, inputStream) =>
           dataHandlerService.aeoiValidationAndExtraction(schema, inputStream)
-        }.leftFlatMap { initiateError =>
-          val savedStatus = initiateError match {
-            case InvalidXmlError => "SchemaValidationError"
-            case _: XmlErrors    => "SchemaValidationError"
-            case _               => "UnexpectedFailure"
-          }
-          logger.warn(
-            s"[XmlParserService][validateAndExtractAEOI] XML Parsing Failure detected, " +
-              s"saving status to database as $savedStatus"
-          )
-
-          val submissionUponFailure = SavedAEOIFileDetails(
-            ObjectId.get(),
-            ExtractedAEOIFileDetails(
-              uploadId = UploadId(UUID.randomUUID().toString),
-              validationErrors = ValidationErrors(
-                fileError = Seq.empty,
-                recordError = Seq.empty
-              ),
-              validationResult = ValidationResult(
-                status = savedStatus
-              )
-            )
-          )
-          submissionRepository
-            .insert(submissionUponFailure)
-            .flatMap { _ =>
-              ResultT.fromError(initiateError)
-            }
-            .leftMap { e =>
-              logger.warn(
-                s"[XmlParserService][validateAndExtractAEOI] Repository call to submissionRepository.insert threw " +
-                  s"an error but initial error is being returned"
-              )
-              initiateError
-            }
-        }
+        }.leftFlatMap(saveToRepository)
       _                    <-
         submissionRepository.insert(
           SavedAEOIFileDetails(
@@ -101,6 +65,43 @@ class XmlParserService @Inject (
           )
         )
     } yield extractedFileDetails
+
+  private def saveToRepository[T](initialError: CarfError): ResultT[T] =
+    val savedStatus = initialError match {
+      case InvalidXmlError => "SchemaValidationError"
+      case _: XmlErrors    => "SchemaValidationError"
+      case _               => "UnexpectedFailure"
+    }
+    logger.warn(
+      s"[XmlParserService][validateAndExtractAEOI] XML Parsing Failure detected, " +
+        s"saving status to database as $savedStatus"
+    )
+
+    val submissionUponFailure = SavedAEOIFileDetails(
+      ObjectId.get(),
+      ExtractedAEOIFileDetails(
+        uploadId = UploadId(UUID.randomUUID().toString),
+        validationErrors = ValidationErrors(
+          fileError = Seq.empty,
+          recordError = Seq.empty
+        ),
+        validationResult = ValidationResult(
+          status = savedStatus
+        )
+      )
+    )
+    submissionRepository
+      .insert(submissionUponFailure)
+      .leftMap { _ =>
+        logger.warn(
+          "[XmlParserService][validateAndExtractAEOI] Repository call to submissionRepository.insert threw " +
+            "an error but initial error is being returned"
+        )
+        initialError
+      }
+      .flatMap { _ =>
+        ResultT.fromError[T](initialError)
+      }
 
   private def initiate[A](schema: XMLValidationSchema, inputStream: InputStream)(
       f: (schema: XMLValidationSchema, inputStream: InputStream) => Either[CarfError, A]

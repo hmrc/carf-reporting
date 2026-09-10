@@ -129,18 +129,20 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
     }
 
     "validateAndExtractAEOI" - {
-      "must return file_not_found error when the XML file does not exist" in {
+      "must return InternalServerError error when the XML file does not exist" in {
+
+        when(mockSubmissionRepository.insert(any())).thenReturn(ResultT.fromValue(true))
 
         val fileName = "invalid/path/nonexistent.xml"
         val path     = Paths.get(fileName).toUri.toString
         val result   = service.validateAndExtractAEOI(path).value.futureValue
 
-        when(mockSubmissionRepository.insert(any())).thenReturn(ResultT.fromValue(true))
-
         result mustBe Left(InternalServerError("XML file cannot be found with path provided"))
 
         verify(mockXmlDataHandlerService, times(0)).aeoiValidationAndExtraction(any(), any())
-        verify(mockSubmissionRepository, times(0)).insert(any())
+        verify(mockSubmissionRepository, times(1)).insert(
+          argThat(fileDetails => fileDetails.extractedAEOIFileDetails.validationResult.status == "UnexpectedFailure")
+        )
       }
 
       "must return ExtractedAEOIFileDetails when returned by XmlDataHandlerService" in {
@@ -159,6 +161,30 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
         verify(mockXmlDataHandlerService, times(1)).aeoiValidationAndExtraction(any(), any())
         verify(mockSubmissionRepository, times(1)).insert(
           argThat(fileDetails => fileDetails.extractedAEOIFileDetails.validationResult.status == "Accepted")
+        )
+      }
+
+      "must return XmlErrors when XmlDataHandlerService returns schema errors (the XML is well-formed but fails schema validation)" in {
+        when(mockXmlDataHandlerService.aeoiValidationAndExtraction(any(), any())).thenReturn(Left(xmlErrors))
+        when(mockSubmissionRepository.insert(any())).thenReturn(ResultT.fromValue(true))
+
+        val fileName = "conf/data/examples/aeoi/BusinessRuleCheckSampleRequest_invalidFile_schema__errors.xml"
+        val path     = Paths.get(fileName).toUri.toString
+
+        val result = service.validateAndExtractAEOI(path).value.futureValue
+
+        result match {
+          case Left(e: XmlErrors) =>
+            e.errors.length                 mustBe 4
+            e.errors.map(_.errorMessage).head must include("\"MessageTypeIndic\" is not allowed.")
+          case _                  => fail()
+        }
+
+        verify(mockXmlDataHandlerService, times(1)).aeoiValidationAndExtraction(any(), any())
+        verify(mockSubmissionRepository, times(1)).insert(
+          argThat(fileDetails =>
+            fileDetails.extractedAEOIFileDetails.validationResult.status == "SchemaValidationError"
+          )
         )
       }
 

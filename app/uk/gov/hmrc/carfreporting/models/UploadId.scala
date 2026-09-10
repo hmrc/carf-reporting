@@ -17,7 +17,6 @@
 package uk.gov.hmrc.carfreporting.models
 
 import play.api.libs.json.*
-import uk.gov.hmrc.carfreporting.models.UploadId
 
 case class UploadId(value: String)
 
