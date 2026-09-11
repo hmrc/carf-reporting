@@ -19,7 +19,8 @@ package uk.gov.hmrc.carfreporting.controllers.upscan
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.carfreporting.controllers.actions.AuthAction
-import uk.gov.hmrc.carfreporting.models.upscan.{UploadId, UpscanIdentifiers}
+import uk.gov.hmrc.carfreporting.models.UploadId
+import uk.gov.hmrc.carfreporting.models.upscan.UpscanIdentifiers
 import uk.gov.hmrc.carfreporting.services.upscan.UploadProgressTracker
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 

@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.models.upscan
+package uk.gov.hmrc.carfreporting.models
 
-import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.carfreporting.models.UploadId
-
-case class UpscanIdentifiers(uploadId: UploadId, fileReference: Reference)
-
-object UpscanIdentifiers {
-  implicit val format: OFormat[UpscanIdentifiers] = Json.format[UpscanIdentifiers]
+enum ValidationType {
+  case CARF
+  case AEOI
 }

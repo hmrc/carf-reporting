@@ -16,36 +16,99 @@
 
 package uk.gov.hmrc.carfreporting.services
 
+import org.bson.types.ObjectId
 import org.codehaus.stax2.validation.*
 import play.api.{Environment, Logging}
 import uk.gov.hmrc.carfreporting.dispatchers.XmlDispatcher
-import uk.gov.hmrc.carfreporting.models.ExtractedFileDetails
+import uk.gov.hmrc.carfreporting.models.{ExtractedAEOIFileDetails, ExtractedCarfFileDetails, SavedAEOIFileDetails, UploadId, ValidationErrors, ValidationResult, ValidationType}
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.types.ResultT
+import uk.gov.hmrc.carfreporting.models.ValidationType.{AEOI, CARF}
+import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 
 import java.io.{FileNotFoundException, InputStream}
 import java.net.URI
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 @Singleton
 class XmlParserService @Inject (
-    dataHandlerService: XmlDataHandlerService
+    dataHandlerService: XmlDataHandlerService,
+    submissionRepository: SubmissionRepository
 )(env: Environment)(implicit xmlDispatcher: XmlDispatcher)
     extends Logging {
 
-  def validateAndExtract(path: String): ResultT[ExtractedFileDetails] =
+  def validateAndExtractCARF(path: String): ResultT[ExtractedCarfFileDetails] =
     for {
-      schema      <- loadSchema
+      schema      <- loadSchema(CARF)
       inputStream <- openInputStream(path)
-      result      <- initiate(schema, inputStream)
+      result      <- initiate(schema, inputStream) { (schema, inputStream) =>
+                       dataHandlerService.carfValidationAndExtraction(schema, inputStream)
+                     }
     } yield result
 
-  private def initiate(schema: XMLValidationSchema, inputStream: InputStream): ResultT[ExtractedFileDetails] =
+  def validateAndExtractAEOI(path: String): ResultT[ExtractedAEOIFileDetails] =
+    for {
+      schema               <- loadSchema(AEOI)
+      inputStream          <- openInputStream(path).leftFlatMap(saveToRepository)
+      extractedFileDetails <-
+        initiate(schema, inputStream) { (schema, inputStream) =>
+          dataHandlerService.aeoiValidationAndExtraction(schema, inputStream)
+        }.leftFlatMap(saveToRepository)
+      _                    <-
+        submissionRepository.insert(
+          SavedAEOIFileDetails(
+            ObjectId.get(),
+            extractedFileDetails
+          )
+        )
+    } yield extractedFileDetails
+
+  private def saveToRepository[T](initialError: CarfError): ResultT[T] =
+    val savedStatus = initialError match {
+      case InvalidXmlError => "SchemaValidationError"
+      case _: XmlErrors    => "SchemaValidationError"
+      case _               => "UnexpectedFailure"
+    }
+    logger.warn(
+      s"[XmlParserService][validateAndExtractAEOI] XML Parsing Failure detected, " +
+        s"saving status to database as $savedStatus"
+    )
+
+    val submissionUponFailure = SavedAEOIFileDetails(
+      ObjectId.get(),
+      ExtractedAEOIFileDetails(
+        uploadId = UploadId(UUID.randomUUID().toString),
+        validationErrors = ValidationErrors(
+          fileError = Seq.empty,
+          recordError = Seq.empty
+        ),
+        validationResult = ValidationResult(
+          status = savedStatus
+        )
+      )
+    )
+    submissionRepository
+      .insert(submissionUponFailure)
+      .leftMap { _ =>
+        logger.warn(
+          "[XmlParserService][validateAndExtractAEOI] Repository call to submissionRepository.insert threw " +
+            "an error but initial error is being returned"
+        )
+        initialError
+      }
+      .flatMap { _ =>
+        ResultT.fromError[T](initialError)
+      }
+
+  private def initiate[A](schema: XMLValidationSchema, inputStream: InputStream)(
+      f: (schema: XMLValidationSchema, inputStream: InputStream) => Either[CarfError, A]
+  ): ResultT[A] =
     ResultT.fromFuture {
       Future {
-        dataHandlerService.validationAndExtraction(schema, inputStream)
+        f(schema, inputStream)
       } andThen { _ =>
         inputStream.close()
       } recover { e =>
@@ -71,14 +134,17 @@ class XmlParserService @Inject (
         )
     }
 
-  private def loadSchema: ResultT[XMLValidationSchema] = {
-    val defaultSchemaPath = "data/schemas/CARFXML_v1.5.xsd"
+  private def loadSchema(validationType: ValidationType): ResultT[XMLValidationSchema] = {
+    val schemaPath = validationType match {
+      case CARF => "data/schemas/CARFXML_v1.5.xsd"
+      case AEOI => "data/schemas/AEOI_Business_Rule_Result_schema_v0.3.xsd"
+    }
 
     Try {
       val schemaFactory = XMLValidationSchemaFactory
         .newInstance(XMLValidationSchema.SCHEMA_ID_W3C_SCHEMA)
 
-      env.resource(defaultSchemaPath).map { url =>
+      env.resource(schemaPath).map { url =>
         schemaFactory.createSchema(url)
       }
     } match {
