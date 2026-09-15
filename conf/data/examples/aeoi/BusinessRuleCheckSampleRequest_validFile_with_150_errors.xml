@@ -1,0 +1,615 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gsm:BREResponse xmlns:gsm="http://www.hmrc.gsi.gov.uk/gsm" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.hmrc.gsi.gov.uk/gsm AEOI_Business_Rule_Result_schema_v0.3.xsd">
+    <requestCommon>
+        <receiptDate>2022-12-17T09:30:47Z</receiptDate>
+        <regime>AEOI</regime>
+        <conversationID>3ada9236-21a6-4ad2-9f0c-f01shdt40c5</conversationID>
+        <schemaVersion>1.0.0</schemaVersion>
+    </requestCommon>
+    <requestDetail>
+        <GenericStatusMessage>
+            <ValidationErrors>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 1: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 1</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 2: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 2</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 3: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 3</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 4: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 4</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 5: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 5</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 6: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 6</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 7: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 7</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 8: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 8</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 9: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 9</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 10: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 10</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 11: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 11</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 12: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 12</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 13: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 13</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 14: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 14</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 15: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 15</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 16: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 16</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 17: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 17</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 18: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 18</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 19: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 19</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 20: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 20</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 21: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 21</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 22: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 22</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 23: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 23</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 24: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 24</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 25: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 25</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 26: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 26</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 27: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 27</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 28: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 28</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 29: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 29</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 30: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 30</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 31: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 31</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 32: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 32</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 33: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 33</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 34: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 34</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 35: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 35</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 36: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 36</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 37: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 37</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 38: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 38</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 39: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 39</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 40: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 40</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 41: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 41</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 42: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 42</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 43: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 43</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 44: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 44</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 45: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 45</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 46: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 46</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 47: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 47</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 48: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 48</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 49: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 49</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 50: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 50</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 51: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 51</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 52: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 52</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 53: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 53</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 54: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 54</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 55: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 55</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 56: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 56</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 57: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 57</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 58: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 58</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 59: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 59</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 60: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 60</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 61: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 61</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 62: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 62</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 63: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 63</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 64: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 64</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 65: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 65</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 66: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 66</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 67: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 67</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 68: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 68</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 69: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 69</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 70: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 70</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 71: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 71</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 72: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 72</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 73: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 73</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 74: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 74</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 75: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 75</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 76: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 76</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 77: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 77</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 78: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 78</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 79: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 79</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 80: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 80</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 81: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 81</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 82: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 82</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 83: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 83</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 84: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 84</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 85: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 85</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 86: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 86</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 87: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 87</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 88: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 88</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 89: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 89</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 90: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 90</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 91: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 91</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 92: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 92</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 93: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 93</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 94: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 94</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 95: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 95</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 96: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 96</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 97: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 97</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 98: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 98</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 99: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 99</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 100: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 100</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 101: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 101</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 102: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 102</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 103: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 103</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 104: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 104</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 105: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 105</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 106: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 106</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 107: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 107</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 108: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 108</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 109: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 109</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 110: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 110</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 111: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 111</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 112: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 112</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 113: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 113</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 114: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 114</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 115: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 115</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 116: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 116</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 117: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 117</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 118: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 118</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 119: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 119</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 120: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 120</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 121: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 121</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 122: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 122</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 123: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 123</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 124: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 124</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 125: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 125</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 126: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 126</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 127: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 127</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 128: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 128</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 129: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 129</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 130: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 130</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 131: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 131</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 132: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 132</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 133: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 133</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 134: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 134</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 135: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 135</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 136: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 136</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 137: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 137</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 138: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 138</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 139: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 139</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 140: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 140</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 141: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 141</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 142: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 142</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 143: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 143</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 144: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 144</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 145: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 145</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 146: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 146</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 147: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 147</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 148: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 148</Details>
+                </FileError>
+                <FileError>
+                    <Code></Code> <!-- Schema Error 149: Empty string violates StringMin1Max50_Type -->
+                    <Details>Generated length violation 149</Details>
+                </FileError>
+            </ValidationErrors>
+            <ValidationResult>
+                <!-- Schema Error 150: "Pending" violates FileAcceptanceStatus_EnumType -->
+                <Status>Pending</Status>
+            </ValidationResult>
+        </GenericStatusMessage>
+    </requestDetail>
+</gsm:BREResponse>

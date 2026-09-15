@@ -21,14 +21,24 @@ import uk.gov.hmrc.carfreporting.base.NoGuiceSpecBase
 import uk.gov.hmrc.carfreporting.controllers.XmlValidationAndExtractionController
 import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, XmlDispatcher}
 import uk.gov.hmrc.carfreporting.itutil.Reporter.*
+import uk.gov.hmrc.carfreporting.models.SavedAEOIFileDetails
+import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.services.{XmlDataHandlerService, XmlParserService}
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import java.nio.file.Paths
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
 
-class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
+class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase
+  with DefaultPlayMongoRepositorySupport[SavedAEOIFileDetails] {
 
+  override protected val checkTtlIndex: Boolean = false // TODO remove when CARF-611 is implemented
+  
+  val repository: SubmissionRepository = new SubmissionRepository(
+    mongoComponent = mongoComponent
+  )
+  
   override def beforeEach(): Unit = {
     println("Cleaning")
     System.gc()
@@ -49,7 +59,7 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
 
     val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service)
 
@@ -79,7 +89,7 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
 
     val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service)
 
@@ -107,7 +117,7 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
 
     val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service)
 
@@ -135,7 +145,7 @@ class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase {
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
 
     val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service)
 

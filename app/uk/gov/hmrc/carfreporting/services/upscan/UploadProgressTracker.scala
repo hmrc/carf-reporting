@@ -17,9 +17,10 @@
 package uk.gov.hmrc.carfreporting.services.upscan
 
 import org.bson.types.ObjectId
+import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.InProgress
-import uk.gov.hmrc.carfreporting.repositories.upscan.UpscanSessionRepository
+import uk.gov.hmrc.carfreporting.repositories.UpscanSessionRepository
 import uk.gov.hmrc.carfreporting.types.ResultT
 
 import javax.inject.Inject

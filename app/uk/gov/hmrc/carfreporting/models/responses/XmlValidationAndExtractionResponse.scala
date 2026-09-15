@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.models.upscan
+package uk.gov.hmrc.carfreporting.models.responses
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.carfreporting.models.UploadId
+import uk.gov.hmrc.carfreporting.models.errors.XmlError
 
-case class UpscanIdentifiers(uploadId: UploadId, fileReference: Reference)
+/** attribute: xmlErrors - will only contain errors that violate the schema the file was validated against
+  */
+case class XmlValidationAndExtractionResponse(
+    status: Int,
+    sourcePath: String,
+    errorMessage: Option[String],
+    xmlErrors: Vector[XmlError]
+)
 
-object UpscanIdentifiers {
-  implicit val format: OFormat[UpscanIdentifiers] = Json.format[UpscanIdentifiers]
+object XmlValidationAndExtractionResponse {
+  implicit val format: OFormat[XmlValidationAndExtractionResponse] = Json.format[XmlValidationAndExtractionResponse]
 }

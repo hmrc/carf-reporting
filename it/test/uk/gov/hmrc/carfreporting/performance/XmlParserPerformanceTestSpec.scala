@@ -18,16 +18,26 @@ package uk.gov.hmrc.carfreporting.performance
 
 import uk.gov.hmrc.carfreporting.base.NoGuiceSpecBase
 import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, XmlDispatcher}
+import uk.gov.hmrc.carfreporting.models.SavedAEOIFileDetails
+import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.services.{XmlDataHandlerService, XmlParserService}
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import java.nio.file.Paths
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
 
-class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
+class XmlParserPerformanceTestSpec extends NoGuiceSpecBase
+  with DefaultPlayMongoRepositorySupport[SavedAEOIFileDetails] {
 
   import uk.gov.hmrc.carfreporting.itutil.Reporter.*
 
+  override protected val checkTtlIndex: Boolean = false // TODO remove when CARF-611 is implemented
+  
+  val repository: SubmissionRepository = new SubmissionRepository(
+    mongoComponent = mongoComponent
+  )
+  
   override def beforeEach(): Unit = {
     println("Cleaning")
     System.gc()
@@ -41,7 +51,7 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
 
     val validCarfXmlSizeOnDisk = 4000L
 
@@ -75,7 +85,7 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(service)
@@ -101,7 +111,7 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(service)
@@ -127,7 +137,7 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(service)
@@ -149,7 +159,7 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase {
   private def createAndMeasureExecution(path: String, fileSizeInBytes: Long, service: => XmlParserService) =
     Future {
       val startTime = System.nanoTime()
-      service.validateAndExtract(path).value map { _ =>
+      service.validateAndExtractCARF(path).value map { _ =>
         FileInfo(fileSizeInBytes, System.nanoTime() - startTime)
       }
     }.flatten

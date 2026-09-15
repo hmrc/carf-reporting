@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.repositories.upscan
+package uk.gov.hmrc.carfreporting.repositories
 
 import com.mongodb.MongoWriteException
 import org.mongodb.scala.bson.conversions.Bson
@@ -23,6 +23,7 @@ import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Updates.set
 import org.mongodb.scala.model.{FindOneAndUpdateOptions, IndexModel, IndexOptions, Updates}
 import uk.gov.hmrc.carfreporting.config.AppConfig
+import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.types.ResultT

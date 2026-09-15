@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gsm:BREResponse xmlns:gsm="http://www.hmrc.gsi.gov.uk/gsm" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.hmrc.gsi.gov.uk/gsm AEOI_Business_Rule_Result_schema_v0.3.xsd">
+    <requestCommon>
+        <receiptDate>2022-12-17T09:30:47Z</receiptDate>
+        <regime>AEOI</regime>
+        <conversationID>3ada9236-21a6-4ad2-9f0c-f01shdt40c5</conversationID>
+        <schemaVersion>1.0.0</schemaVersion>
+    </requestCommon>
+    <requestDetail>
+        <GenericStatusMessage>
+            <ValidationErrors>
+                <FileError>
+                    <Code>50009</Code>
+                    <Details>Duplicate message ref IDs</Details>
+                </FileError>
+            </ValidationErrors>
+            <ValidationResult>
+                <!-- The schema specifically requires "Accepted" or "Rejected" here. -->
+                <Status>Pending</Status>
+            </ValidationResult>
+        </GenericStatusMessage>
+    </requestDetail>
+</gsm:BREResponse>

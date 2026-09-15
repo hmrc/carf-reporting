@@ -5,3 +5,4 @@ GET         /upscan/status/:uploadId        uk.gov.hmrc.carfreporting.controller
 POST        /upscan/upload                  uk.gov.hmrc.carfreporting.controllers.upscan.UploadFormController.saveRequestedUpload
 
 POST        /validate-extract-xml           uk.gov.hmrc.carfreporting.controllers.XmlValidationAndExtractionController.processXml
+POST        /validate-extract-aeoi-xml      uk.gov.hmrc.carfreporting.controllers.XmlValidationAndExtractionController.processAEOIXml
