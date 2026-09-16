@@ -25,8 +25,8 @@ case class ExtractedAEOIFileDetails(
 )
 
 case class ValidationErrors(
-    fileError: Seq[FileError],
-    recordError: Seq[RecordError]
+    fileError: Seq[FileError] = Seq.empty,
+    recordError: Seq[RecordError] = Seq.empty
 )
 
 /** @param status

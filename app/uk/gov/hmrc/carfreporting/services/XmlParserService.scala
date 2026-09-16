@@ -58,7 +58,7 @@ class XmlParserService @Inject (
           dataHandlerService.aeoiValidationAndExtraction(schema, inputStream)
         }.leftFlatMap(saveToRepository)
       _                    <-
-        submissionRepository.insert(
+        submissionRepository.update(
           SavedAEOIFileDetails(
             ObjectId.get(),
             extractedFileDetails
@@ -91,7 +91,7 @@ class XmlParserService @Inject (
       )
     )
     submissionRepository
-      .insert(submissionUponFailure)
+      .update(submissionUponFailure)
       .leftMap { _ =>
         logger.warn(
           "[XmlParserService][validateAndExtractAEOI] Repository call to submissionRepository.insert threw " +

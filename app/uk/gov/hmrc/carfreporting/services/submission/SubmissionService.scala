@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.config
+package uk.gov.hmrc.carfreporting.services.submission
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
+import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
+import uk.gov.hmrc.carfreporting.types.ResultT
 
-@Singleton
-class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig) {
+import javax.inject.Inject
 
-  val appName: String = config.get[String]("appName")
+class SubmissionService @Inject() (sdesService: SDESService, repository: SubmissionRepository) {
 
-  val cacheTtl: Long = config.get[Long]("mongodb.upscanTimeToLiveInSeconds")
-
-  val sdesBaseUrl: String     = servicesConfig.baseUrl("sdes")
-  val submissionTtlDays: Long = config.get[Long]("mongodb.submissionTimeToLiveInDays")
+  def saveAndSubmit(submissionRequest: SubmissionRequest): ResultT[Unit] =
+    ???
 }

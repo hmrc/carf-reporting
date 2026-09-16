@@ -18,10 +18,15 @@ package uk.gov.hmrc.carfreporting.base
 
 import org.bson.types.ObjectId
 import uk.gov.hmrc.carfreporting.config.Constants.ukZoneId
+import uk.gov.hmrc.carfreporting.models.*
 import uk.gov.hmrc.carfreporting.models.errors.{XmlError, XmlErrors}
+import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
+import uk.gov.hmrc.carfreporting.models.requests.sdes.Algorithm.SHA256
+import uk.gov.hmrc.carfreporting.models.requests.sdes.*
+import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Pending
+import uk.gov.hmrc.carfreporting.models.submission.*
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
-import uk.gov.hmrc.carfreporting.models.*
 
 import java.time.*
 import java.util.UUID
@@ -128,26 +133,28 @@ trait TestData {
     ValidationResult("Accepted")
   )
 
-  val invalidExtractedAEOIFileDetails = ExtractedAEOIFileDetails(
-    testUploadId,
-    ValidationErrors(
-      fileError = Seq(
-        FileError(
-          code = "50009",
-          details = Some("Duplicate message ref IDs")
-        )
-      ),
-      recordError = Seq(
-        RecordError(
-          code = "80000",
-          details = Some("Duplicate doc ref IDs"),
-          docRefIDInError = Seq(
-            "CBCUSER001DHSJEURUT20001",
-            "CBCUSER001DHSJEURUT20002"
-          )
-        )
+  lazy val businessRuleValidationErrors = ValidationErrors(
+    fileError = Seq(
+      FileError(
+        code = "50009",
+        details = Some("Duplicate message ref IDs")
       )
     ),
+    recordError = Seq(
+      RecordError(
+        code = "80000",
+        details = Some("Duplicate doc ref IDs"),
+        docRefIDInError = Seq(
+          "CBCUSER001DHSJEURUT20001",
+          "CBCUSER001DHSJEURUT20002"
+        )
+      )
+    )
+  )
+
+  lazy val invalidExtractedAEOIFileDetails = ExtractedAEOIFileDetails(
+    testUploadId,
+    businessRuleValidationErrors,
     ValidationResult("Rejected")
   )
 
@@ -155,5 +162,71 @@ trait TestData {
     ObjectId.get(),
     validExtractedAEOIFileDetails,
     Instant.ofEpochSecond(1)
+  )
+
+  val testNotification: FileTransferNotification = FileTransferNotification(
+    informationType = "carf-reporting",
+    file = File(
+      name = FileName("test-file.xml"),
+      location = "http://localhost:8080/download",
+      checksum = Checksum(SHA256, "checksum12345"),
+      size = 1024,
+      recipientOrSender = Some("Sender"),
+      properties = List(Property("name", "value"))
+    ),
+    audit = Audit("correlation-id-123456789")
+  )
+
+  lazy val displaySubscriptionDetails: DisplaySubscriptionDetails = DisplaySubscriptionDetails(
+    carfReference = CarfId("XACARF000001234"),
+    gbUser = true,
+    primaryContact = DisplaySubscriptionContact(
+      individual = Some(DisplaySubscriptionIndividual("Jane", "Smith")),
+      organisation = None,
+      email = "jane.smith@example.com"
+    ),
+    secondaryContact = None
+  )
+
+  val individualRcaspDetails =
+    IndividualRcaspDetails(
+      RCASPID = "ZMCAR0123456788",
+      IsRCASPUser = false,
+      FirstName = "testFirstName",
+      LastName = "testLastName",
+      PrimaryContactDetails = RcaspContactDetails(ContactName = "testContactName", EmailAddress = "testEmail")
+    )
+
+  val testSubmissionRequest: SubmissionRequest = SubmissionRequest(
+    fileName = FileName("test-file.xml"),
+    uploadId = testUploadId,
+    fileSize = 1024L,
+    documentUrl = "http://localhost:8080/file",
+    checksum = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    rcaspDetails = IndividualRcaspDetails(
+      RCASPID = "RCASP123456",
+      IsRCASPUser = false,
+      FirstName = "John",
+      LastName = "Doe",
+      PrimaryContactDetails = RcaspContactDetails(
+        ContactName = "John Doe",
+        EmailAddress = "john.doe@example.com"
+      )
+    ),
+    subscriptionDetails = displaySubscriptionDetails,
+    extractedFileDetails = extractedFileDetailsCarf
+  )
+
+  lazy val testSubmissionDetailsCache: SubmissionDetailsCache = SubmissionDetailsCache(
+    testSubmissionRequest.uploadId,
+    testSubmissionRequest.subscriptionDetails.carfReference,
+    Pending,
+    testSubmissionRequest.fileName,
+    extractedFileDetailsCarf,
+    rcaspDetails = individualRcaspDetails,
+    subscriptionDetails = displaySubscriptionDetails,
+    submissionTime = Instant.ofEpochSecond(1),
+    lastStatusUpdateTime = Instant.now,
+    businessRuleErrors = ValidationErrors.apply()
   )
 }
