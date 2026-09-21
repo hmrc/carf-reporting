@@ -30,11 +30,44 @@ case class ValidationErrors(
 )
 
 /** @param status
-  *   \- can be 'Accepted' or 'Rejected' from an AEOI XML file. Furthermore, It can also be 'SchemaValidationError' when
-  *   an XML file fails schema validation or 'UnexpectedFailure' for any other unexpected errors.
+  *   \- can be 'Accepted' or '1' from an AEOI XML file. Furthermore, It can also be 'SchemaValidationError' when an XML
+  *   file fails schema validation or 'UnexpectedFailure' for any other unexpected errors.
   */
 
-case class ValidationResult(status: String) //TODO Create enum for possible values, no benefit for now
+case class ValidationResult(status: ValidationStatus)
+
+enum ValidationStatus:
+  case Accepted
+  case Rejected
+
+object ValidationStatus {
+
+  def fromString(value: String): ValidationStatus =
+    value match {
+      case "Accepted" => Accepted
+      case "Rejected" => Rejected
+      case _          => throw new RuntimeException("No match found for provided Validation status string")
+    }
+
+  given Writes[ValidationStatus] = Writes[ValidationStatus] {
+    case Accepted => JsString("Accepted")
+    case Rejected => JsString("Rejected")
+  }
+
+  given Reads[ValidationStatus] = Reads[ValidationStatus] {
+    case JsString(s) =>
+      s.toUpperCase match {
+        case "Accepted" => JsSuccess(Accepted)
+        case "Rejected" => JsSuccess(Rejected)
+        case _          => JsError(s"Unexpected ValidationStatus: $s")
+      }
+    case other       =>
+      JsError(
+        "Expected JSON string for ValidationStatus from the following options\n" +
+          s"${ValidationStatus.values.mkString(", ")}, but got ${other.toString}"
+      )
+  }
+}
 
 case class FileError(
     code: String,

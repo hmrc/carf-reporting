@@ -21,10 +21,10 @@ import uk.gov.hmrc.carfreporting.config.Constants.ukZoneId
 import uk.gov.hmrc.carfreporting.models.*
 import uk.gov.hmrc.carfreporting.models.errors.{XmlError, XmlErrors}
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
-import uk.gov.hmrc.carfreporting.models.requests.sdes.Algorithm.SHA256
 import uk.gov.hmrc.carfreporting.models.requests.sdes.*
-import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Pending
+import uk.gov.hmrc.carfreporting.models.requests.sdes.Algorithm.SHA256
 import uk.gov.hmrc.carfreporting.models.submission.*
+import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Pending
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
 
@@ -37,9 +37,9 @@ trait TestData {
 
   val uuid: String = UUID.randomUUID().toString
 
-  val testUploadId    = UploadId(uuid)
-  val testReference   = Reference("11370e18-6e24-453e-b45a-76d3e32ea33d")
-  val testDownloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676"
+  val testUploadId           = UploadId(uuid)
+  val testReference          = Reference("11370e18-6e24-453e-b45a-76d3e32ea33d")
+  inline val testDownloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676"
 
   val uploadSessionDetails = UploadSessionDetails(
     ObjectId.get(),
@@ -124,15 +124,14 @@ trait TestData {
     )
   )
 
-  val validExtractedAEOIFileDetails = ExtractedAEOIFileDetails(
-    testUploadId,
+  val validExtractedAEOIFileDetails     = ExtractedAEOIFileDetails(
+    UploadId("3ada9236-21a6-4ad2-9f0c-f01shdt40c5"),
     ValidationErrors(
       Seq.empty,
       Seq.empty
     ),
-    ValidationResult("Accepted")
+    ValidationResult(ValidationStatus.fromString("Accepted"))
   )
-
   lazy val businessRuleValidationErrors = ValidationErrors(
     fileError = Seq(
       FileError(
@@ -152,10 +151,10 @@ trait TestData {
     )
   )
 
-  lazy val invalidExtractedAEOIFileDetails = ExtractedAEOIFileDetails(
-    testUploadId,
+  val validExtractedAEOIFileDetailsWithErrors = ExtractedAEOIFileDetails(
+    UploadId("3ada9236-21a6-4ad2-9f0c-f01shdt40c5"),
     businessRuleValidationErrors,
-    ValidationResult("Rejected")
+    ValidationResult(ValidationStatus.fromString("Rejected"))
   )
 
   lazy val testSavedAEOIFileDetails: SavedAEOIFileDetails = SavedAEOIFileDetails(
@@ -177,8 +176,10 @@ trait TestData {
     audit = Audit("correlation-id-123456789")
   )
 
+  inline val testCarfRef = "XACARF000001234"
+
   lazy val displaySubscriptionDetails: DisplaySubscriptionDetails = DisplaySubscriptionDetails(
-    carfReference = CarfId("XACARF000001234"),
+    carfReference = CarfId(testCarfRef),
     gbUser = true,
     primaryContact = DisplaySubscriptionContact(
       individual = Some(DisplaySubscriptionIndividual("Jane", "Smith")),

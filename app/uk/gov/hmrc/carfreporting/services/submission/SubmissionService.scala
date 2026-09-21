@@ -16,14 +16,43 @@
 
 package uk.gov.hmrc.carfreporting.services.submission
 
+import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationErrors}
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
+import uk.gov.hmrc.carfreporting.models.submission.*
+import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Pending
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.types.ResultT
+import uk.gov.hmrc.http.HeaderCarrier
 
+import java.time.Instant
 import javax.inject.Inject
+import scala.concurrent.ExecutionContext
 
-class SubmissionService @Inject() (sdesService: SDESService, repository: SubmissionRepository) {
+class SubmissionService @Inject() (sdesService: SDESService, repository: SubmissionRepository)(implicit
+    ec: ExecutionContext
+) {
 
-  def saveAndSubmit(submissionRequest: SubmissionRequest): ResultT[Unit] =
+  def saveAndSubmit(submissionRequest: SubmissionRequest)(implicit headerCarrier: HeaderCarrier): ResultT[Unit] = {
+    val submissionTime  = Instant.now
+    val submissionCache = SubmissionDetailsCache(
+      submissionRequest.uploadId,
+      submissionRequest.subscriptionDetails.carfReference,
+      Pending,
+      submissionRequest.fileName,
+      submissionRequest.extractedFileDetails,
+      submissionRequest.rcaspDetails,
+      submissionRequest.subscriptionDetails,
+      submissionTime,
+      Instant.now,
+      ValidationErrors.apply()
+    )
+    for {
+      _      <- repository.insert(submissionCache)
+      result <- sdesService.sendNotification(submissionRequest, submissionTime)
+    } yield result
+  }
+
+  def updateFileStatus(uploadId: UploadId, failureReason: Option[String]): ResultT[Unit] =
     ???
+    /// repository.updateStatus(uploadId, fileStatus).map(_ => ())
 }

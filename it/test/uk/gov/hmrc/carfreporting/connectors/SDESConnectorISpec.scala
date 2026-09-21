@@ -23,8 +23,6 @@ import play.api.http.Status.*
 import uk.gov.hmrc.carfreporting.base.TestData
 import uk.gov.hmrc.carfreporting.itutil.ApplicationWithWiremock
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.*
-import uk.gov.hmrc.carfreporting.models.requests.sdes.*
-import uk.gov.hmrc.carfreporting.models.requests.sdes.Algorithm.SHA256
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global

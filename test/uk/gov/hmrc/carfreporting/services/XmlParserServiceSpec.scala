@@ -17,11 +17,12 @@
 package uk.gov.hmrc.carfreporting.services
 
 import org.mockito.ArgumentMatchers.{any, argThat}
-import org.mockito.Mockito.{reset, times, verify, when}
+import org.mockito.Mockito.{never, reset, times, verify, when}
 import uk.gov.hmrc.carfreporting.base.{NoGuiceSpecBase, TestData}
 import uk.gov.hmrc.carfreporting.dispatchers.{MainDispatcherName, XmlDispatcher}
 import uk.gov.hmrc.carfreporting.models.ExtractedCarfFileDetails
 import uk.gov.hmrc.carfreporting.models.errors.{InternalServerError, InvalidXmlError, XmlErrors}
+import uk.gov.hmrc.carfreporting.models.submission.FileStatus
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.types.ResultT
 
@@ -131,47 +132,74 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
     "validateAndExtractAEOI" - {
       "must return InternalServerError error when the XML file does not exist" in {
 
-        when(mockSubmissionRepository.update(any())).thenReturn(ResultT.fromValue(true))
+        when(mockSubmissionRepository.updateStatus(any(), any())).thenReturn(ResultT.fromValue(true))
 
         val fileName = "invalid/path/nonexistent.xml"
         val path     = Paths.get(fileName).toUri.toString
-        val result   = service.validateAndExtractAEOI(path).value.futureValue
+        val result   = service.validateAndExtractAEOI(path, testUploadId).value.futureValue
 
         result mustBe Left(InternalServerError("XML file cannot be found with path provided"))
 
         verify(mockXmlDataHandlerService, times(0)).aeoiValidationAndExtraction(any(), any())
-        verify(mockSubmissionRepository, times(1)).update(
-          argThat(fileDetails => fileDetails.extractedAEOIFileDetails.validationResult.status == "UnexpectedFailure")
+        verify(mockSubmissionRepository, times(1)).updateStatus(
+          argThat(_ == testUploadId),
+          argThat(_ == FileStatus.UnprocessableErrorFile)
         )
+        verify(mockSubmissionRepository, never()).updateStatusWithErrors(any(), any(), any())
       }
 
       "must return ExtractedAEOIFileDetails when returned by XmlDataHandlerService" in {
         when(mockXmlDataHandlerService.aeoiValidationAndExtraction(any(), any()))
           .thenReturn(Right(validExtractedAEOIFileDetails))
 
-        when(mockSubmissionRepository.update(any())).thenReturn(ResultT.fromValue(true))
+        when(mockSubmissionRepository.updateStatus(any(), any())).thenReturn(ResultT.fromValue(true))
 
         val fileName = "conf/data/examples/aeoi/BusinessRuleCheckSampleRequest_ValidFile_v0.3.xml"
         val path     = Paths.get(fileName).toUri.toString
 
-        val result = service.validateAndExtractAEOI(path).value.futureValue
+        val result = service.validateAndExtractAEOI(path, testUploadId).value.futureValue
 
         result mustBe Right(validExtractedAEOIFileDetails)
 
         verify(mockXmlDataHandlerService, times(1)).aeoiValidationAndExtraction(any(), any())
-        verify(mockSubmissionRepository, times(1)).update(
-          argThat(fileDetails => fileDetails.extractedAEOIFileDetails.validationResult.status == "Accepted")
+        verify(mockSubmissionRepository, times(1)).updateStatus(
+          argThat(_ == testUploadId),
+          argThat(_ == FileStatus.Accepted)
+        )
+        verify(mockSubmissionRepository, never()).updateStatusWithErrors(any(), any(), any())
+      }
+
+      "must return ExtractedAEOIFileDetails with errors when valid file with errors are returned by XmlDataHandlerService" in {
+        when(mockXmlDataHandlerService.aeoiValidationAndExtraction(any(), any()))
+          .thenReturn(Right(validExtractedAEOIFileDetailsWithErrors))
+
+        when(mockSubmissionRepository.updateStatusWithErrors(any(), any(), any())).thenReturn(ResultT.fromValue(true))
+
+        val fileName = "conf/data/examples/aeoi/BusinessRuleCheckSampleRequest_validFile_with_errors.xml"
+        val path     = Paths.get(fileName).toUri.toString
+
+        val result = service.validateAndExtractAEOI(path, testUploadId).value.futureValue
+
+        result mustBe Right(validExtractedAEOIFileDetailsWithErrors)
+
+        verify(mockXmlDataHandlerService, times(1)).aeoiValidationAndExtraction(any(), any())
+        verify(mockSubmissionRepository, never()).updateStatus(any(), any())
+        verify(mockSubmissionRepository, times(1)).updateStatusWithErrors(
+          argThat(_ == testUploadId),
+          argThat(_ == FileStatus.Rejected),
+          argThat(_ == validExtractedAEOIFileDetailsWithErrors.validationErrors)
         )
       }
 
       "must return XmlErrors when XmlDataHandlerService returns schema errors (the XML is well-formed but fails schema validation)" in {
         when(mockXmlDataHandlerService.aeoiValidationAndExtraction(any(), any())).thenReturn(Left(xmlErrors))
-        when(mockSubmissionRepository.update(any())).thenReturn(ResultT.fromValue(true))
+        when(mockSubmissionRepository.updateStatus(testUploadId, FileStatus.UnprocessableErrorFile))
+          .thenReturn(ResultT.fromValue(true))
 
         val fileName = "conf/data/examples/aeoi/BusinessRuleCheckSampleRequest_invalidFile_schema__errors.xml"
         val path     = Paths.get(fileName).toUri.toString
 
-        val result = service.validateAndExtractAEOI(path).value.futureValue
+        val result = service.validateAndExtractAEOI(path, testUploadId).value.futureValue
 
         result match {
           case Left(e: XmlErrors) =>
@@ -181,11 +209,11 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
         }
 
         verify(mockXmlDataHandlerService, times(1)).aeoiValidationAndExtraction(any(), any())
-        verify(mockSubmissionRepository, times(1)).update(
-          argThat(fileDetails =>
-            fileDetails.extractedAEOIFileDetails.validationResult.status == "SchemaValidationError"
-          )
+        verify(mockSubmissionRepository, times(1)).updateStatus(
+          argThat(_ == testUploadId),
+          argThat(_ == FileStatus.UnprocessableErrorFile)
         )
+        verify(mockSubmissionRepository, never()).updateStatusWithErrors(any(), any(), any())
       }
 
       "must return an InvalidXmlError when XmlDataHandlerService returns InvalidXmlError (the XML is completely " +
@@ -193,32 +221,32 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
           when(mockXmlDataHandlerService.aeoiValidationAndExtraction(any(), any()))
             .thenReturn(Left(InvalidXmlError))
 
-          when(mockSubmissionRepository.update(any())).thenReturn(ResultT.fromValue(true))
+          when(mockSubmissionRepository.updateStatus(any(), any())).thenReturn(ResultT.fromValue(true))
 
           val fileName = "conf/data/examples/malformed-xml.xml"
           val path     = Paths.get(fileName).toUri.toString
 
-          val result = service.validateAndExtractAEOI(path).value.futureValue
+          val result = service.validateAndExtractAEOI(path, testUploadId).value.futureValue
 
           result mustBe Left(InvalidXmlError)
 
           verify(mockXmlDataHandlerService, times(1)).aeoiValidationAndExtraction(any(), any())
-          verify(mockSubmissionRepository, times(1)).update(
-            argThat(fileDetails =>
-              fileDetails.extractedAEOIFileDetails.validationResult.status == "SchemaValidationError"
-            )
+          verify(mockSubmissionRepository, times(1)).updateStatus(
+            argThat(_ == testUploadId),
+            argThat(_ == FileStatus.UnprocessableErrorFile)
           )
+          verify(mockSubmissionRepository, never()).updateStatusWithErrors(any(), any(), any())
         }
 
       "must return an InternalServerError when aeoiValidationAndExtraction throws an exception" in {
         when(mockXmlDataHandlerService.aeoiValidationAndExtraction(any(), any()))
           .thenThrow(new RuntimeException("unexpected explosion"))
 
-        when(mockSubmissionRepository.update(any())).thenReturn(ResultT.fromValue(true))
+        when(mockSubmissionRepository.updateStatus(any(), any())).thenReturn(ResultT.fromValue(true))
 
         val fileName = "conf/data/examples/malformed-xml.xml"
         val path     = Paths.get(fileName).toUri.toString
-        val result   = service.validateAndExtractAEOI(path).value.futureValue
+        val result   = service.validateAndExtractAEOI(path, testUploadId).value.futureValue
 
         result match {
           case Left(e: InternalServerError) =>
@@ -227,9 +255,11 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
         }
 
         verify(mockXmlDataHandlerService, times(1)).aeoiValidationAndExtraction(any(), any())
-        verify(mockSubmissionRepository, times(1)).update(
-          argThat(fileDetails => fileDetails.extractedAEOIFileDetails.validationResult.status == "UnexpectedFailure")
+        verify(mockSubmissionRepository, times(1)).updateStatus(
+          argThat(_ == testUploadId),
+          argThat(_ == FileStatus.UnprocessableErrorFile)
         )
+        verify(mockSubmissionRepository, never()).updateStatusWithErrors(any(), any(), any())
       }
     }
   }

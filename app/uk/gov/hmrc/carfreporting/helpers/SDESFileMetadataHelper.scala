@@ -16,21 +16,71 @@
 
 package uk.gov.hmrc.carfreporting.helpers
 
+import play.api.Logging
+import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
 import uk.gov.hmrc.carfreporting.models.requests.sdes.Property
-import uk.gov.hmrc.carfreporting.models.submission.{DisplaySubscriptionContact, DisplaySubscriptionDetails}
+import uk.gov.hmrc.carfreporting.models.submission.{DisplaySubscriptionContact, DisplaySubscriptionOrganisation}
 
+import java.time.Instant
 import java.time.format.DateTimeFormatter
 
-object SDESFileMetadataHelper {
+object SDESFileMetadataHelper extends Logging {
 
-  private final val formatter = DateTimeFormatter.ISO_DATE_TIME
+  private final val formatter = DateTimeFormatter.ISO_INSTANT
 
-  def generatePropertiesMetadata(subscriptionDetails: DisplaySubscriptionDetails): List[Property] =
-    List.empty
-
-  def contactDetailsToProperties(subscriptionContact: DisplaySubscriptionContact) =
+  def generatePropertiesMetadata(submissionRequest: SubmissionRequest, submissionTime: Instant): List[Property] =
+    val conversationId = submissionRequest.uploadId.value
     List(
-      Property("emailAddress", subscriptionContact.email)
-      // subscriptionContactDetails.
+      Property("requestCommon/conversationID", conversationId),
+      Property("requestCommon/receiptDate", formatter.format(submissionTime)),
+      Property("requestCommon/regime", "CARF"),
+      Property("requestCommon/schemaVersion", "1.0.0"),
+      Property("requestAdditionalDetail/subscriptionID", submissionRequest.subscriptionDetails.carfReference.value),
+      Property("requestAdditionalDetail/isGBUser", submissionRequest.subscriptionDetails.gbUser.toString)
+    ) ++ individualOrOrganisationDetails(submissionRequest.subscriptionDetails.primaryContact, "primaryContact") ++
+      submissionRequest.subscriptionDetails.secondaryContact.fold(List.empty)(secondaryContact =>
+        individualOrOrganisationDetails(secondaryContact, "secondaryContact")
+      )
+
+  private def individualOrOrganisationDetails(subscriptionContact: DisplaySubscriptionContact, contactType: String) = {
+    lazy val orgProperties: DisplaySubscriptionOrganisation => List[Property] = displaySubscriptionOrg =>
+      List(
+        Property(
+          s"requestAdditionalDetail/$contactType/organisationDetails/organisationName",
+          displaySubscriptionOrg.name
+        )
+      )
+
+    (subscriptionContact.individual, subscriptionContact.organisation) match {
+      case (Some(ind), None)    =>
+        List(
+          Property(
+            s"requestAdditionalDetail/$contactType/individualDetails/firstName",
+            subscriptionContact.individual.get.firstName
+          ),
+          Property(
+            s"requestAdditionalDetail/$contactType/individualDetails/lastName",
+            subscriptionContact.individual.get.lastName
+          )
+        )
+      case (None, Some(org))    => orgProperties(org)
+      case (Some(_), Some(org)) =>
+        logger.warn(
+          "[SDESFileMetadataHelper][individualOrOrganisationDetails](Individual and organisation) " +
+            "contact details provided defaulting to organisation"
+        )
+        orgProperties(org)
+      case (_, _)               =>
+        logger.error(
+          "[SDESFileMetadataHelper][individualOrOrganisationDetails]No" +
+            "contact details provided submission will fail in transit"
+        )
+        List.empty
+    }
+  }.appended(
+    Property(
+      s"requestAdditionalDetail/$contactType/emailAddress",
+      subscriptionContact.email
     )
+  )
 }

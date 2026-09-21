@@ -418,7 +418,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
         inputStream.close()
 
         result match {
-          case Right(result) => result mustBe validExtractedAEOIFileDetails.copy(uploadId = result.uploadId)
+          case Right(result) => result mustBe validExtractedAEOIFileDetails
           case _             => fail()
         }
       }
@@ -431,8 +431,9 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
 
         val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
         inputStream.close()
+
         result match {
-          case Right(result) => result mustBe invalidExtractedAEOIFileDetails.copy(uploadId = result.uploadId)
+          case Right(result) => result mustBe validExtractedAEOIFileDetailsWithErrors
           case _             => fail()
         }
       }

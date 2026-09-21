@@ -88,30 +88,6 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
       )
     }
 
-  def update(
-      fileDetails: SavedAEOIFileDetails
-  ): ResultT[Boolean] = // TODO change this to just update businessRule Errors or to file status passed and use the SubmissionDetailsCache class
-    ResultT.fromValue {
-      /* collection
-        .insertOne(fileDetails)
-        .toFuture()
-        .map(_ => Right(true))
-        .recover {
-          case e: MongoWriteException =>
-            val errorMessage =
-              s"Exception from SubmissionRepository.insert with message: ${e.getMessage}"
-            logger.error(errorMessage)
-            Left(
-              MongoError(errorMessage)
-            )
-          case e                      =>
-            val errorMessage = s"Failed to call SubmissionRepository .insert with message: ${e.getMessage}"
-            logger.error(errorMessage)
-            Left(MongoError(errorMessage))
-        }*/
-      true
-    }
-
   def updateStatus(
       uploadId: UploadId,
       newStatus: FileStatus

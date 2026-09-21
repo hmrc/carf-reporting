@@ -8,3 +8,5 @@ POST        /validate-extract-xml           uk.gov.hmrc.carfreporting.controller
 POST        /validate-extract-aeoi-xml      uk.gov.hmrc.carfreporting.controllers.XmlValidationAndExtractionController.processAEOIXml
 
 POST        /submit                         uk.gov.hmrc.carfreporting.controllers.SubmissionController.submit
+
+POST        /fts/callback                   uk.gov.hmrc.carfreporting.controllers.SDESCallbackController.callback

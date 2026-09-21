@@ -18,18 +18,22 @@ package uk.gov.hmrc.carfreporting.services.submission
 
 import play.api.Logging
 import uk.gov.hmrc.carfreporting.connectors.SDESConnector
+import uk.gov.hmrc.carfreporting.helpers.SDESFileMetadataHelper
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
 import uk.gov.hmrc.carfreporting.models.requests.sdes.*
-import uk.gov.hmrc.carfreporting.models.requests.sdes.Algorithm.SHA512
+import uk.gov.hmrc.carfreporting.models.requests.sdes.Algorithm.SHA256
 import uk.gov.hmrc.carfreporting.types.ResultT
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.time.Instant
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class SDESService @Inject() (sdesConnector: SDESConnector)(implicit ec: ExecutionContext) extends Logging {
 
-  def sendNotification(submissionRequest: SubmissionRequest)(implicit hc: HeaderCarrier): ResultT[Unit] = {
+  def sendNotification(submissionRequest: SubmissionRequest, submissionTime: Instant)(implicit
+      hc: HeaderCarrier
+  ): ResultT[Unit] = {
 
     val conversationId = submissionRequest.uploadId.value
 
@@ -39,16 +43,13 @@ class SDESService @Inject() (sdesConnector: SDESConnector)(implicit ec: Executio
         file = File(
           name = submissionRequest.fileName,
           location = submissionRequest.documentUrl,
-          checksum = Checksum(SHA512, submissionRequest.checksum),
+          checksum = Checksum(SHA256, submissionRequest.checksum),
           size = submissionRequest.fileSize,
           recipientOrSender = Some("carf-reporting"),
-          properties = mapToProperty(Map.empty[String, String])
+          properties = SDESFileMetadataHelper.generatePropertiesMetadata(submissionRequest, submissionTime)
         ),
         audit = Audit(conversationId)
       )
     )
   }
-
-  private def mapToProperty(metaData: Map[String, String]): List[Property] =
-    metaData.toList.map { case (name, value) => Property(name, value) }
 }

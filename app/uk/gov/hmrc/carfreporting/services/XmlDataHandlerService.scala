@@ -22,14 +22,13 @@ import org.codehaus.stax2.XMLStreamReader2
 import org.codehaus.stax2.validation.{XMLValidationProblem, XMLValidationSchema}
 import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.Constants.*
+import uk.gov.hmrc.carfreporting.models.*
+import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.services.xmlElements.CarfBody.*
 import uk.gov.hmrc.carfreporting.services.xmlElements.CarfBody.RcaspName.*
 import uk.gov.hmrc.carfreporting.services.xmlElements.MessageSpec.*
-import uk.gov.hmrc.carfreporting.models.{ExtractedAEOIFileDetails, ExtractedCarfFileDetails, FileError, RecordError, UploadId, ValidationErrors, ValidationResult}
-import uk.gov.hmrc.carfreporting.models.errors.*
 
 import java.io.InputStream
-import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import javax.xml.stream.{XMLInputFactory, XMLStreamConstants}
 import scala.collection.mutable.ListBuffer
@@ -90,13 +89,16 @@ class XmlDataHandlerService @Inject() extends Logging {
     Try {
       readXml(reader)
     } match {
-      case Success(extractedFileDetails)          =>
+      case Success(extractedFileDetails)                                                        =>
         reader.close()
         resolveErrors(errors, Right(extractedFileDetails))
-      case Failure(e: XmlStreamFailSafeException) =>
+      case Failure(e: XmlStreamFailSafeException)                                               =>
         reader.close()
         resolveErrors(errors, Left(XmlErrors(Vector.empty)))
-      case Failure(e)                             =>
+      case Failure(e) if e.getMessage == "No match found for provided Validation status string" =>
+        reader.close()
+        resolveErrors(errors, Left(XmlErrors(Vector.empty)))
+      case Failure(e)                                                                           =>
         reader.close()
         Left(InvalidXmlError)
     }
@@ -199,13 +201,14 @@ class XmlDataHandlerService @Inject() extends Logging {
   }
 
   private def readAEOIXml(reader: XMLStreamReader2): ExtractedAEOIFileDetails = {
-    import xmlElements.AEOIRequestDetail._
+    import xmlElements.AEOIRequestDetail.*
 
     val path = ListBuffer.empty[String]
 
     val fileErrors   = ListBuffer.empty[FileError]
     val recordErrors = ListBuffer.empty[RecordError]
 
+    var currentConversationId: String           = ""
     var currentFileErrorCode: String            = ""
     var currentFileErrorDetails: Option[String] = None
 
@@ -232,6 +235,8 @@ class XmlDataHandlerService @Inject() extends Logging {
           path += localName
 
           localName match {
+            case CONVERSATION_ID if pathEndsWith(CONVERSATION_ID, REQUEST_COMMON)                                    =>
+              currentConversationId = readElement()
             case CODE if pathEndsWith(CODE, FILE_ERROR, VALIDATION_ERRORS, GENERIC_STATUS_MESSAGE, REQUEST_DETAIL)   =>
               currentFileErrorCode = readElement()
             case DETAILS
@@ -278,13 +283,13 @@ class XmlDataHandlerService @Inject() extends Logging {
       }
 
     ExtractedAEOIFileDetails(
-      uploadId = UploadId(UUID.randomUUID().toString),
+      uploadId = UploadId(currentConversationId),
       validationErrors = ValidationErrors(
         fileError = fileErrors.toSeq,
         recordError = recordErrors.toSeq
       ),
       validationResult = ValidationResult(
-        status = status // TODO convert to enum here when implemented
+        status = ValidationStatus.fromString(status)
       )
     )
   }
