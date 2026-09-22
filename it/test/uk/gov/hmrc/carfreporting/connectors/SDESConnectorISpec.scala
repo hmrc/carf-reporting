@@ -28,15 +28,16 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class SDESConnectorISpec
-  extends ApplicationWithWiremock
+    extends ApplicationWithWiremock
     with Matchers
     with ScalaFutures
-    with IntegrationPatience with TestData {
+    with IntegrationPatience
+    with TestData {
 
   lazy val connector: SDESConnector = app.injector.instanceOf[SDESConnector]
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
-  
+
   val testNotificationJson: String =
     """
       |{

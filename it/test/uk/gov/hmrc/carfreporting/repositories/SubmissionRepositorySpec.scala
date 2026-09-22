@@ -28,10 +28,12 @@ import uk.gov.hmrc.carfreporting.models.submission.SubmissionDetailsCache
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 class SubmissionRepositorySpec
-  extends SpecBase with IntegrationPatience with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache]{
-  
+    extends SpecBase
+    with IntegrationPatience
+    with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
+
   val config: AppConfig = mock[AppConfig]
-  
+
   override protected val repository: SubmissionRepository = new SubmissionRepository(
     mongoComponent = mongoComponent,
     appConfig = config,
@@ -42,10 +44,10 @@ class SubmissionRepositorySpec
     ".insert" - {
       "must insert a SubmissionDetailsCache" in {
         val setResult = repository.insert(testSubmissionDetailsCache).value.futureValue
-        val record = find(Filters.equal("_id", testSubmissionDetailsCache._id.value)).futureValue.head
+        val record    = find(Filters.equal("_id", testSubmissionDetailsCache._id.value)).futureValue.head
 
         setResult mustBe Right(true)
-        record mustBe testSubmissionDetailsCache
+        record    mustBe testSubmissionDetailsCache
       }
 
       "must return a MongoError if there is already a record with the same uploadId" in {
@@ -55,7 +57,7 @@ class SubmissionRepositorySpec
         setResult1 mustBe Right(true)
         setResult2 match {
           case Left(value) => value.message.contains("duplicate key error collection") mustBe true
-          case _ => fail()
+          case _           => fail()
         }
       }
 
@@ -63,8 +65,9 @@ class SubmissionRepositorySpec
         val setResult = repository.insert(testSubmissionDetailsCache.copy(fileStatus = Accepted)).value.futureValue
 
         setResult match {
-          case Left(BusinessError(message)) => message mustBe "Tried to insert file with a status that is not Pending in SubmissionRepository .insert"
-          case _ => fail()
+          case Left(BusinessError(message)) =>
+            message mustBe "Tried to insert file with a status that is not Pending in SubmissionRepository .insert"
+          case _                            => fail()
         }
       }
     }
@@ -72,24 +75,24 @@ class SubmissionRepositorySpec
     ".updateStatus" - {
       "must successfully update the fileStatus and lastStatusUpdateTime when new status is NOT Rejected" in {
         repository.insert(testSubmissionDetailsCache).value.futureValue mustBe Right(true)
-        
+
         val updateResult = repository.updateStatus(testUploadId, Accepted).value.futureValue
         updateResult mustBe Right(true)
 
         val record = find(Filters.equal("_id", testSubmissionDetailsCache._id.value)).futureValue.head
 
-        record.fileStatus mustBe Accepted
+        record.fileStatus           mustBe Accepted
         record.lastStatusUpdateTime mustBe clock.instant()
       }
 
       "must return a BusinessError when attempting to update with a Rejected status" in {
-        val uploadId = testSubmissionDetailsCache._id
+        val uploadId     = testSubmissionDetailsCache._id
         val updateResult = repository.updateStatus(uploadId, Rejected).value.futureValue
 
         updateResult match {
           case Left(BusinessError(message)) =>
             message mustBe "Error updateStatus called with rejected status in SubmissionRepository .updateStatus"
-          case _ => fail("Expected a BusinessError")
+          case _                            => fail("Expected a BusinessError")
         }
       }
     }
@@ -100,29 +103,34 @@ class SubmissionRepositorySpec
 
         val uploadId = testSubmissionDetailsCache._id
 
-        val updateResult = repository.updateStatusWithErrors(
-          uploadId, Rejected, businessRuleValidationErrors
-        ).value.futureValue
-        
+        val updateResult = repository
+          .updateStatusWithErrors(
+            uploadId,
+            Rejected,
+            businessRuleValidationErrors
+          )
+          .value
+          .futureValue
+
         updateResult mustBe Right(true)
 
         val record = find(Filters.equal("_id", uploadId.value)).futureValue.head
 
-        record.fileStatus mustBe Rejected
-        record.businessRuleErrors mustBe businessRuleValidationErrors
+        record.fileStatus           mustBe Rejected
+        record.businessRuleErrors   mustBe businessRuleValidationErrors
         record.lastStatusUpdateTime mustBe clock.instant()
       }
 
       "must return a BusinessError when attempting to update with a status other than Rejected" in {
         val uploadId = testSubmissionDetailsCache._id
 
-        val updateResult = repository.updateStatusWithErrors(uploadId, VirusFound, businessRuleValidationErrors)
-          .value.futureValue
+        val updateResult =
+          repository.updateStatusWithErrors(uploadId, VirusFound, businessRuleValidationErrors).value.futureValue
 
         updateResult match {
           case Left(BusinessError(message)) =>
             message mustBe "Error updateStatusWithErrors called without rejected status in SubmissionRepository .updateStatusWithErrors"
-          case _ => fail("Expected a BusinessError")
+          case _                            => fail("Expected a BusinessError")
         }
       }
     }

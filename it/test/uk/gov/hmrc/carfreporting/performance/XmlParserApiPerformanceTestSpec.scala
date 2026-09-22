@@ -23,7 +23,6 @@ import uk.gov.hmrc.carfreporting.config.Constants.ukZoneId
 import uk.gov.hmrc.carfreporting.controllers.XmlValidationAndExtractionController
 import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, XmlDispatcher}
 import uk.gov.hmrc.carfreporting.itutil.Reporter.*
-import uk.gov.hmrc.carfreporting.models.SavedAEOIFileDetails
 import uk.gov.hmrc.carfreporting.models.submission.SubmissionDetailsCache
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.services.{XmlDataHandlerService, XmlParserService}
@@ -34,19 +33,20 @@ import java.time.{Clock, Instant}
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
 
-class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase
-  with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
-  
+class XmlParserApiPerformanceTestSpec
+    extends NoGuiceSpecBase
+    with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
+
   val clock: Clock = Clock.fixed(Instant.ofEpochMilli(1718118467838L), ukZoneId)
-  
+
   val config: AppConfig = mock[AppConfig]
-  
+
   val repository: SubmissionRepository = new SubmissionRepository(
     mongoComponent = mongoComponent,
     appConfig = config,
     clock = clock
   )(ec)
-  
+
   override def beforeEach(): Unit = {
     println("Cleaning")
     System.gc()

@@ -25,10 +25,10 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
 
   final val appName: String = config.get[String]("appName")
 
-  final val cacheTtl: Long = config.get[Long]("mongodb.upscanTimeToLiveInSeconds")
+  val cacheTtl: Long = config.get[Long]("mongodb.upscanTimeToLiveInSeconds")
 
-  private final val sdesBaseUrl: String = servicesConfig.baseUrl("sdes")
-  final val sdesUrl: String             = s"$sdesBaseUrl/${config.get[String]("sdes.url")}"
+  private val sdesBaseUrl: String = servicesConfig.baseUrl("sdes")
+  val sdesUrl: String             = s"$sdesBaseUrl/${config.get[String]("sdes.url")}"
 
-  final val submissionTtlDays: Long = config.get[Long]("mongodb.submissionTimeToLiveInDays")
+  val submissionTtlDays: Long = config.get[Long]("mongodb.submissionTimeToLiveInDays")
 }

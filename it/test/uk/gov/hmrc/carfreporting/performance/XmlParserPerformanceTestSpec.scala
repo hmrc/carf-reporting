@@ -30,21 +30,22 @@ import java.time.{Clock, Instant}
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
 
-class XmlParserPerformanceTestSpec extends NoGuiceSpecBase
-  with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
+class XmlParserPerformanceTestSpec
+    extends NoGuiceSpecBase
+    with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
 
   import uk.gov.hmrc.carfreporting.itutil.Reporter.*
-  
+
   val config: AppConfig = mock[AppConfig]
 
   val clock: Clock = Clock.fixed(Instant.ofEpochMilli(1718118467838L), ukZoneId)
-  
+
   val repository: SubmissionRepository = new SubmissionRepository(
     mongoComponent = mongoComponent,
     appConfig = config,
     clock = clock
   )(ec)
-  
+
   override def beforeEach(): Unit = {
     println("Cleaning")
     System.gc()
