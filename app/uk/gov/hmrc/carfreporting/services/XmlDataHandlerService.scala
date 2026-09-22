@@ -185,10 +185,10 @@ class XmlDataHandlerService @Inject() extends Logging {
       messageRefId = messageRefId,
       sendingEntityIn = if sendingEntityIn.isEmpty then "missing" else sendingEntityIn,
       rcaspName = if messageTypeIndic == nilReportMessageTypeIndic then None else rcaspName,
-      messageTypeIndic = messageTypeIndic, // TODO: Will be changed to an enum later (CARF-611)
+      messageTypeIndic = messageTypeIndic,
       hasOtherNexus = hasOtherNexus,
       hasCryptoUsers = hasCryptoUsers,
-      docTypeIndic = rcaspDocTypeIndic, // TODO: Will be changed to an enum later (CARF-611)
+      docTypeIndic = rcaspDocTypeIndic,
       isTestData = {
         val docTypeIndics = rcaspDocTypeIndic.fold(List.empty)(List(_)) ++ cryptoUserDocTypeIndics
         docTypeIndics.exists(docTypeIndic => testDataDocTypeIndics.contains(docTypeIndic))

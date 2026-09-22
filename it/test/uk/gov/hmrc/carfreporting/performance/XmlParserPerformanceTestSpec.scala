@@ -34,9 +34,7 @@ class XmlParserPerformanceTestSpec extends NoGuiceSpecBase
   with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
 
   import uk.gov.hmrc.carfreporting.itutil.Reporter.*
-
-  override protected val checkTtlIndex: Boolean = false // TODO remove when CARF-611 is implemented
-
+  
   val config: AppConfig = mock[AppConfig]
 
   val clock: Clock = Clock.fixed(Instant.ofEpochMilli(1718118467838L), ukZoneId)

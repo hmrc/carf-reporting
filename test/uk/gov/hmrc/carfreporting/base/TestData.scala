@@ -29,6 +29,7 @@ import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
 
 import java.time.*
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 trait TestData {
@@ -195,7 +196,7 @@ trait TestData {
       IsRCASPUser = false,
       FirstName = "testFirstName",
       LastName = "testLastName",
-      PrimaryContactDetails = RcaspContactDetails(ContactName = "testContactName", EmailAddress = "testEmail")
+      PrimaryContactDetails = RcaspContactDetails(ContactName = "testContactName", EmailAddress = "test@example.com")
     )
 
   val testSubmissionRequest: SubmissionRequest = SubmissionRequest(
@@ -204,16 +205,7 @@ trait TestData {
     fileSize = 1024L,
     documentUrl = "http://localhost:8080/file",
     checksum = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    rcaspDetails = IndividualRcaspDetails(
-      RCASPID = "RCASP123456",
-      IsRCASPUser = false,
-      FirstName = "John",
-      LastName = "Doe",
-      PrimaryContactDetails = RcaspContactDetails(
-        ContactName = "John Doe",
-        EmailAddress = "john.doe@example.com"
-      )
-    ),
+    rcaspDetails = individualRcaspDetails,
     subscriptionDetails = displaySubscriptionDetails,
     extractedFileDetails = extractedFileDetailsCarf
   )
@@ -227,7 +219,7 @@ trait TestData {
     rcaspDetails = individualRcaspDetails,
     subscriptionDetails = displaySubscriptionDetails,
     submissionTime = Instant.ofEpochSecond(1),
-    lastStatusUpdateTime = Instant.now,
+    lastStatusUpdateTime = Instant.now.truncatedTo(ChronoUnit.SECONDS),
     businessRuleErrors = ValidationErrors.apply()
   )
 }

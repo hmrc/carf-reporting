@@ -17,20 +17,20 @@
 package uk.gov.hmrc.carfreporting.repositories
 
 import com.mongodb.MongoWriteException
-import org.mongodb.scala.model.Updates.set
+import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model.Updates.set
 import org.mongodb.scala.model.{FindOneAndUpdateOptions, IndexModel, IndexOptions, Updates}
-import org.mongodb.scala.bson.conversions.Bson
 import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus.{Pending, Rejected}
-import uk.gov.hmrc.carfreporting.models.{SavedAEOIFileDetails, UploadId, ValidationErrors}
 import uk.gov.hmrc.carfreporting.models.submission.{FileStatus, SubmissionDetailsCache}
-import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationErrors}
 import uk.gov.hmrc.carfreporting.types.ResultT
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import java.time.{Clock, Instant}
 import java.util.concurrent.TimeUnit
@@ -127,7 +127,7 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
       val modifier: Bson                   = Updates.combine(
         set("fileStatus", Codecs.toBson(newStatus)),
         set("lastStatusUpdateTime", Instant.now(clock)),
-        set("businessRuleErrors", businessRuleErrors)
+        set("businessRuleErrors", Codecs.toBson(businessRuleErrors))
       )
       val options: FindOneAndUpdateOptions = FindOneAndUpdateOptions().upsert(true)
 

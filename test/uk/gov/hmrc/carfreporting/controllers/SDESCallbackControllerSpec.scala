@@ -16,12 +16,11 @@
 
 package uk.gov.hmrc.carfreporting.controllers
 
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{reset, when}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito.{reset, times, verify, when}
 import play.api.libs.json.Json
 import play.api.test.Helpers.*
 import uk.gov.hmrc.carfreporting.base.SpecBase
-import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.carfreporting.models.errors.InternalServerError
 import uk.gov.hmrc.carfreporting.services.submission.SubmissionService
 import uk.gov.hmrc.carfreporting.types.ResultT
@@ -43,7 +42,6 @@ class SDESCallbackControllerSpec extends SpecBase {
     "callback" - {
 
       "must return NO_CONTENT (204) when notification is FileProcessingFailure and the service successfully updates the status" in {
-        val correlationID = UploadId("correlation-12345")
         val failureReason = "Virus scan failed"
 
         val requestBodyJson =
@@ -51,38 +49,40 @@ class SDESCallbackControllerSpec extends SpecBase {
              |{
              |  "notification": "FileProcessingFailure",
              |  "filename": "test-file.xml",
-             |  "correlationID": "${correlationID.value}",
+             |  "checksumAlgorithm": "SHA-256",
+             |  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+             |  "correlationID": "${testUploadId.value}",
              |  "failureReason": "$failureReason"
              |}
              |""".stripMargin
 
         val requestBody = Json.parse(requestBodyJson)
 
-        when(mockSubmissionService.updateFileStatus(any(), any()))
+        when(mockSubmissionService.updateFileStatusAsFailure(any(), any()))
           .thenReturn(ResultT.fromValue(()))
 
         val result = testController.callback(fakeRequestWithJsonBody(requestBody))
 
         status(result) mustEqual NO_CONTENT
-        // TODO Lookdown
-        // verify(mockSubmissionService).updateFileStatus(eqTo(correlationID), eqTo(Some(failureReason)))(any())
+        verify(mockSubmissionService).updateFileStatusAsFailure(eqTo(testUploadId), eqTo(Some(failureReason)))
       }
 
       "must return INTERNAL_SERVER_ERROR (500) when notification is FileProcessingFailure and the service returns an error" in {
-        val correlationID = "correlation-12345"
 
         val requestBodyJson =
           s"""
              |{
              |  "notification": "FileProcessingFailure",
+             |  "checksumAlgorithm": "SHA-256",
+             |  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
              |  "filename": "test-file.xml",
-             |  "correlationID": "$correlationID"
+             |  "correlationID": "${testUploadId.value}"
              |}
              |""".stripMargin
 
         val requestBody = Json.parse(requestBodyJson)
 
-        when(mockSubmissionService.updateFileStatus(any(), any()))
+        when(mockSubmissionService.updateFileStatusAsFailure(any(), any()))
           .thenReturn(ResultT.fromError(InternalServerError("Database timeout")))
 
         val result = testController.callback(fakeRequestWithJsonBody(requestBody))
@@ -90,18 +90,19 @@ class SDESCallbackControllerSpec extends SpecBase {
         status(result)          mustEqual INTERNAL_SERVER_ERROR
         contentAsString(result) mustEqual "Unexpected error"
 
-        // verify(mockSubmissionService).updateFileStatus(eqTo(correlationID), eqTo(None))(any())
+        verify(mockSubmissionService).updateFileStatusAsFailure(eqTo(testUploadId), eqTo(None))
       }
 
       "must return NO_CONTENT (204) without calling the service when notification is NOT FileProcessingFailure (e.g., FileProcessed)" in {
-        val correlationID = "correlation-12345"
 
         val requestBodyJson =
           s"""
              |{
              |  "notification": "FileProcessed",
              |  "filename": "test-file.xml",
-             |  "correlationID": "$correlationID"
+             |  "checksumAlgorithm": "SHA-256",
+             |  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+             |  "correlationID": "correlation-12345"
              |}
              |""".stripMargin
 
@@ -111,7 +112,7 @@ class SDESCallbackControllerSpec extends SpecBase {
 
         status(result) mustEqual NO_CONTENT
 
-        // verify(mockSubmissionService, never).updateFileStatus(any(), any())(any())
+        verify(mockSubmissionService, times(0)).updateFileStatusAsFailure(any(), any())
       }
 
       "must return BAD_REQUEST (400) when the JSON request is invalid or missing required fields" in {
@@ -129,7 +130,7 @@ class SDESCallbackControllerSpec extends SpecBase {
         status(result)     mustEqual BAD_REQUEST
         contentAsString(result) must include("Request body provided is invalid")
 
-        // verify(mockSubmissionService, never).updateFileStatus(any(), any())(any())
+        verify(mockSubmissionService, times(0)).updateFileStatusAsFailure(any(), any())
       }
     }
   }

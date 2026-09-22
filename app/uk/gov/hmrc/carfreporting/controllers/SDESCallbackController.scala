@@ -38,17 +38,17 @@ class SDESCallbackController @Inject() (cc: ControllerComponents, submissionServ
       .fold(
         invalid =>
           logger.error(
-            s"[BackendController][callback] Failed to parse request body with message: ${invalid.mkString(",\n")}"
+            s"[SDESCallbackController][callback] Failed to parse request body with message: ${invalid.mkString(",\n")}"
           )
           Future.successful(BadRequest(s"Request body provided is invalid with message: ${invalid.mkString(",\n")}"))
         ,
         valid =>
           if (valid.notification == FileProcessingFailure) {
-            submissionService.updateFileStatus(valid.correlationID, valid.failureReason).value.map {
+            submissionService.updateFileStatusAsFailure(valid.correlationID, valid.failureReason).value.map {
               case Right(_)    => NoContent
               case Left(error) =>
                 logger.error(
-                  s"[BackendController][callback] Unexpected error with message: ${error.message}"
+                  s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}"
                 )
                 InternalServerError("Unexpected error")
             }

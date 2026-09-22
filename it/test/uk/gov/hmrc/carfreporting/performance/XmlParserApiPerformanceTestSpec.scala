@@ -36,9 +36,7 @@ import scala.concurrent.{Await, Future}
 
 class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase
   with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
-
-  override protected val checkTtlIndex: Boolean = false // TODO remove when CARF-611 is implemented
-
+  
   val clock: Clock = Clock.fixed(Instant.ofEpochMilli(1718118467838L), ukZoneId)
   
   val config: AppConfig = mock[AppConfig]

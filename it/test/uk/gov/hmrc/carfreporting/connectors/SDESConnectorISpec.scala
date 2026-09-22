@@ -65,7 +65,7 @@ class SDESConnectorISpec
 
   "sendFileReadyNotification" - {
 
-    val baseUrlPattern = "/notification/fileready"
+    val baseUrlPattern = "/carf-stubs/notification/fileready"
 
     "must return Right(()) when backend returns NO_CONTENT (204)" in {
       stubFor(

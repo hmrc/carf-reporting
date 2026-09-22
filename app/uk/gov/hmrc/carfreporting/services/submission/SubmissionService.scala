@@ -52,7 +52,16 @@ class SubmissionService @Inject() (sdesService: SDESService, repository: Submiss
     } yield result
   }
 
-  def updateFileStatus(uploadId: UploadId, failureReason: Option[String]): ResultT[Unit] =
-    ???
-    /// repository.updateStatus(uploadId, fileStatus).map(_ => ())
+  def updateFileStatusAsFailure(uploadId: UploadId, maybeFailureReason: Option[String]): ResultT[Unit] =
+    maybeFailureReason
+      .fold {
+        repository.updateStatus(uploadId, FileStatus.UnexpectedError)
+      } { failureReason =>
+        if (failureReason.toLowerCase.contains("virus")) {
+          repository.updateStatus(uploadId, FileStatus.VirusFound)
+        } else {
+          repository.updateStatus(uploadId, FileStatus.UnexpectedError)
+        }
+      }
+      .map(_ => ())
 }

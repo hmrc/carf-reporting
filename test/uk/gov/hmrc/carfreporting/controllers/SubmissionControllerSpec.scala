@@ -52,13 +52,13 @@ class SubmissionControllerSpec extends SpecBase {
              |  "documentUrl": "http://localhost:8080/file",
              |  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
              |  "rcaspDetails": {
-             |    "RCASPID": "RCASP123456",
+             |    "RCASPID": "ZMCAR0123456788",
              |    "IsRCASPUser": false,
-             |    "FirstName": "John",
-             |    "LastName": "Doe",
+             |    "FirstName": "testFirstName",
+             |    "LastName": "testLastName",
              |    "PrimaryContactDetails": {
-             |      "ContactName": "John Doe",
-             |      "EmailAddress": "john.doe@example.com"
+             |      "ContactName": "testContactName",
+             |      "EmailAddress": "test@example.com"
              |    }
              |  },
              |  "subscriptionDetails": {

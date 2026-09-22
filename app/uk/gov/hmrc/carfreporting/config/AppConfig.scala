@@ -23,10 +23,12 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 @Singleton
 class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig) {
 
-  val appName: String = config.get[String]("appName")
+  final val appName: String = config.get[String]("appName")
 
-  val cacheTtl: Long = config.get[Long]("mongodb.upscanTimeToLiveInSeconds")
+  final val cacheTtl: Long = config.get[Long]("mongodb.upscanTimeToLiveInSeconds")
 
-  val sdesBaseUrl: String     = servicesConfig.baseUrl("sdes")
-  val submissionTtlDays: Long = config.get[Long]("mongodb.submissionTimeToLiveInDays")
+  private final val sdesBaseUrl: String = servicesConfig.baseUrl("sdes")
+  final val sdesUrl: String             = s"$sdesBaseUrl/${config.get[String]("sdes.url")}"
+
+  final val submissionTtlDays: Long = config.get[Long]("mongodb.submissionTimeToLiveInDays")
 }

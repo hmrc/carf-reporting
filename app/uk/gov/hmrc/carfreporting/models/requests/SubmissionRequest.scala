@@ -17,7 +17,7 @@
 package uk.gov.hmrc.carfreporting.models.requests
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.carfreporting.models.submission.{DisplaySubscriptionDetails, FileName, FileStatus, RcaspDetails}
+import uk.gov.hmrc.carfreporting.models.submission.{DisplaySubscriptionDetails, FileName, RcaspDetails}
 import uk.gov.hmrc.carfreporting.models.{ExtractedCarfFileDetails, UploadId}
 
 case class SubmissionRequest(

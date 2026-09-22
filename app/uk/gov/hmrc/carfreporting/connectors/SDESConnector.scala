@@ -38,7 +38,7 @@ class SDESConnector @Inject() (val config: AppConfig, val http: HttpClientV2) ex
       fileTransferNotification: FileTransferNotification
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): ResultT[Unit] = {
 
-    val baseUrl = url"${config.sdesBaseUrl}/notification/fileready" // TODO add /carf-stubs to url and toggle in config
+    val baseUrl = url"${config.sdesUrl}"
 
     logger.debug(
       s"[SDESConnector][sendFileReadyNotification] Sending File Ready Notification for uploadId/correlationId: " +

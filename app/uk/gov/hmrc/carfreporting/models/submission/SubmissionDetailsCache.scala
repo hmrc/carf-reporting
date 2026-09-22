@@ -51,7 +51,6 @@ object SubmissionDetailsCache {
 
   import play.api.libs.functional.syntax.*
 
-  // (__ \ "_id").read(MongoFormats.objectIdFormat) and
   val reads: Reads[SubmissionDetailsCache] =
     (
       (__ \ "_id").read[UploadId] and
@@ -62,7 +61,7 @@ object SubmissionDetailsCache {
         (__ \ "rcaspDetails").read[RcaspDetails] and
         (__ \ "subscriptionDetails").read[DisplaySubscriptionDetails] and
         (__ \ "submissionTime").read(MongoJavatimeFormats.instantFormat) and
-        (__ \ "lastStatusUpdateTime").read[Instant] and
+        (__ \ "lastStatusUpdateTime").read(MongoJavatimeFormats.instantFormat) and
         (__ \ "businessRuleErrors").read[ValidationErrors]
     )(SubmissionDetailsCache.apply _)
 
@@ -76,7 +75,7 @@ object SubmissionDetailsCache {
         (__ \ "rcaspDetails").write[RcaspDetails] and
         (__ \ "subscriptionDetails").write[DisplaySubscriptionDetails] and
         (__ \ "submissionTime").write(MongoJavatimeFormats.instantFormat) and
-        (__ \ "lastStatusUpdateTime").write[Instant] and
+        (__ \ "lastStatusUpdateTime").write(MongoJavatimeFormats.instantFormat) and
         (__ \ "businessRuleErrors").write[ValidationErrors]
     )(o => Tuple.fromProductTyped(o))
 
