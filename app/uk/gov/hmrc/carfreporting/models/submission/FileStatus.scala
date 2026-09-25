@@ -32,8 +32,8 @@ object FileStatus {
   given Format[FileStatus] = Format(
     Reads {
       case JsString("Pending")                => JsSuccess(Pending)
-      case JsString("Passed")                 => JsSuccess(Accepted)
-      case JsString("Failed")                 => JsSuccess(Rejected)
+      case JsString("Accepted")               => JsSuccess(Accepted)
+      case JsString("Rejected")               => JsSuccess(Rejected)
       case JsString("VirusFound")             => JsSuccess(VirusFound)
       case JsString("UnprocessableErrorFile") => JsSuccess(UnprocessableErrorFile)
       case JsString("UnexpectedError")        => JsSuccess(UnexpectedError)
@@ -41,8 +41,8 @@ object FileStatus {
     },
     Writes {
       case Pending                => JsString("Pending")
-      case Accepted               => JsString("Passed")
-      case Rejected               => JsString("Failed")
+      case Accepted               => JsString("Accepted")
+      case Rejected               => JsString("Rejected")
       case VirusFound             => JsString("VirusFound")
       case UnprocessableErrorFile => JsString("UnprocessableErrorFile")
       case UnexpectedError        => JsString("UnexpectedError")
