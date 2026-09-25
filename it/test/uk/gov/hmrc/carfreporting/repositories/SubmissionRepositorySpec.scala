@@ -61,7 +61,7 @@ class SubmissionRepositorySpec
         }
       }
 
-      "must return a MongoError if inserting without a Pending file status" in {
+      "must return a BusinessError if inserting without a Pending file status" in {
         val setResult = repository.insert(testSubmissionDetailsCache.copy(fileStatus = Accepted)).value.futureValue
 
         setResult match {

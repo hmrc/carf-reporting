@@ -19,6 +19,7 @@ package uk.gov.hmrc.carfreporting.services
 import org.mockito.ArgumentMatchers.{any, argThat, eq as eqTo}
 import org.mockito.Mockito.{reset, verify, when}
 import uk.gov.hmrc.carfreporting.base.{NoGuiceSpecBase, TestData}
+import uk.gov.hmrc.carfreporting.models.errors.ApiError.InternalServerError
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
@@ -46,6 +47,50 @@ class SubmissionServiceSpec extends NoGuiceSpecBase with TestData {
         val result = submissionService.saveAndSubmit(testSubmissionRequest).value.futureValue
 
         result mustBe Right(())
+
+        verify(mockSubmissionRepository).insert(
+          argThat(cache =>
+            cache._id == testSubmissionDetailsCache._id &&
+              cache.carfId == testSubmissionDetailsCache.carfId &&
+              cache.fileStatus == testSubmissionDetailsCache.fileStatus &&
+              cache.fileName == testSubmissionDetailsCache.fileName &&
+              cache.extractedFileDetails == testSubmissionDetailsCache.extractedFileDetails &&
+              cache.rcaspDetails == testSubmissionDetailsCache.rcaspDetails &&
+              cache.subscriptionDetails == testSubmissionDetailsCache.subscriptionDetails &&
+              cache.businessRuleErrors == testSubmissionDetailsCache.businessRuleErrors
+          )
+        )
+        verify(mockSDESService).sendNotification(eqTo(testSubmissionRequest), any())(any())
+      }
+
+      "must pass on failure if the repository fails during submission request" in {
+        when(mockSubmissionRepository.insert(any())).thenReturn(ResultT.fromError(InternalServerError))
+
+        val result = submissionService.saveAndSubmit(testSubmissionRequest).value.futureValue
+
+        result mustBe Left(InternalServerError)
+
+        verify(mockSubmissionRepository).insert(
+          argThat(cache =>
+            cache._id == testSubmissionDetailsCache._id &&
+              cache.carfId == testSubmissionDetailsCache.carfId &&
+              cache.fileStatus == testSubmissionDetailsCache.fileStatus &&
+              cache.fileName == testSubmissionDetailsCache.fileName &&
+              cache.extractedFileDetails == testSubmissionDetailsCache.extractedFileDetails &&
+              cache.rcaspDetails == testSubmissionDetailsCache.rcaspDetails &&
+              cache.subscriptionDetails == testSubmissionDetailsCache.subscriptionDetails &&
+              cache.businessRuleErrors == testSubmissionDetailsCache.businessRuleErrors
+          )
+        )
+      }
+
+      "must pass on failure if SDESService fails when sending a notification" in {
+        when(mockSubmissionRepository.insert(any())).thenReturn(ResultT.fromValue(true))
+        when(mockSDESService.sendNotification(any(), any())(any())).thenReturn(ResultT.fromError(InternalServerError))
+
+        val result = submissionService.saveAndSubmit(testSubmissionRequest).value.futureValue
+
+        result mustBe Left(InternalServerError)
 
         verify(mockSubmissionRepository).insert(
           argThat(cache =>

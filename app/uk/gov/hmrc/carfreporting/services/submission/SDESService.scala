@@ -17,6 +17,7 @@
 package uk.gov.hmrc.carfreporting.services.submission
 
 import play.api.Logging
+import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.connectors.SDESConnector
 import uk.gov.hmrc.carfreporting.helpers.SDESFileMetadataHelper
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
@@ -29,7 +30,8 @@ import java.time.Instant
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class SDESService @Inject() (sdesConnector: SDESConnector)(implicit ec: ExecutionContext) extends Logging {
+class SDESService @Inject() (sdesConnector: SDESConnector, appConfig: AppConfig)(implicit ec: ExecutionContext)
+    extends Logging {
 
   def sendNotification(submissionRequest: SubmissionRequest, submissionTime: Instant)(implicit
       hc: HeaderCarrier
@@ -39,7 +41,7 @@ class SDESService @Inject() (sdesConnector: SDESConnector)(implicit ec: Executio
 
     sdesConnector.sendFileReadyNotification(
       FileTransferNotification(
-        informationType = "carf-submission",
+        informationType = appConfig.sdesInformationType,
         file = File(
           name = submissionRequest.fileName,
           location = submissionRequest.documentUrl,

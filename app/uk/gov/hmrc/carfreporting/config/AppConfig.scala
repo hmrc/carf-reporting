@@ -29,6 +29,7 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
 
   private val sdesBaseUrl: String = servicesConfig.baseUrl("sdes")
   val sdesUrl: String             = s"$sdesBaseUrl/${config.get[String]("sdes.url")}"
+  val sdesInformationType: String = s"${config.get[String]("sdes.informationType")}"
 
   val submissionTtlDays: Long = config.get[Long]("mongodb.submissionTimeToLiveInDays")
 }

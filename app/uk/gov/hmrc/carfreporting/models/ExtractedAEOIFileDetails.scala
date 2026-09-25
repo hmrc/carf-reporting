@@ -30,8 +30,8 @@ case class ValidationErrors(
 )
 
 /** @param status
-  *   \- can be 'Accepted' or '1' from an AEOI XML file. Furthermore, It can also be 'SchemaValidationError' when an XML
-  *   file fails schema validation or 'UnexpectedFailure' for any other unexpected errors.
+  *   \- can be 'Accepted' or 'Rejected' from an AEOI XML file. Furthermore, It can also be 'SchemaValidationError' when
+  *   an XML file fails schema validation or 'UnexpectedFailure' for any other unexpected errors.
   */
 
 case class ValidationResult(status: ValidationStatus)

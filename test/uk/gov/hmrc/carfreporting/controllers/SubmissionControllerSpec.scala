@@ -41,7 +41,6 @@ class SubmissionControllerSpec extends SpecBase {
 
   "SubmissionController" - {
     "submit" - {
-
       "must return NO_CONTENT (204) when the payload is valid and submission is successful" in {
         val requestBodyJsonString: String =
           s"""

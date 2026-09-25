@@ -459,7 +459,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
       }
 
       "must truncate errors and exit cleanly when schema errors exceed max errors of (101) and xml contains 150 errors" in {
-        val path        = "data/examples/aeoi/BusinessRuleCheckSampleRequest_validFile_with_150_errors.xml"
+        val path        = "data/examples/aeoi/BusinessRuleCheckSampleRequest_invalidFile_with_150_errors.xml"
         val inputStream = getInputStream(path)
 
         val service = new XmlDataHandlerService

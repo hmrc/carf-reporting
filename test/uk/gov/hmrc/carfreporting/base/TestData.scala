@@ -52,7 +52,7 @@ trait TestData {
 
   val uploadDetails = UploadDetails(
     uploadTimestamp = Instant.now(clock),
-    checksum = "396f1",
+    checksum = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     fileMimeType = "application/xml",
     fileName = "test.xml",
     size = 987L
@@ -82,7 +82,7 @@ trait TestData {
       mimeType = "application/xml",
       downloadUrl = testDownloadUrl,
       size = Some(987L),
-      checksum = Some("396f1")
+      checksum = Some("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
     )
 
   val uploadRejected: UploadStatus.UploadRejected = UploadRejected(errorDetails("REJECTED"))

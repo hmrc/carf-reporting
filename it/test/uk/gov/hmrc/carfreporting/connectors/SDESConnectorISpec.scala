@@ -17,10 +17,7 @@
 package uk.gov.hmrc.carfreporting.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.matchers.must.Matchers
 import play.api.http.Status.*
-import uk.gov.hmrc.carfreporting.base.TestData
 import uk.gov.hmrc.carfreporting.itutil.ApplicationWithWiremock
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.*
 import uk.gov.hmrc.http.HeaderCarrier
@@ -28,11 +25,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class SDESConnectorISpec
-    extends ApplicationWithWiremock
-    with Matchers
-    with ScalaFutures
-    with IntegrationPatience
-    with TestData {
+    extends ApplicationWithWiremock {
 
   lazy val connector: SDESConnector = app.injector.instanceOf[SDESConnector]
 
@@ -66,7 +59,7 @@ class SDESConnectorISpec
 
   "sendFileReadyNotification" - {
 
-    val baseUrlPattern = "/carf-stubs/notification/fileready"
+    val baseUrlPattern = "/sdes-stub/notification/fileready"
 
     "must return Right(()) when backend returns NO_CONTENT (204)" in {
       stubFor(

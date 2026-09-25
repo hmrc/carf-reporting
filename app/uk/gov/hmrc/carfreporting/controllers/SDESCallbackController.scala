@@ -45,7 +45,7 @@ class SDESCallbackController @Inject() (cc: ControllerComponents, submissionServ
         valid =>
           if (valid.notification == FileProcessingFailure) {
             submissionService.updateFileStatusAsFailure(valid.correlationID, valid.failureReason).value.map {
-              case Right(_)    => NoContent
+              case Right(_)    => Ok
               case Left(error) =>
                 logger.error(
                   s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}"
@@ -54,7 +54,7 @@ class SDESCallbackController @Inject() (cc: ControllerComponents, submissionServ
             }
           } else {
             logger.debug(s"Callback received for upload/correlation ID: ${valid.correlationID}")
-            Future.successful(NoContent)
+            Future.successful(Ok)
           }
       )
   }

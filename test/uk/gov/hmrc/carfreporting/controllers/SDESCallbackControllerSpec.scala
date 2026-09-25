@@ -41,7 +41,7 @@ class SDESCallbackControllerSpec extends SpecBase {
 
     "callback" - {
 
-      "must return NO_CONTENT (204) when notification is FileProcessingFailure and the service successfully updates the status" in {
+      "must return OK (200) when notification is FileProcessingFailure and the service successfully updates the status" in {
         val failureReason = "Virus scan failed"
 
         val requestBodyJson =
@@ -63,7 +63,7 @@ class SDESCallbackControllerSpec extends SpecBase {
 
         val result = testController.callback(fakeRequestWithJsonBody(requestBody))
 
-        status(result) mustEqual NO_CONTENT
+        status(result) mustEqual OK
         verify(mockSubmissionService).updateFileStatusAsFailure(eqTo(testUploadId), eqTo(Some(failureReason)))
       }
 
@@ -93,7 +93,7 @@ class SDESCallbackControllerSpec extends SpecBase {
         verify(mockSubmissionService).updateFileStatusAsFailure(eqTo(testUploadId), eqTo(None))
       }
 
-      "must return NO_CONTENT (204) without calling the service when notification is NOT FileProcessingFailure (e.g., FileProcessed)" in {
+      "must return OK (200) without calling the service when notification is NOT FileProcessingFailure (e.g., FileProcessed)" in {
 
         val requestBodyJson =
           s"""
@@ -110,7 +110,7 @@ class SDESCallbackControllerSpec extends SpecBase {
 
         val result = testController.callback(fakeRequestWithJsonBody(requestBody))
 
-        status(result) mustEqual NO_CONTENT
+        status(result) mustEqual OK
 
         verify(mockSubmissionService, times(0)).updateFileStatusAsFailure(any(), any())
       }

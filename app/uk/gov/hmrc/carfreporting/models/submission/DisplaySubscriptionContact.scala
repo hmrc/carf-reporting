@@ -59,10 +59,3 @@ object DisplaySubscriptionIndividual {
 object DisplaySubscriptionOrganisation {
   implicit val format: OFormat[DisplaySubscriptionOrganisation] = Json.format[DisplaySubscriptionOrganisation]
 }
-
-/*case class SubscriptionContactDetails(name: String, email: String)
-
-
-object SubscriptionContactDetails {
-  implicit val format: OFormat[SubscriptionContactDetails] = Json.format[SubscriptionContactDetails]
-}*/
