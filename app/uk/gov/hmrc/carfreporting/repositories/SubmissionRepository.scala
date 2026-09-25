@@ -147,4 +147,25 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
         )
       )
 
+  def findByUploadId(uploadId: UploadId): ResultT[Option[SubmissionDetailsCache]] =
+    ResultT.fromFuture {
+      collection
+        .find(equal("_id", Codecs.toBson(uploadId.value)))
+        .headOption()
+        .map(Right(_))
+        .recover { case _ =>
+          Left(MongoError("Failed to call SubmissionRepository .findByUploadId"))
+        }
+    }
+
+  def findByCarfId(carfId: String): ResultT[Seq[SubmissionDetailsCache]] =
+    ResultT.fromFuture {
+      collection
+        .find(equal("carfId", Codecs.toBson(carfId)))
+        .toFuture()
+        .map(Right(_))
+        .recover { case _ =>
+          Left(MongoError("Failed to call SubmissionRepository .findByCarfId"))
+        }
+    }
 }

@@ -21,7 +21,7 @@ import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.freespec.AnyFreeSpec
 import uk.gov.hmrc.carfreporting.base.SpecBase
 import uk.gov.hmrc.carfreporting.config.AppConfig
-import uk.gov.hmrc.carfreporting.models.ValidationErrors
+import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationErrors}
 import uk.gov.hmrc.carfreporting.models.errors.BusinessError
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus.{Accepted, Rejected, VirusFound}
 import uk.gov.hmrc.carfreporting.models.submission.SubmissionDetailsCache
@@ -132,6 +132,38 @@ class SubmissionRepositorySpec
             message mustBe "Error updateStatusWithErrors called without rejected status in SubmissionRepository .updateStatusWithErrors"
           case _                            => fail("Expected a BusinessError")
         }
+      }
+    }
+
+    ".findByUploadId" - {
+      "when there is a record for the uploadId" in {
+        insert(testSubmissionDetailsCache).futureValue
+
+        val result = repository.findByUploadId(testUploadId).value.futureValue
+
+        result mustBe Right(Some(testSubmissionDetailsCache))
+      }
+
+      "when there is no record for the uploadId" in {
+        repository.findByUploadId(UploadId("abc")).value.futureValue mustBe Right(None)
+      }
+    }
+
+    ".findByCarfId" - {
+      "when there are records for the carfId" in {
+        val testSubmissionDetailsCache2 =
+          testSubmissionDetailsCache.copy(_id = UploadId("987654"), fileStatus = Rejected)
+
+        insert(testSubmissionDetailsCache).futureValue
+        insert(testSubmissionDetailsCache2).futureValue
+
+        val result = repository.findByCarfId(testCarfRef).value.futureValue
+
+        result mustBe Right(Seq(testSubmissionDetailsCache, testSubmissionDetailsCache2))
+      }
+
+      "when there are no records for the carfId" in {
+        repository.findByCarfId(testCarfRef).value.futureValue mustBe Right(Seq.empty)
       }
     }
   }
