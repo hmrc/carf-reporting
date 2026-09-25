@@ -119,7 +119,7 @@ class UploadFormControllerSpec extends SpecBase {
             |  "mimeType": "application/xml",
             |  "downloadUrl": "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
             |  "size": 987,
-            |  "checksum": "396f1",
+            |  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             |  "_type": "UploadedSuccessfully"
             |}""".stripMargin
 

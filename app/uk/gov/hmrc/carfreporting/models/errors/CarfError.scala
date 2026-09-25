@@ -26,6 +26,8 @@ case class MongoError(value: String = "") extends CarfError {
   override val message: String = value
 }
 
+case class BusinessError(override val message: String = "") extends CarfError
+
 sealed trait ApiError extends CarfError
 
 object ApiError {
@@ -42,6 +44,10 @@ object ApiError {
 
   case object JsonValidationError extends ApiError {
     override val message: String = "Json Validation Error"
+  }
+
+  case object InternalServerError extends ApiError {
+    override val message: String = "Internal Server Error"
   }
 }
 

@@ -33,7 +33,7 @@ class CallbackBodySpec extends SpecBase {
           |   "downloadUrl": "http://test.com",
           |   "uploadDetails": {
           |     "uploadTimestamp": 1591464117,
-          |     "checksum": "396f1",
+          |     "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           |     "fileMimeType": "application/xml",
           |     "fileName": "test.xml",
           |     "size": 987
@@ -45,7 +45,7 @@ class CallbackBodySpec extends SpecBase {
         "http://test.com",
         UploadDetails(
           uploadTimestamp = Instant.ofEpochMilli(1591464117),
-          checksum = "396f1",
+          checksum = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           fileMimeType = "application/xml",
           fileName = "test.xml",
           size = 987L

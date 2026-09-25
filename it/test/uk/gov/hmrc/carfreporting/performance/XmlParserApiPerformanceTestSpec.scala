@@ -18,27 +18,35 @@ package uk.gov.hmrc.carfreporting.performance
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.carfreporting.base.NoGuiceSpecBase
+import uk.gov.hmrc.carfreporting.config.AppConfig
+import uk.gov.hmrc.carfreporting.config.Constants.ukZoneId
 import uk.gov.hmrc.carfreporting.controllers.XmlValidationAndExtractionController
 import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, XmlDispatcher}
 import uk.gov.hmrc.carfreporting.itutil.Reporter.*
-import uk.gov.hmrc.carfreporting.models.SavedAEOIFileDetails
+import uk.gov.hmrc.carfreporting.models.submission.SubmissionDetailsCache
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.services.{XmlDataHandlerService, XmlParserService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import java.nio.file.Paths
+import java.time.{Clock, Instant}
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
 
-class XmlParserApiPerformanceTestSpec extends NoGuiceSpecBase
-  with DefaultPlayMongoRepositorySupport[SavedAEOIFileDetails] {
+class XmlParserApiPerformanceTestSpec
+    extends NoGuiceSpecBase
+    with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
 
-  override protected val checkTtlIndex: Boolean = false // TODO remove when CARF-611 is implemented
-  
+  val clock: Clock = Clock.fixed(Instant.ofEpochMilli(1718118467838L), ukZoneId)
+
+  val config: AppConfig = mock[AppConfig]
+
   val repository: SubmissionRepository = new SubmissionRepository(
-    mongoComponent = mongoComponent
-  )
-  
+    mongoComponent = mongoComponent,
+    appConfig = config,
+    clock = clock
+  )(ec)
+
   override def beforeEach(): Unit = {
     println("Cleaning")
     System.gc()

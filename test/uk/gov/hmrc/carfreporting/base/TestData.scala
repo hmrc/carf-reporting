@@ -18,12 +18,18 @@ package uk.gov.hmrc.carfreporting.base
 
 import org.bson.types.ObjectId
 import uk.gov.hmrc.carfreporting.config.Constants.ukZoneId
+import uk.gov.hmrc.carfreporting.models.*
 import uk.gov.hmrc.carfreporting.models.errors.{XmlError, XmlErrors}
+import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
+import uk.gov.hmrc.carfreporting.models.requests.sdes.*
+import uk.gov.hmrc.carfreporting.models.requests.sdes.Algorithm.SHA256
+import uk.gov.hmrc.carfreporting.models.submission.*
+import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Pending
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
-import uk.gov.hmrc.carfreporting.models.*
 
 import java.time.*
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 trait TestData {
@@ -32,9 +38,9 @@ trait TestData {
 
   val uuid: String = UUID.randomUUID().toString
 
-  val testUploadId    = UploadId(uuid)
-  val testReference   = Reference("11370e18-6e24-453e-b45a-76d3e32ea33d")
-  val testDownloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676"
+  val testUploadId           = UploadId(uuid)
+  val testReference          = Reference("11370e18-6e24-453e-b45a-76d3e32ea33d")
+  inline val testDownloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676"
 
   val uploadSessionDetails = UploadSessionDetails(
     ObjectId.get(),
@@ -46,7 +52,7 @@ trait TestData {
 
   val uploadDetails = UploadDetails(
     uploadTimestamp = Instant.now(clock),
-    checksum = "396f1",
+    checksum = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     fileMimeType = "application/xml",
     fileName = "test.xml",
     size = 987L
@@ -76,7 +82,7 @@ trait TestData {
       mimeType = "application/xml",
       downloadUrl = testDownloadUrl,
       size = Some(987L),
-      checksum = Some("396f1")
+      checksum = Some("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
     )
 
   val uploadRejected: UploadStatus.UploadRejected = UploadRejected(errorDetails("REJECTED"))
@@ -119,41 +125,101 @@ trait TestData {
     )
   )
 
-  val validExtractedAEOIFileDetails = ExtractedAEOIFileDetails(
-    testUploadId,
+  val validExtractedAEOIFileDetails     = ExtractedAEOIFileDetails(
+    UploadId("3ada9236-21a6-4ad2-9f0c-f01shdt40c5"),
     ValidationErrors(
       Seq.empty,
       Seq.empty
     ),
-    ValidationResult("Accepted")
+    ValidationResult(ValidationStatus.fromString("Accepted"))
   )
-
-  val invalidExtractedAEOIFileDetails = ExtractedAEOIFileDetails(
-    testUploadId,
-    ValidationErrors(
-      fileError = Seq(
-        FileError(
-          code = "50009",
-          details = Some("Duplicate message ref IDs")
-        )
-      ),
-      recordError = Seq(
-        RecordError(
-          code = "80000",
-          details = Some("Duplicate doc ref IDs"),
-          docRefIDInError = Seq(
-            "CBCUSER001DHSJEURUT20001",
-            "CBCUSER001DHSJEURUT20002"
-          )
-        )
+  lazy val businessRuleValidationErrors = ValidationErrors(
+    fileError = Seq(
+      FileError(
+        code = "50009",
+        details = Some("Duplicate message ref IDs")
       )
     ),
-    ValidationResult("Rejected")
+    recordError = Seq(
+      RecordError(
+        code = "80000",
+        details = Some("Duplicate doc ref IDs"),
+        docRefIDInError = Seq(
+          "CBCUSER001DHSJEURUT20001",
+          "CBCUSER001DHSJEURUT20002"
+        )
+      )
+    )
+  )
+
+  val validExtractedAEOIFileDetailsWithErrors = ExtractedAEOIFileDetails(
+    UploadId("3ada9236-21a6-4ad2-9f0c-f01shdt40c5"),
+    businessRuleValidationErrors,
+    ValidationResult(ValidationStatus.fromString("Rejected"))
   )
 
   lazy val testSavedAEOIFileDetails: SavedAEOIFileDetails = SavedAEOIFileDetails(
     ObjectId.get(),
     validExtractedAEOIFileDetails,
     Instant.ofEpochSecond(1)
+  )
+
+  val testNotification: FileTransferNotification = FileTransferNotification(
+    informationType = "carf-reporting",
+    file = File(
+      name = FileName("test-file.xml"),
+      location = "http://localhost:8080/download",
+      checksum = Checksum(SHA256, "checksum12345"),
+      size = 1024,
+      recipientOrSender = Some("Sender"),
+      properties = List(Property("name", "value"))
+    ),
+    audit = Audit("correlation-id-123456789")
+  )
+
+  inline val testCarfRef = "XACARF000001234"
+
+  lazy val displaySubscriptionDetails: DisplaySubscriptionDetails = DisplaySubscriptionDetails(
+    carfReference = CarfId(testCarfRef),
+    gbUser = true,
+    primaryContact = DisplaySubscriptionContact(
+      individual = Some(DisplaySubscriptionIndividual("Jane", "Smith")),
+      organisation = None,
+      email = "jane.smith@example.com"
+    ),
+    secondaryContact = None
+  )
+
+  val individualRcaspDetails =
+    IndividualRcaspDetails(
+      RCASPID = "ZMCAR0123456788",
+      IsRCASPUser = false,
+      FirstName = "testFirstName",
+      LastName = "testLastName",
+      PrimaryContactDetails = RcaspContactDetails(ContactName = "testContactName", EmailAddress = "test@example.com")
+    )
+
+  val testSubmissionRequest: SubmissionRequest = SubmissionRequest(
+    fileName = FileName("test-file.xml"),
+    uploadId = testUploadId,
+    fileSize = 1024L,
+    documentUrl = "http://localhost:8080/file",
+    checksum = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    rcaspDetails = individualRcaspDetails,
+    subscriptionDetails = displaySubscriptionDetails,
+    extractedFileDetails = extractedFileDetailsCarf
+  )
+
+  lazy val testSubmissionDetailsCache: SubmissionDetailsCache = SubmissionDetailsCache(
+    testSubmissionRequest.uploadId,
+    testSubmissionRequest.subscriptionDetails.carfReference,
+    Pending,
+    testSubmissionRequest.fileName,
+    extractedFileDetailsCarf,
+    rcaspDetails = individualRcaspDetails,
+    subscriptionDetails = displaySubscriptionDetails,
+    submissionTime = Instant.ofEpochSecond(1),
+    lastStatusUpdateTime = Instant.now.truncatedTo(ChronoUnit.SECONDS),
+    businessRuleErrors = ValidationErrors.apply()
   )
 }
