@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.models
+package uk.gov.hmrc.carfreporting.models.requests.sdes
 
-import play.api.libs.json.*
+import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.carfreporting.models.UploadId
+import uk.gov.hmrc.carfreporting.models.submission.NotificationType
 
-/** @param value
-  *   also being used as a conversationId to SDES and a correlationId in SDES Callback
-  */
+import java.time.LocalDateTime
 
-case class UploadId(value: String)
+case class CallbackRequest(
+    notification: NotificationType,
+    filename: String,
+    checksumAlgorithm: Algorithm,
+    checksum: String,
+    correlationID: UploadId,
+    dateTime: Option[LocalDateTime],
+    failureReason: Option[String] = None
+)
 
-object UploadId {
-
-  implicit val reads: Reads[UploadId] =
-    Reads.StringReads.map(UploadId(_))
-
-  implicit val writes: Writes[UploadId] =
-    Writes[UploadId](x => JsString(x.value))
+object CallbackRequest {
+  implicit val format: OFormat[CallbackRequest] = Json.format[CallbackRequest]
 }

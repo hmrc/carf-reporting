@@ -418,7 +418,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
         inputStream.close()
 
         result match {
-          case Right(result) => result mustBe validExtractedAEOIFileDetails.copy(uploadId = result.uploadId)
+          case Right(result) => result mustBe validExtractedAEOIFileDetails
           case _             => fail()
         }
       }
@@ -431,8 +431,9 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
 
         val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
         inputStream.close()
+
         result match {
-          case Right(result) => result mustBe invalidExtractedAEOIFileDetails.copy(uploadId = result.uploadId)
+          case Right(result) => result mustBe validExtractedAEOIFileDetailsWithErrors
           case _             => fail()
         }
       }
@@ -458,7 +459,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
       }
 
       "must truncate errors and exit cleanly when schema errors exceed max errors of (101) and xml contains 150 errors" in {
-        val path        = "data/examples/aeoi/BusinessRuleCheckSampleRequest_validFile_with_150_errors.xml"
+        val path        = "data/examples/aeoi/BusinessRuleCheckSampleRequest_invalidFile_with_150_errors.xml"
         val inputStream = getInputStream(path)
 
         val service = new XmlDataHandlerService

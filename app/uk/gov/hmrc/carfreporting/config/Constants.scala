@@ -26,5 +26,6 @@ object Constants {
   val correctionDocTypeIndic: String     = "OECD2"
   val deletionDocTypeIndic: String       = "OECD3"
   val nilReportMessageTypeIndic: String  = "CARF703"
+  lazy val conversationIdHeader          = "x-conversation-id"
 
 }

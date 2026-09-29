@@ -16,19 +16,19 @@
 
 package uk.gov.hmrc.carfreporting.services
 
-import org.bson.types.ObjectId
 import org.codehaus.stax2.validation.*
 import play.api.{Environment, Logging}
 import uk.gov.hmrc.carfreporting.dispatchers.XmlDispatcher
-import uk.gov.hmrc.carfreporting.models.{ExtractedAEOIFileDetails, ExtractedCarfFileDetails, SavedAEOIFileDetails, UploadId, ValidationErrors, ValidationResult, ValidationType}
-import uk.gov.hmrc.carfreporting.models.errors.*
-import uk.gov.hmrc.carfreporting.types.ResultT
 import uk.gov.hmrc.carfreporting.models.ValidationType.{AEOI, CARF}
+import uk.gov.hmrc.carfreporting.models.errors.*
+import uk.gov.hmrc.carfreporting.models.submission.FileStatus
+import uk.gov.hmrc.carfreporting.models.submission.FileStatus.UnprocessableErrorFile
+import uk.gov.hmrc.carfreporting.models.*
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
+import uk.gov.hmrc.carfreporting.types.ResultT
 
 import java.io.{FileNotFoundException, InputStream}
 import java.net.URI
-import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -49,49 +49,44 @@ class XmlParserService @Inject (
                      }
     } yield result
 
-  def validateAndExtractAEOI(path: String): ResultT[ExtractedAEOIFileDetails] =
+  def validateAndExtractAEOI(path: String, conversationId: UploadId): ResultT[ExtractedAEOIFileDetails] =
     for {
       schema               <- loadSchema(AEOI)
-      inputStream          <- openInputStream(path).leftFlatMap(saveToRepository)
+      inputStream          <- openInputStream(path).leftFlatMap(saveToRepository(_, conversationId))
       extractedFileDetails <-
         initiate(schema, inputStream) { (schema, inputStream) =>
           dataHandlerService.aeoiValidationAndExtraction(schema, inputStream)
-        }.leftFlatMap(saveToRepository)
-      _                    <-
-        submissionRepository.insert(
-          SavedAEOIFileDetails(
-            ObjectId.get(),
-            extractedFileDetails
-          )
-        )
+        }.leftFlatMap(saveToRepository(_, conversationId))
+      _                    <- {
+        extractedFileDetails.validationResult.status match {
+          case ValidationStatus.Accepted =>
+            submissionRepository.updateStatus(
+              conversationId,
+              FileStatus.Accepted
+            )
+          case ValidationStatus.Rejected =>
+            submissionRepository.updateStatusWithErrors(
+              conversationId,
+              FileStatus.Rejected,
+              extractedFileDetails.validationErrors
+            )
+        }
+      }
     } yield extractedFileDetails
 
-  private def saveToRepository[T](initialError: CarfError): ResultT[T] =
+  private def saveToRepository[T](initialError: CarfError, conversationId: UploadId): ResultT[T] =
     val savedStatus = initialError match {
       case InvalidXmlError => "SchemaValidationError"
       case _: XmlErrors    => "SchemaValidationError"
       case _               => "UnexpectedFailure"
     }
+
     logger.warn(
-      s"[XmlParserService][validateAndExtractAEOI] XML Parsing Failure detected, " +
-        s"saving status to database as $savedStatus"
+      s"[XmlParserService][validateAndExtractAEOI] XML Parsing Failure detected, caused by $savedStatus"
     )
 
-    val submissionUponFailure = SavedAEOIFileDetails(
-      ObjectId.get(),
-      ExtractedAEOIFileDetails(
-        uploadId = UploadId(UUID.randomUUID().toString),
-        validationErrors = ValidationErrors(
-          fileError = Seq.empty,
-          recordError = Seq.empty
-        ),
-        validationResult = ValidationResult(
-          status = savedStatus
-        )
-      )
-    )
     submissionRepository
-      .insert(submissionUponFailure)
+      .updateStatus(conversationId, UnprocessableErrorFile)
       .leftMap { _ =>
         logger.warn(
           "[XmlParserService][validateAndExtractAEOI] Repository call to submissionRepository.insert threw " +

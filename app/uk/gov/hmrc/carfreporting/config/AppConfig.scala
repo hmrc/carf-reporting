@@ -18,11 +18,18 @@ package uk.gov.hmrc.carfreporting.config
 
 import javax.inject.{Inject, Singleton}
 import play.api.Configuration
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 @Singleton
-class AppConfig @Inject() (config: Configuration) {
+class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig) {
 
-  val appName: String = config.get[String]("appName")
+  final val appName: String = config.get[String]("appName")
 
-  lazy val cacheTtl: Long = config.get[Long]("mongodb.timeToLiveInSeconds")
+  val cacheTtl: Long = config.get[Long]("mongodb.upscanTimeToLiveInSeconds")
+
+  private val sdesBaseUrl: String = servicesConfig.baseUrl("sdes")
+  val sdesUrl: String             = s"$sdesBaseUrl/${config.get[String]("sdes.url")}"
+  val sdesInformationType: String = s"${config.get[String]("sdes.informationType")}"
+
+  val submissionTtlDays: Long = config.get[Long]("mongodb.submissionTimeToLiveInDays")
 }

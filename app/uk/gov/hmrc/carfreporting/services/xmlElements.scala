@@ -44,6 +44,8 @@ object xmlElements {
   }
 
   object AEOIRequestDetail {
+    val REQUEST_COMMON         = "requestCommon"
+    val CONVERSATION_ID        = "conversationID"
     val REQUEST_DETAIL         = "requestDetail"
     val GENERIC_STATUS_MESSAGE = "GenericStatusMessage"
     val VALIDATION_ERRORS      = "ValidationErrors"

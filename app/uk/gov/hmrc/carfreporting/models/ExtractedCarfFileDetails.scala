@@ -18,7 +18,6 @@ package uk.gov.hmrc.carfreporting.models
 
 import play.api.libs.json.*
 
-// TODO: Change messageTypeIndic and docTypeIndic to enums with json reads/writes for when receiving ExtractedFileDetails from the frontend and saving to Mongo (CARF-611)
 case class ExtractedCarfFileDetails(
     messageRefId: String,
     sendingEntityIn: String,

@@ -5,7 +5,7 @@
            version="1.5">
 
   <MessageSpec>
-    <SendingEntityIN>SENDER-001</SendingEntityIN>
+    <SendingEntityIN>ZMCAR0123456786</SendingEntityIN>
     <TransmittingCountry>GB</TransmittingCountry>
     <ReceivingCountry>US</ReceivingCountry>
     <MessageType>CARF</MessageType>

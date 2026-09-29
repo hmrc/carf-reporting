@@ -47,7 +47,7 @@ class UploadCallbackControllerSpec extends SpecBase {
               "fileName" : "test.xml",
               "fileMimeType" : "application/xml",
               "uploadTimestamp" : "2018-04-24T09:30:00Z",
-              "checksum" : "396f1",
+              "checksum" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
               "size" : 987
               },
             "fileStatus" : "READY"
@@ -143,7 +143,7 @@ class UploadCallbackControllerSpec extends SpecBase {
             "fileName" : "test.xml",
             "fileMimeType" : "application/xml",
             "uploadTimestamp" : "2018-04-24T09:30:00Z",
-            "checksum" : "396f1",
+            "checksum" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "size" : 987
             },
           "fileStatus" : "READY"
