@@ -22,8 +22,6 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.carfreporting.controllers.actions.AuthAction
 import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.NotFoundError
-import uk.gov.hmrc.carfreporting.models.submission.FileStatus
-import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.services.submission.SubmissionService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 

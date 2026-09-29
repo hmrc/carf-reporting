@@ -20,16 +20,19 @@ import play.api.Logging
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.carfreporting.models.requests.sdes.CallbackRequest
-import uk.gov.hmrc.carfreporting.models.submission.NotificationType.FileProcessingFailure
-import uk.gov.hmrc.carfreporting.services.submission.SubmissionService
+import uk.gov.hmrc.carfreporting.models.submission.NotificationType.{FileProcessingFailure, FileReady}
+import uk.gov.hmrc.carfreporting.services.submission.{SDESService, SubmissionService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class SDESCallbackController @Inject() (cc: ControllerComponents, submissionService: SubmissionService)(implicit
-    e: ExecutionContext
-) extends BackendController(cc)
+class SDESCallbackController @Inject() (
+    cc: ControllerComponents,
+    submissionService: SubmissionService,
+    sdesService: SDESService
+)(implicit e: ExecutionContext)
+    extends BackendController(cc)
     with Logging {
 
   def callback: Action[JsValue] = Action.async(parse.json) { implicit request =>
@@ -43,18 +46,30 @@ class SDESCallbackController @Inject() (cc: ControllerComponents, submissionServ
           Future.successful(BadRequest(s"Request body provided is invalid with message: ${invalid.mkString(",\n")}"))
         ,
         valid =>
-          if (valid.notification == FileProcessingFailure) {
-            submissionService.updateFileStatusAsFailure(valid.correlationID, valid.failureReason).value.map {
-              case Right(_)    => Ok
-              case Left(error) =>
-                logger.error(
-                  s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}"
-                )
-                InternalServerError("Unexpected error")
-            }
-          } else {
-            logger.debug(s"Callback received for upload/correlation ID: ${valid.correlationID}")
-            Future.successful(Ok)
+          valid.notification match {
+            case FileProcessingFailure =>
+              submissionService.updateFileStatusAsFailure(valid.correlationID, valid.failureReason).value.map {
+                case Right(_)    => Ok
+                case Left(error) =>
+                  logger.error(
+                    s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}"
+                  )
+                  InternalServerError("Unexpected error")
+              }
+            case FileReady             =>
+              sdesService.getAndProcessBusinessRulesResponseFile(valid.correlationID, valid.filename).value.map {
+                case Right(_)    => Ok
+                case Left(error) =>
+                  logger.error(
+                    s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}"
+                  )
+                  InternalServerError("Unexpected error")
+              }
+            case _                     =>
+              logger.debug(
+                s"[SDESCallbackController][callback] Callback received for upload/correlation ID: ${valid.correlationID}"
+              )
+              Future.successful(Ok)
           }
       )
   }
