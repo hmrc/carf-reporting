@@ -21,8 +21,10 @@ import play.api.libs.json.*
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.carfreporting.controllers.actions.AuthAction
 import uk.gov.hmrc.carfreporting.models.UploadId
+import uk.gov.hmrc.carfreporting.models.errors.ApiError.NotFoundError
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
+import uk.gov.hmrc.carfreporting.services.submission.SubmissionService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
@@ -31,36 +33,21 @@ import scala.concurrent.ExecutionContext
 class SubmissionDetailsController @Inject() (
     authorise: AuthAction,
     cc: ControllerComponents,
-    submissionRepository: SubmissionRepository
+    submissionService: SubmissionService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging {
 
-  def getFileStatus(uploadId: String): Action[AnyContent] = authorise.async { implicit request =>
-    submissionRepository.findByUploadId(UploadId(uploadId)).value.map {
-      case Right(Some(submissionDetails)) =>
-        Ok(Json.toJson(submissionDetails.fileStatus))
-      case Right(None)                    =>
-        logger.warn(s"[SubmissionDetailsController][getFileStatus] Submission details not found for uploadId $uploadId")
-        NotFound
-      case Left(error)                    =>
-        logger.warn(
-          s"[SubmissionDetailsController][getFileStatus] Error getting submission details for uploadId $uploadId"
-        )
-        InternalServerError(s"Unexpected error: $error")
-    }
-  }
-
   def getSubmissionDetailsByUploadId(uploadId: String): Action[AnyContent] = authorise.async { implicit request =>
-    submissionRepository.findByUploadId(UploadId(uploadId)).value.map {
-      case Right(Some(submissionDetails)) =>
+    submissionService.getSubmissionDetailsByUploadId(UploadId(uploadId)).value.map {
+      case Right(submissionDetails) =>
         Ok(Json.toJson(submissionDetails))
-      case Right(None)                    =>
+      case Left(NotFoundError)      =>
         logger.warn(
           s"[SubmissionDetailsController][getSubmissionDetailsByUploadId] Submission details not found for uploadId $uploadId"
         )
         NotFound
-      case Left(error)                    =>
+      case Left(error)              =>
         logger.warn(
           s"[SubmissionDetailsController][getSubmissionDetailsByUploadId] Error getting submission details for uploadId $uploadId"
         )
@@ -69,7 +56,7 @@ class SubmissionDetailsController @Inject() (
   }
 
   def getSubmissionDetailsByCarfId(carfId: String): Action[AnyContent] = authorise.async { implicit request =>
-    submissionRepository.findByCarfId(carfId).value.map {
+    submissionService.getSubmissionDetailsByCarfId(carfId).value.map {
       case Right(submissionDetailsList) =>
         Ok(Json.toJson(submissionDetailsList))
       case Left(error)                  =>

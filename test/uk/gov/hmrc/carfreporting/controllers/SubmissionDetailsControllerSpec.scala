@@ -22,85 +22,51 @@ import play.api.libs.json.Json
 import play.api.test.Helpers.*
 import uk.gov.hmrc.carfreporting.base.SpecBase
 import uk.gov.hmrc.carfreporting.models.UploadId
+import uk.gov.hmrc.carfreporting.models.errors.ApiError.NotFoundError
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
-import uk.gov.hmrc.carfreporting.models.submission.FileStatus.{Pending, Rejected}
+import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Rejected
 import uk.gov.hmrc.carfreporting.models.submission.SubmissionDetailsCache
-import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
+import uk.gov.hmrc.carfreporting.services.submission.SubmissionService
 import uk.gov.hmrc.carfreporting.types.ResultT
 
 class SubmissionDetailsControllerSpec extends SpecBase {
 
-  val mockSubmissionRepository: SubmissionRepository = mock[SubmissionRepository]
+  val mockSubmissionService: SubmissionService = mock[SubmissionService]
 
-  val controller = new SubmissionDetailsController(fakeAuthAction, cc, mockSubmissionRepository)
+  val controller = new SubmissionDetailsController(fakeAuthAction, cc, mockSubmissionService)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockSubmissionRepository)
+    reset(mockSubmissionService)
   }
 
   "SubmissionDetailsController" - {
-    ".getFileStatus" - {
-      "must return OK with the file status when a record is found" in {
-        when(mockSubmissionRepository.findByUploadId(eqTo(testUploadId)))
-          .thenReturn(ResultT.fromValue(Some(testSubmissionDetailsCache)))
-
-        val result = controller.getFileStatus(testUploadId.value)(fakeRequest)
-
-        status(result)        mustEqual OK
-        contentAsJson(result) mustEqual Json.toJson(Pending)
-
-        verify(mockSubmissionRepository, times(1)).findByUploadId(eqTo(testUploadId))
-      }
-
-      "must return NotFound when no record is found" in {
-        when(mockSubmissionRepository.findByUploadId(eqTo(testUploadId))).thenReturn(ResultT.fromValue(None))
-
-        val result = controller.getFileStatus(testUploadId.value)(fakeRequest)
-
-        status(result) mustEqual NOT_FOUND
-
-        verify(mockSubmissionRepository, times(1)).findByUploadId(eqTo(testUploadId))
-      }
-
-      "must return InternalServerError when the repository returns an error" in {
-        when(mockSubmissionRepository.findByUploadId(eqTo(testUploadId)))
-          .thenReturn(ResultT.fromError(MongoError("Error message")))
-
-        val result = controller.getFileStatus(testUploadId.value)(fakeRequest)
-
-        status(result)     mustEqual INTERNAL_SERVER_ERROR
-        contentAsString(result) must include("Unexpected error")
-
-        verify(mockSubmissionRepository, times(1)).findByUploadId(eqTo(testUploadId))
-      }
-    }
-
     ".getSubmissionDetailsByUploadId" - {
       "must return OK with the file status when a record is found" in {
-        when(mockSubmissionRepository.findByUploadId(eqTo(testUploadId)))
-          .thenReturn(ResultT.fromValue(Some(testSubmissionDetailsCache)))
+        when(mockSubmissionService.getSubmissionDetailsByUploadId(eqTo(testUploadId)))
+          .thenReturn(ResultT.fromValue(testSubmissionDetailsCache))
 
         val result = controller.getSubmissionDetailsByUploadId(testUploadId.value)(fakeRequest)
 
         status(result)        mustEqual OK
         contentAsJson(result) mustEqual Json.toJson(testSubmissionDetailsCache)
 
-        verify(mockSubmissionRepository, times(1)).findByUploadId(eqTo(testUploadId))
+        verify(mockSubmissionService, times(1)).getSubmissionDetailsByUploadId(eqTo(testUploadId))
       }
 
       "must return NotFound when no record is found" in {
-        when(mockSubmissionRepository.findByUploadId(eqTo(testUploadId))).thenReturn(ResultT.fromValue(None))
+        when(mockSubmissionService.getSubmissionDetailsByUploadId(eqTo(testUploadId)))
+          .thenReturn(ResultT.fromError(NotFoundError))
 
         val result = controller.getSubmissionDetailsByUploadId(testUploadId.value)(fakeRequest)
 
         status(result) mustEqual NOT_FOUND
 
-        verify(mockSubmissionRepository, times(1)).findByUploadId(eqTo(testUploadId))
+        verify(mockSubmissionService, times(1)).getSubmissionDetailsByUploadId(eqTo(testUploadId))
       }
 
-      "must return InternalServerError when the repository returns an error" in {
-        when(mockSubmissionRepository.findByUploadId(eqTo(testUploadId)))
+      "must return InternalServerError when the service returns another error" in {
+        when(mockSubmissionService.getSubmissionDetailsByUploadId(eqTo(testUploadId)))
           .thenReturn(ResultT.fromError(MongoError("Error message")))
 
         val result = controller.getSubmissionDetailsByUploadId(testUploadId.value)(fakeRequest)
@@ -108,7 +74,7 @@ class SubmissionDetailsControllerSpec extends SpecBase {
         status(result)     mustEqual INTERNAL_SERVER_ERROR
         contentAsString(result) must include("Unexpected error")
 
-        verify(mockSubmissionRepository, times(1)).findByUploadId(eqTo(testUploadId))
+        verify(mockSubmissionService, times(1)).getSubmissionDetailsByUploadId(eqTo(testUploadId))
       }
     }
 
@@ -119,7 +85,7 @@ class SubmissionDetailsControllerSpec extends SpecBase {
           testSubmissionDetailsCache.copy(_id = UploadId("987654"), fileStatus = Rejected)
         )
 
-        when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+        when(mockSubmissionService.getSubmissionDetailsByCarfId(eqTo(testCarfRef)))
           .thenReturn(ResultT.fromValue(submissionDetailsList))
 
         val result = controller.getSubmissionDetailsByCarfId(testCarfRef)(fakeRequest)
@@ -127,11 +93,11 @@ class SubmissionDetailsControllerSpec extends SpecBase {
         status(result)        mustEqual OK
         contentAsJson(result) mustEqual Json.toJson(submissionDetailsList)
 
-        verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+        verify(mockSubmissionService, times(1)).getSubmissionDetailsByCarfId(eqTo(testCarfRef))
       }
 
       "must return OK with an empty list of submission details" in {
-        when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+        when(mockSubmissionService.getSubmissionDetailsByCarfId(eqTo(testCarfRef)))
           .thenReturn(ResultT.fromValue(Seq.empty))
 
         val result = controller.getSubmissionDetailsByCarfId(testCarfRef)(fakeRequest)
@@ -139,11 +105,11 @@ class SubmissionDetailsControllerSpec extends SpecBase {
         status(result)        mustEqual OK
         contentAsJson(result) mustEqual Json.toJson(Seq.empty[SubmissionDetailsCache])
 
-        verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+        verify(mockSubmissionService, times(1)).getSubmissionDetailsByCarfId(eqTo(testCarfRef))
       }
 
       "must return InternalServerError when the repository returns an error" in {
-        when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+        when(mockSubmissionService.getSubmissionDetailsByCarfId(eqTo(testCarfRef)))
           .thenReturn(ResultT.fromError(MongoError("Error message")))
 
         val result = controller.getSubmissionDetailsByCarfId(testCarfRef)(fakeRequest)
@@ -151,7 +117,7 @@ class SubmissionDetailsControllerSpec extends SpecBase {
         status(result)     mustEqual INTERNAL_SERVER_ERROR
         contentAsString(result) must include("Unexpected error")
 
-        verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+        verify(mockSubmissionService, times(1)).getSubmissionDetailsByCarfId(eqTo(testCarfRef))
       }
     }
   }
