@@ -23,6 +23,7 @@ import uk.gov.hmrc.carfreporting.models.errors.{XmlError, XmlErrors}
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
 import uk.gov.hmrc.carfreporting.models.requests.sdes.*
 import uk.gov.hmrc.carfreporting.models.requests.sdes.Algorithm.SHA256
+import uk.gov.hmrc.carfreporting.models.responses.{FileListing, FileListingMetadata}
 import uk.gov.hmrc.carfreporting.models.submission.*
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Pending
 import uk.gov.hmrc.carfreporting.models.upscan.*
@@ -125,7 +126,7 @@ trait TestData {
     )
   )
 
-  val validExtractedAEOIFileDetails     = ExtractedAEOIFileDetails(
+  val validExtractedAEOIFileDetails = ExtractedAEOIFileDetails(
     UploadId("3ada9236-21a6-4ad2-9f0c-f01shdt40c5"),
     ValidationErrors(
       Seq.empty,
@@ -133,6 +134,7 @@ trait TestData {
     ),
     ValidationResult(ValidationStatus.fromString("Accepted"))
   )
+
   lazy val businessRuleValidationErrors = ValidationErrors(
     fileError = Seq(
       FileError(
@@ -221,5 +223,24 @@ trait TestData {
     submissionTime = Instant.ofEpochSecond(1),
     lastStatusUpdateTime = Instant.now.truncatedTo(ChronoUnit.SECONDS),
     businessRuleErrors = ValidationErrors.apply()
+  )
+
+  val testBusinessRulesFileName = "br-file-1.xml"
+
+  val testSdesFileListing: Seq[FileListing] = Seq(
+    FileListing(
+      filename = testBusinessRulesFileName,
+      fileSize = 100L,
+      downloadURL = testDownloadUrl,
+      metadata = Seq(
+        FileListingMetadata(metadata = "FileType", value = "XML")
+      )
+    ),
+    FileListing(
+      filename = "br-file-2.xml",
+      fileSize = 345L,
+      downloadURL = testDownloadUrl,
+      metadata = Seq.empty
+    )
   )
 }

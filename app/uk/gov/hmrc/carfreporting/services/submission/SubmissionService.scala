@@ -16,10 +16,12 @@
 
 package uk.gov.hmrc.carfreporting.services.submission
 
-import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationErrors}
+import play.api.Logging
+import uk.gov.hmrc.carfreporting.models.errors.ApiError.NotFoundError
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
 import uk.gov.hmrc.carfreporting.models.submission.*
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Pending
+import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationErrors}
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.types.ResultT
 import uk.gov.hmrc.http.HeaderCarrier
@@ -30,7 +32,7 @@ import scala.concurrent.ExecutionContext
 
 class SubmissionService @Inject() (sdesService: SDESService, repository: SubmissionRepository)(implicit
     ec: ExecutionContext
-) {
+) extends Logging {
 
   def saveAndSubmit(submissionRequest: SubmissionRequest)(implicit headerCarrier: HeaderCarrier): ResultT[Unit] = {
     val submissionTime  = Instant.now
@@ -64,4 +66,30 @@ class SubmissionService @Inject() (sdesService: SDESService, repository: Submiss
         }
       }
       .map(_ => ())
+
+  def getSubmissionDetailsByUploadId(uploadId: UploadId): ResultT[SubmissionDetailsCache] =
+    repository
+      .findByUploadId(uploadId)
+      .leftMap { error =>
+        logger.warn(
+          s"[SubmissionService][getSubmissionDetailsByUploadId] Error getting submission details for uploadId $uploadId"
+        )
+        error
+      }
+      .subflatMap { maybeSubmissionDetails =>
+        maybeSubmissionDetails.fold {
+          logger.warn(
+            s"[SubmissionService][getSubmissionDetailsByUploadId] Submission details not found for uploadId $uploadId"
+          )
+          Left(NotFoundError)
+        }(Right(_))
+      }
+
+  def getSubmissionDetailsByCarfId(carfId: String): ResultT[Seq[SubmissionDetailsCache]] =
+    repository.findByCarfId(carfId).leftMap { error =>
+      logger.warn(
+        s"[SubmissionService][getSubmissionDetailsByCarfId] Error getting submission details for carfId $carfId"
+      )
+      error
+    }
 }
