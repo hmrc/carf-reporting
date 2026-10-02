@@ -20,7 +20,7 @@ import play.api.Logging
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.carfreporting.models.requests.sdes.CallbackRequest
-import uk.gov.hmrc.carfreporting.models.submission.NotificationType.{FileProcessingFailure, FileReady}
+import uk.gov.hmrc.carfreporting.models.submission.NotificationType.*
 import uk.gov.hmrc.carfreporting.services.submission.{SDESService, SubmissionService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -47,7 +47,7 @@ class SDESCallbackController @Inject() (
         ,
         valid =>
           valid.notification match {
-            case FileProcessingFailure =>
+            case FileProcessingFailure        =>
               submissionService.updateFileStatusAsFailure(valid.correlationID, valid.failureReason).value.map {
                 case Right(_)    => Ok
                 case Left(error) =>
@@ -56,7 +56,7 @@ class SDESCallbackController @Inject() (
                   )
                   InternalServerError("Unexpected error")
               }
-            case FileReady             =>
+            case FileReady                    =>
               sdesService.getAndProcessBusinessRulesResponseFile(valid.correlationID, valid.filename).value.map {
                 case Right(_)    => Ok
                 case Left(error) =>
@@ -65,7 +65,7 @@ class SDESCallbackController @Inject() (
                   )
                   InternalServerError("Unexpected error")
               }
-            case _                     =>
+            case FileProcessed | FileReceived =>
               logger.debug(
                 s"[SDESCallbackController][callback] Callback received for upload/correlation ID: ${valid.correlationID}"
               )

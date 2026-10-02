@@ -76,7 +76,9 @@ class SDESService @Inject() (
           fileList
             .find(_.filename == fileName)
             .fold {
-              logger.warn("[SDESService][getAndProcessBusinessRulesResponseFile] No file with matching file name found")
+              logger.warn(
+                s"[SDESService][getAndProcessBusinessRulesResponseFile] No file with matching file name in File Listing API response - uploadId: ${uploadId.value}"
+              )
               repository.updateStatus(uploadId, FileStatus.UnexpectedError).value.map(_ => Left(InternalServerError))
             } { fileListingRecord =>
               xmlParserService.validateAndExtractAEOI(fileListingRecord.downloadURL, uploadId).value.map {
