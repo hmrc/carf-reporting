@@ -22,19 +22,20 @@ import play.api.libs.json.Json
 import play.api.test.Helpers.*
 import uk.gov.hmrc.carfreporting.base.SpecBase
 import uk.gov.hmrc.carfreporting.models.errors.InternalServerError
-import uk.gov.hmrc.carfreporting.services.submission.SubmissionService
+import uk.gov.hmrc.carfreporting.services.submission.{SDESService, SubmissionService}
 import uk.gov.hmrc.carfreporting.types.ResultT
 
 class SDESCallbackControllerSpec extends SpecBase {
 
   private val mockSubmissionService = mock[SubmissionService]
+  private val mockSdesService       = mock[SDESService]
 
   val testController: SDESCallbackController =
-    new SDESCallbackController(cc, mockSubmissionService)
+    new SDESCallbackController(cc, mockSubmissionService, mockSdesService)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockSubmissionService)
+    reset(mockSubmissionService, mockSdesService)
   }
 
   "SDESCallbackController" - {
@@ -93,7 +94,55 @@ class SDESCallbackControllerSpec extends SpecBase {
         verify(mockSubmissionService).updateFileStatusAsFailure(eqTo(testUploadId), eqTo(None))
       }
 
-      "must return OK (200) without calling the service when notification is NOT FileProcessingFailure (e.g., FileProcessed)" in {
+      "must return OK (200) when notification is FileReady and the call to SdesService is successful" in {
+        val requestBodyJson =
+          s"""
+             |{
+             |  "notification": "FileReady",
+             |  "filename": "br-file.xml",
+             |  "checksumAlgorithm": "SHA-256",
+             |  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+             |  "correlationID": "${testUploadId.value}"
+             |}
+             |""".stripMargin
+
+        val requestBody = Json.parse(requestBodyJson)
+
+        when(mockSdesService.getAndProcessBusinessRulesResponseFile(any(), any())(any()))
+          .thenReturn(ResultT.fromValue(()))
+
+        val result = testController.callback(fakeRequestWithJsonBody(requestBody))
+
+        status(result) mustEqual OK
+        verify(mockSdesService).getAndProcessBusinessRulesResponseFile(eqTo(testUploadId), eqTo("br-file.xml"))(any())
+      }
+
+      "must return INTERNAL_SERVER_ERROR (500) when notification is FileReady and SdesService returns an error" in {
+        val requestBodyJson =
+          s"""
+             |{
+             |  "notification": "FileReady",
+             |  "filename": "br-file.xml",
+             |  "checksumAlgorithm": "SHA-256",
+             |  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+             |  "correlationID": "${testUploadId.value}"
+             |}
+             |""".stripMargin
+
+        val requestBody = Json.parse(requestBodyJson)
+
+        when(mockSdesService.getAndProcessBusinessRulesResponseFile(any(), any())(any()))
+          .thenReturn(ResultT.fromError(InternalServerError("Unexpected error")))
+
+        val result = testController.callback(fakeRequestWithJsonBody(requestBody))
+
+        status(result)          mustEqual INTERNAL_SERVER_ERROR
+        contentAsString(result) mustEqual "Unexpected error"
+
+        verify(mockSdesService).getAndProcessBusinessRulesResponseFile(eqTo(testUploadId), eqTo("br-file.xml"))(any())
+      }
+
+      "must return OK (200) without calling the service when notification is NOT FileProcessingFailure or FileReady (e.g., FileProcessed)" in {
 
         val requestBodyJson =
           s"""
