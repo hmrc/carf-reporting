@@ -24,8 +24,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class SDESConnectorISpec
-    extends ApplicationWithWiremock {
+class SDESConnectorISpec extends ApplicationWithWiremock {
 
   lazy val connector: SDESConnector = app.injector.instanceOf[SDESConnector]
 

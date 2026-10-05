@@ -125,7 +125,7 @@ trait TestData {
     )
   )
 
-  val validExtractedAEOIFileDetails     = ExtractedAEOIFileDetails(
+  val validExtractedAEOIFileDetails = ExtractedAEOIFileDetails(
     UploadId("3ada9236-21a6-4ad2-9f0c-f01shdt40c5"),
     ValidationErrors(
       Seq.empty,
@@ -133,6 +133,7 @@ trait TestData {
     ),
     ValidationResult(ValidationStatus.fromString("Accepted"))
   )
+
   lazy val businessRuleValidationErrors = ValidationErrors(
     fileError = Seq(
       FileError(

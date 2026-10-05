@@ -17,11 +17,13 @@
 package uk.gov.hmrc.carfreporting.services
 
 import org.mockito.ArgumentMatchers.{any, argThat, eq as eqTo}
-import org.mockito.Mockito.{reset, verify, when}
+import org.mockito.Mockito.{reset, times, verify, when}
 import uk.gov.hmrc.carfreporting.base.{NoGuiceSpecBase, TestData}
-import uk.gov.hmrc.carfreporting.models.errors.ApiError.InternalServerError
+import uk.gov.hmrc.carfreporting.models.UploadId
+import uk.gov.hmrc.carfreporting.models.errors.ApiError.{InternalServerError, NotFoundError}
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
-import uk.gov.hmrc.carfreporting.models.submission.FileStatus
+import uk.gov.hmrc.carfreporting.models.submission.{FileStatus, SubmissionDetailsCache}
+import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Rejected
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.services.submission.{SDESService, SubmissionService}
 import uk.gov.hmrc.carfreporting.types.ResultT
@@ -154,6 +156,80 @@ class SubmissionServiceSpec extends NoGuiceSpecBase with TestData {
         result mustBe Left(MongoError())
 
         verify(mockSubmissionRepository).updateStatus(eqTo(testUploadId), eqTo(FileStatus.UnexpectedError))
+      }
+    }
+
+    ".getSubmissionDetailsByUploadId" - {
+      "must return the submission details when a record is found" in {
+        when(mockSubmissionRepository.findByUploadId(eqTo(testUploadId)))
+          .thenReturn(ResultT.fromValue(Some(testSubmissionDetailsCache)))
+
+        val result = submissionService.getSubmissionDetailsByUploadId(testUploadId).value.futureValue
+
+        result mustBe Right(testSubmissionDetailsCache)
+
+        verify(mockSubmissionRepository, times(1)).findByUploadId(eqTo(testUploadId))
+      }
+
+      "must return NotFoundError when no record is found" in {
+        when(mockSubmissionRepository.findByUploadId(eqTo(testUploadId))).thenReturn(ResultT.fromValue(None))
+
+        val result = submissionService.getSubmissionDetailsByUploadId(testUploadId).value.futureValue
+
+        result mustBe Left(NotFoundError)
+
+        verify(mockSubmissionRepository, times(1)).findByUploadId(eqTo(testUploadId))
+      }
+
+      "must return the error when the repository returns an error" in {
+        when(mockSubmissionRepository.findByUploadId(eqTo(testUploadId)))
+          .thenReturn(ResultT.fromError(MongoError("Error message")))
+
+        val result = submissionService.getSubmissionDetailsByUploadId(testUploadId).value.futureValue
+
+        result mustBe Left(MongoError("Error message"))
+
+        verify(mockSubmissionRepository, times(1)).findByUploadId(eqTo(testUploadId))
+      }
+    }
+
+    ".getSubmissionDetailsByCarfId" - {
+      "must return a list of submission details" in {
+        val submissionDetailsList = Seq(
+          testSubmissionDetailsCache,
+          testSubmissionDetailsCache.copy(_id = UploadId("987654"), fileStatus = Rejected)
+        )
+
+        when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+          .thenReturn(ResultT.fromValue(submissionDetailsList))
+
+        val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef).value.futureValue
+
+        result mustBe Right(submissionDetailsList)
+
+        verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+      }
+
+      "must return an empty list of submission details" in {
+        when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+          .thenReturn(ResultT.fromValue(Seq.empty))
+
+        val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef).value.futureValue
+
+        result mustBe Right(Seq.empty[SubmissionDetailsCache])
+
+        verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+      }
+
+      "must return an error when the repository returns an error" in {
+        when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+          .thenReturn(ResultT.fromError(MongoError("Error message")))
+
+        val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef).value.futureValue
+
+        result mustBe Left(MongoError("Error message"))
+
+        verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
       }
     }
   }
