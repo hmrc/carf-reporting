@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.config
+package uk.gov.hmrc.carfreporting.models.responses
 
-import java.time.ZoneId
+import play.api.libs.json.{Json, OFormat}
 
-object Constants {
+case class FileListing(
+    filename: String,
+    fileSize: Long,
+    downloadURL: String,
+    metadata: Seq[FileListingMetadata]
+)
 
-  val ukZoneId: ZoneId = ZoneId.of("Europe/London")
+object FileListing {
+  implicit val format: OFormat[FileListing] = Json.format[FileListing]
+}
 
-  val testDataDocTypeIndics: Set[String] = Set("OECD10", "OECD11", "OECD12", "OECD13")
-  val correctionDocTypeIndic: String     = "OECD2"
-  val deletionDocTypeIndic: String       = "OECD3"
-  val nilReportMessageTypeIndic: String  = "CARF703"
+case class FileListingMetadata(metadata: String, value: String)
 
-  val clientIdHeader = "x-client-id"
-  val sdesKeyHeader  = "x-sdes-Key"
+object FileListingMetadata {
+  implicit val format: OFormat[FileListingMetadata] = Json.format[FileListingMetadata]
 }

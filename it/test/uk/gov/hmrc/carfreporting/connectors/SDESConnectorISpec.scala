@@ -115,4 +115,86 @@ class SDESConnectorISpec extends ApplicationWithWiremock {
       result mustBe Left(InternalServerError)
     }
   }
+
+  "getBusinessRulesFileListing" - {
+    val testUrl = "/files-available/list/carf-submission"
+
+    val testFileListingJson: String =
+      s"""[
+        |    {
+        |        "filename": "$testBusinessRulesFileName",
+        |        "fileSize": 100,
+        |        "downloadURL": "$testDownloadUrl",
+        |        "metadata": [
+        |            {
+        |                "metadata": "FileType",
+        |                "value": "XML"
+        |            }
+        |        ]
+        |    },
+        |    {
+        |        "filename": "br-file-2.xml",
+        |        "fileSize": 345,
+        |        "downloadURL": "$testDownloadUrl",
+        |        "metadata": []
+        |    }
+        |]
+        |""".stripMargin
+
+    "must return the list of files given a 200 response" in {
+      stubFor(
+        get(urlPathMatching(testUrl))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(testFileListingJson)
+          )
+      )
+
+      val result = connector.getBusinessRulesFileListing().value.futureValue
+      result mustBe Right(testSdesFileListing)
+    }
+
+    "must return JsonValidationError when the response body cannot be parsed" in {
+      stubFor(
+        get(urlPathMatching(testUrl))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody("""{"incorrect": "structure"}""")
+          )
+      )
+
+      val result = connector.getBusinessRulesFileListing().value.futureValue
+      result mustBe Left(JsonValidationError)
+    }
+
+    "must return InternalServerError given a 400 response" in {
+      stubFor(
+        get(urlPathMatching(testUrl))
+          .willReturn(
+            aResponse()
+              .withStatus(BAD_REQUEST)
+              .withBody("Bad request")
+          )
+      )
+
+      val result = connector.getBusinessRulesFileListing().value.futureValue
+      result mustBe Left(InternalServerError)
+    }
+
+    "must return InternalServerError given a 500 response" in {
+      stubFor(
+        get(urlPathMatching(testUrl))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+              .withBody("Internal server error")
+          )
+      )
+
+      val result = connector.getBusinessRulesFileListing().value.futureValue
+      result mustBe Left(InternalServerError)
+    }
+  }
 }
