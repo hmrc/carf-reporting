@@ -81,8 +81,15 @@ class SDESService @Inject() (
               )
               repository.updateStatus(uploadId, FileStatus.UnexpectedError).value.map(_ => Left(InternalServerError))
             } { fileListingRecord =>
+              logger.info(
+                s"[SDESService][getAndProcessBusinessRulesResponseFile]\nStarting BR XML Validation <Upload ID: ${uploadId.value}>"
+              )
               xmlParserService.validateAndExtractAEOI(fileListingRecord.downloadURL, uploadId).value.map {
-                case Right(_)                   => Right(())
+                case Right(_)                   =>
+                  logger.info(
+                    s"[SDESService][getAndProcessBusinessRulesResponseFile]\nFinished BR XML Validation with success <Upload ID: ${uploadId.value}>"
+                  )
+                  Right(())
                 case Left(xmlErrors: XmlErrors) =>
                   logger.warn(
                     s"[SDESService][getAndProcessBusinessRulesResponseFile] Failed to validate XML with (${xmlErrors.errors.size}) schema error(s)"
