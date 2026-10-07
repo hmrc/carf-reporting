@@ -87,7 +87,7 @@ class SDESService @Inject() (
               xmlParserService.validateAndExtractAEOI(fileListingRecord.downloadURL, uploadId).value.map {
                 case Right(_)                   =>
                   logger.info(
-                    s"[SDESService][getAndProcessBusinessRulesResponseFile]\nStarting BR XML Validation <Upload ID: ${uploadId.value}>"
+                    s"[SDESService][getAndProcessBusinessRulesResponseFile]\nFinished BR XML Validation with success <Upload ID: ${uploadId.value}>"
                   )
                   Right(())
                 case Left(xmlErrors: XmlErrors) =>
