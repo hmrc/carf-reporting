@@ -42,8 +42,14 @@ class XmlValidationAndExtractionController @Inject() (cc: ControllerComponents, 
           Future.successful(BadRequest("Request body provided is invalid"))
         ,
         valid =>
+          logger.info(
+            s"[XmlValidationAndExtractionController][processXml]\nStarting CARF XML Validation <Path: ${valid.path}>"
+          )
           service.validateAndExtractCARF(valid.path).value.map {
             case Right(extractedFileDetails) =>
+              logger.info(
+                s"[XmlValidationAndExtractionController][processXml]\nFinished CARF XML Validation with success <Path: ${valid.path}>"
+              )
               Ok(Json.toJson(extractedFileDetails))
             case Left(xmlErrors: XmlErrors)  =>
               logger.warn(
