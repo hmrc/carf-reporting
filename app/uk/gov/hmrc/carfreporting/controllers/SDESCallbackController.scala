@@ -57,15 +57,8 @@ class SDESCallbackController @Inject() (
                   InternalServerError("Unexpected error")
               }
             case FileReady                    =>
-              logger.info(
-                s"[SDESCallbackController][callback]\nStarting BR XML Validation <Correlation ID: ${valid.correlationID.value}>"
-              )
               sdesService.getAndProcessBusinessRulesResponseFile(valid.correlationID, valid.filename).value.map {
-                case Right(_)    =>
-                  logger.info(
-                    s"[SDESCallbackController][callback]\nFinished BR XML Validation with success <Correlation ID: ${valid.correlationID.value}>"
-                  )
-                  Ok
+                case Right(_)    => Ok
                 case Left(error) =>
                   logger.error(
                     s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}"
