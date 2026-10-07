@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.carfreporting.controllers
 
-import org.mockito.ArgumentMatchers.eq as eqTo
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.{reset, times, verify, when}
 import play.api.libs.json.Json
 import play.api.test.Helpers.*
@@ -25,7 +25,7 @@ import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.NotFoundError
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Rejected
-import uk.gov.hmrc.carfreporting.models.submission.SubmissionDetailsCache
+import uk.gov.hmrc.carfreporting.models.submission.{DetailsOfFilesSent, SubmissionDetailsCache, SubmissionRecord}
 import uk.gov.hmrc.carfreporting.services.submission.SubmissionService
 import uk.gov.hmrc.carfreporting.types.ResultT
 
@@ -80,44 +80,49 @@ class SubmissionDetailsControllerSpec extends SpecBase {
 
     ".getSubmissionDetailsByCarfId" - {
       "must return OK with a list of submission details" in {
-        val submissionDetailsList = Seq(
+        val submissionRecordsList: Seq[SubmissionRecord] = Seq(
           testSubmissionDetailsCache,
-          testSubmissionDetailsCache.copy(_id = UploadId("987654"), fileStatus = Rejected)
+          testSubmissionDetailsCache.copy(_id = UploadId("987654"), fileStatus = Rejected),
+          submissionHistoryPassed
         )
 
-        when(mockSubmissionService.getSubmissionDetailsByCarfId(eqTo(testCarfRef)))
-          .thenReturn(ResultT.fromValue(submissionDetailsList))
+        val detailsOfFilesSent = DetailsOfFilesSent(submissionRecordsList, totalPages = 1)
 
-        val result = controller.getSubmissionDetailsByCarfId(testCarfRef)(fakeRequest)
+        when(mockSubmissionService.getSubmissionDetailsByCarfId(eqTo(testCarfRef), eqTo(1))(any()))
+          .thenReturn(ResultT.fromValue(detailsOfFilesSent))
 
-        status(result)        mustEqual OK
-        contentAsJson(result) mustEqual Json.toJson(submissionDetailsList)
-
-        verify(mockSubmissionService, times(1)).getSubmissionDetailsByCarfId(eqTo(testCarfRef))
-      }
-
-      "must return OK with an empty list of submission details" in {
-        when(mockSubmissionService.getSubmissionDetailsByCarfId(eqTo(testCarfRef)))
-          .thenReturn(ResultT.fromValue(Seq.empty))
-
-        val result = controller.getSubmissionDetailsByCarfId(testCarfRef)(fakeRequest)
+        val result = controller.getSubmissionDetailsByCarfId(testCarfRef, 1)(fakeRequest)
 
         status(result)        mustEqual OK
-        contentAsJson(result) mustEqual Json.toJson(Seq.empty[SubmissionDetailsCache])
+        contentAsJson(result) mustEqual Json.toJson(detailsOfFilesSent)
 
-        verify(mockSubmissionService, times(1)).getSubmissionDetailsByCarfId(eqTo(testCarfRef))
+        verify(mockSubmissionService, times(1)).getSubmissionDetailsByCarfId(eqTo(testCarfRef), eqTo(1))(any())
       }
 
-      "must return InternalServerError when the repository returns an error" in {
-        when(mockSubmissionService.getSubmissionDetailsByCarfId(eqTo(testCarfRef)))
+      "must return OK with an empty list of submission records" in {
+        val detailsOfFilesSent = DetailsOfFilesSent(Seq.empty, totalPages = 0)
+
+        when(mockSubmissionService.getSubmissionDetailsByCarfId(eqTo(testCarfRef), eqTo(1))(any()))
+          .thenReturn(ResultT.fromValue(detailsOfFilesSent))
+
+        val result = controller.getSubmissionDetailsByCarfId(testCarfRef, 1)(fakeRequest)
+
+        status(result)        mustEqual OK
+        contentAsJson(result) mustEqual Json.toJson(detailsOfFilesSent)
+
+        verify(mockSubmissionService, times(1)).getSubmissionDetailsByCarfId(eqTo(testCarfRef), eqTo(1))(any())
+      }
+
+      "must return InternalServerError when SubmissionService returns an error" in {
+        when(mockSubmissionService.getSubmissionDetailsByCarfId(eqTo(testCarfRef), eqTo(1))(any()))
           .thenReturn(ResultT.fromError(MongoError("Error message")))
 
-        val result = controller.getSubmissionDetailsByCarfId(testCarfRef)(fakeRequest)
+        val result = controller.getSubmissionDetailsByCarfId(testCarfRef, 1)(fakeRequest)
 
         status(result)     mustEqual INTERNAL_SERVER_ERROR
         contentAsString(result) must include("Unexpected error")
 
-        verify(mockSubmissionService, times(1)).getSubmissionDetailsByCarfId(eqTo(testCarfRef))
+        verify(mockSubmissionService, times(1)).getSubmissionDetailsByCarfId(eqTo(testCarfRef), eqTo(1))(any())
       }
     }
   }
