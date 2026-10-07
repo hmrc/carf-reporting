@@ -27,6 +27,8 @@ import uk.gov.hmrc.carfreporting.models.submission.FileStatus.{Accepted, Rejecte
 import uk.gov.hmrc.carfreporting.models.submission.SubmissionDetailsCache
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
+import java.time.Instant
+
 class SubmissionRepositorySpec
     extends SpecBase
     with IntegrationPatience
@@ -150,16 +152,28 @@ class SubmissionRepositorySpec
     }
 
     ".findByCarfId" - {
-      "when there are records for the carfId" in {
+      "when there are records for the carfId, returns the records in order of descending submissionTime" in {
         val testSubmissionDetailsCache2 =
-          testSubmissionDetailsCache.copy(_id = UploadId("987654"), fileStatus = Rejected)
+          testSubmissionDetailsCache.copy(
+            _id = UploadId("987654"),
+            fileStatus = Rejected,
+            submissionTime = Instant.ofEpochSecond(3)
+          )
+
+        val testSubmissionDetailsCache3 =
+          testSubmissionDetailsCache.copy(
+            _id = UploadId("222222"),
+            fileStatus = Accepted,
+            submissionTime = Instant.ofEpochSecond(2)
+          )
 
         insert(testSubmissionDetailsCache).futureValue
         insert(testSubmissionDetailsCache2).futureValue
+        insert(testSubmissionDetailsCache3).futureValue
 
         val result = repository.findByCarfId(testCarfRef).value.futureValue
 
-        result mustBe Right(Seq(testSubmissionDetailsCache, testSubmissionDetailsCache2))
+        result mustBe Right(Seq(testSubmissionDetailsCache2, testSubmissionDetailsCache3, testSubmissionDetailsCache))
       }
 
       "when there are no records for the carfId" in {

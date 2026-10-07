@@ -53,15 +53,16 @@ class SubmissionDetailsController @Inject() (
     }
   }
 
-  def getSubmissionDetailsByCarfId(carfId: String): Action[AnyContent] = authorise.async { implicit request =>
-    submissionService.getSubmissionDetailsByCarfId(carfId).value.map {
-      case Right(submissionDetailsList) =>
-        Ok(Json.toJson(submissionDetailsList))
-      case Left(error)                  =>
-        logger.warn(
-          s"[SubmissionDetailsController][getSubmissionDetailsByCarfId] Error getting submission details for carfId $carfId"
-        )
-        InternalServerError(s"Unexpected error: $error")
-    }
+  def getSubmissionDetailsByCarfId(carfId: String, page: Int): Action[AnyContent] = authorise.async {
+    implicit request =>
+      submissionService.getSubmissionDetailsByCarfId(carfId, page).value.map {
+        case Right(detailsOfFilesSent) =>
+          Ok(Json.toJson(detailsOfFilesSent))
+        case Left(error)               =>
+          logger.warn(
+            s"[SubmissionDetailsController][getSubmissionDetailsByCarfId] Error getting submission details for carfId $carfId"
+          )
+          InternalServerError(s"Unexpected error: $error")
+      }
   }
 }
