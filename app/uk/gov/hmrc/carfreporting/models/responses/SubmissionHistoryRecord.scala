@@ -23,7 +23,7 @@ import java.time.Instant
 case class SubmissionHistoryRecord(
     rcaspId: String,
     rcaspName: String,
-    filename: String,
+    fileName: String,
     submissionStatus: SubmissionHistoryStatus,
     uploadDateTime: Instant,
     messageRefId: String,
