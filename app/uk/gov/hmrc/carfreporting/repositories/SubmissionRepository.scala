@@ -21,7 +21,7 @@ import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Updates.set
-import org.mongodb.scala.model.{FindOneAndUpdateOptions, IndexModel, IndexOptions, Updates}
+import org.mongodb.scala.model.{FindOneAndUpdateOptions, IndexModel, IndexOptions, Sorts, Updates}
 import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.errors.*
@@ -162,6 +162,7 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
     ResultT.fromFuture {
       collection
         .find(equal("carfId", Codecs.toBson(carfId)))
+        .sort(Sorts.descending("submissionTime"))
         .toFuture()
         .map(Right(_))
         .recover { case _ =>

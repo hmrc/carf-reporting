@@ -43,12 +43,14 @@ trait ApplicationWithWiremock
 
   val extraConfig: Map[String, Any] =
     Map[String, Any](
-      "microservice.services.auth.host"              -> WireMockConstants.stubHost,
-      "microservice.services.auth.port"              -> WireMockConstants.stubPort,
-      "microservice.services.sdes.host"              -> WireMockConstants.stubHost,
-      "microservice.services.sdes.port"              -> WireMockConstants.stubPort,
-      "microservice.services.sdes-file-listing.host" -> WireMockConstants.stubHost,
-      "microservice.services.sdes-file-listing.port" -> WireMockConstants.stubPort
+      "microservice.services.auth.host"               -> WireMockConstants.stubHost,
+      "microservice.services.auth.port"               -> WireMockConstants.stubPort,
+      "microservice.services.sdes.host"               -> WireMockConstants.stubHost,
+      "microservice.services.sdes.port"               -> WireMockConstants.stubPort,
+      "microservice.services.sdes-file-listing.host"  -> WireMockConstants.stubHost,
+      "microservice.services.sdes-file-listing.port"  -> WireMockConstants.stubPort,
+      "microservice.services.submission-history.host" -> WireMockConstants.stubHost,
+      "microservice.services.submission-history.port" -> WireMockConstants.stubPort
     )
 
   override lazy val app: Application = new GuiceApplicationBuilder()
