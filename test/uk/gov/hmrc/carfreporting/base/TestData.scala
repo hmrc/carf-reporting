@@ -281,7 +281,7 @@ trait TestData {
     SubmissionHistoryRecord(
       rcaspId = "ZMCAR0123456789",
       rcaspName = "Nemona Champion",
-      filename = "filename1.xml",
+      fileName = "filename1.xml",
       submissionStatus = SubmissionHistoryStatus.Passed,
       uploadDateTime = Instant.now(clock).minus(30, ChronoUnit.DAYS),
       messageRefId = "MSG-2024-0001",
@@ -302,7 +302,7 @@ trait TestData {
       SubmissionHistoryRecord(
         rcaspId = "ZMCAR0123456780",
         rcaspName = "Other RCASP Ltd",
-        filename = s"filename$daysAgo.xml",
+        fileName = s"filename$daysAgo.xml",
         submissionStatus = SubmissionHistoryStatus.Passed,
         uploadDateTime = Instant.now(clock).minus(daysAgo, ChronoUnit.DAYS),
         messageRefId = s"MSG-2024-00$daysAgo",

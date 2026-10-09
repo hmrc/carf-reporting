@@ -74,7 +74,7 @@ class SubmissionHistoryConnectorISpec extends ApplicationWithWiremock {
         |      "submissionsList" : [ {
         |        "rcaspId" : "ZMCAR0123456780",
         |        "rcaspName" : "Other RCASP Ltd",
-        |        "filename" : "filename29.xml",
+        |        "fileName" : "filename29.xml",
         |        "submissionStatus" : "PASSED",
         |        "uploadDateTime" : "2024-05-13T15:07:47.838Z",
         |        "messageRefId" : "MSG-2024-0029",
@@ -84,7 +84,7 @@ class SubmissionHistoryConnectorISpec extends ApplicationWithWiremock {
         |      }, {
         |        "rcaspId" : "ZMCAR0123456780",
         |        "rcaspName" : "Other RCASP Ltd",
-        |        "filename" : "filename30.xml",
+        |        "fileName" : "filename30.xml",
         |        "submissionStatus" : "PASSED",
         |        "uploadDateTime" : "2024-05-12T15:07:47.838Z",
         |        "messageRefId" : "MSG-2024-0030",
