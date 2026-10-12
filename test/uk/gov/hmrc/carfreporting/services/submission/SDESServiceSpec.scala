@@ -47,6 +47,7 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
 
   val testSubmissionTime: Instant = Instant.now()
   val testInformationType         = "carf-submission"
+  val testSrn                     = "carf-reporting"
 
   val expectedNotification = FileTransferNotification(
     informationType = testInformationType,
@@ -55,13 +56,14 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
       location = testSubmissionRequest.documentUrl,
       checksum = Checksum(Algorithm.SHA256, testSubmissionRequest.checksum),
       size = testSubmissionRequest.fileSize,
-      recipientOrSender = Some("carf-reporting"),
+      recipientOrSender = Some(testSrn),
       properties = SDESFileMetadataHelper.generatePropertiesMetadata(testSubmissionRequest, testSubmissionTime)
     ),
     audit = Audit(testUploadId.value)
   )
 
   when(mockAppConfig.sdesInformationType).thenReturn(testInformationType)
+  when(mockAppConfig.sdesSrn).thenReturn(testSrn)
 
   override def beforeEach(): Unit = {
     super.beforeEach()

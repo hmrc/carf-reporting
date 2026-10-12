@@ -58,7 +58,7 @@ class SDESService @Inject() (
           location = submissionRequest.documentUrl,
           checksum = Checksum(SHA256, submissionRequest.checksum),
           size = submissionRequest.fileSize,
-          recipientOrSender = Some("carf-reporting"),
+          recipientOrSender = Some(appConfig.sdesSrn),
           properties = SDESFileMetadataHelper.generatePropertiesMetadata(submissionRequest, submissionTime)
         ),
         audit = Audit(conversationId)
