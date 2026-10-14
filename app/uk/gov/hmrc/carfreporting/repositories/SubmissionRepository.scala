@@ -85,7 +85,7 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
     } else {
       val errorMessage =
         "[SubmissionRepository][insert] Tried to insert file with a status that is not Pending in SubmissionRepository .insert"
-      logWarn(errorMessage)
+      logError(errorMessage)
       ResultT.fromError(BusinessError(errorMessage))
     }
 
@@ -115,7 +115,7 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
     } else {
       val errorMessage =
         "[SubmissionRepository][updateStatus] Error updateStatus called with rejected status in SubmissionRepository .updateStatus"
-      logWarn(errorMessage)
+      logError(errorMessage)
       ResultT.fromError(BusinessError(errorMessage))
     }
 
@@ -148,7 +148,7 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
     } else
       val errorMessage =
         "[SubmissionRepository][updateStatusWithErrors] Error updateStatusWithErrors called without rejected status in SubmissionRepository .updateStatusWithErrors"
-      logWarn(errorMessage)
+      logError(errorMessage)
       ResultT.fromError(BusinessError(errorMessage))
 
   def findByUploadId(uploadId: UploadId): ResultT[Option[SubmissionDetailsCache]] =
