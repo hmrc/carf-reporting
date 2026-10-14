@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.carfreporting.services.submission
 
+import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.NotFoundError
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
 import uk.gov.hmrc.carfreporting.models.submission.*
@@ -28,11 +29,14 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.Instant
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
-class SubmissionService @Inject() (sdesService: SDESService, repository: SubmissionRepository)(implicit
-    ec: ExecutionContext
-) {
+class SubmissionService @Inject() (
+    sdesService: SDESService,
+    repository: SubmissionRepository,
+    submissionHistoryService: SubmissionHistoryService,
+    appConfig: AppConfig
+)(implicit ec: ExecutionContext) {
 
   def saveAndSubmit(submissionRequest: SubmissionRequest)(implicit headerCarrier: HeaderCarrier): ResultT[Unit] = {
     val submissionTime  = Instant.now
@@ -85,11 +89,32 @@ class SubmissionService @Inject() (sdesService: SDESService, repository: Submiss
         }(Right(_))
       }
 
-  def getSubmissionDetailsByCarfId(carfId: String): ResultT[Seq[SubmissionDetailsCache]] =
-    repository.findByCarfId(carfId).leftMap { error =>
-      logWarn(
-        s"[SubmissionService][getSubmissionDetailsByCarfId] Error getting submission details for carfId $carfId"
-      )
-      error
+  def getSubmissionDetailsByCarfId(carfId: String, page: Int)(implicit hc: HeaderCarrier): ResultT[DetailsOfFilesSent] =
+    ResultT.fromFuture {
+      repository.findByCarfId(carfId).value.flatMap {
+        case Left(error)                       =>
+          logWarn(
+            s"[SubmissionService][getSubmissionDetailsByCarfId] Error getting submission details from repository for carfId $carfId"
+          )
+          Future.successful(Left(error))
+        case Right(submissionDetailsCacheList) =>
+          submissionHistoryService.getSubmissionHistory(carfId).value.map {
+            case Left(error)                        =>
+              logWarn(
+                s"[SubmissionService][getSubmissionDetailsByCarfId] Error getting submission history for carfId $carfId"
+              )
+              Left(error)
+            case Right(submissionHistoryPassedList) =>
+              val submissionRecordList: Seq[SubmissionRecord] =
+                submissionDetailsCacheList ++ submissionHistoryPassedList
+
+              val pageSize                   = appConfig.submittedFilesPageSize
+              val totalPages                 = (submissionRecordList.size + pageSize - 1) / pageSize
+              val submissionRecordSlicedList =
+                submissionRecordList.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize)
+
+              Right(DetailsOfFilesSent(submissionRecordSlicedList, totalPages))
+          }
+      }
     }
 }

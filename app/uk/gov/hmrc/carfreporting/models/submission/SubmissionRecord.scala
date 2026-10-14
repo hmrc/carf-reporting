@@ -22,6 +22,24 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
 
+sealed trait SubmissionRecord
+
+object SubmissionRecord {
+
+  implicit val reads: Reads[SubmissionRecord] = Reads { json =>
+    (json \ "carfId").validateOpt[String].flatMap {
+      case Some(_) => json.validate[SubmissionDetailsCache]
+      case None    => json.validate[SubmissionHistoryPassed]
+    }
+  }
+
+  implicit val writes: Writes[SubmissionRecord] = {
+    case submissionDetailsCache: SubmissionDetailsCache   => SubmissionDetailsCache.format.writes(submissionDetailsCache)
+    case submissionHistoryPassed: SubmissionHistoryPassed =>
+      SubmissionHistoryPassed.format.writes(submissionHistoryPassed)
+  }
+}
+
 case class SubmissionDetailsCache(
     _id: UploadId,
     carfId: CarfId,
@@ -33,7 +51,7 @@ case class SubmissionDetailsCache(
     submissionTime: Instant,
     lastStatusUpdateTime: Instant,
     businessRuleErrors: ValidationErrors
-)
+) extends SubmissionRecord
 
 case class CarfId(value: String) extends AnyVal
 
@@ -81,4 +99,14 @@ object SubmissionDetailsCache {
 
   implicit val format: OFormat[SubmissionDetailsCache] = OFormat(reads, writes)
 
+}
+
+case class SubmissionHistoryPassed(
+    messageRefId: String,
+    rcaspName: String,
+    submissionTime: Instant
+) extends SubmissionRecord
+
+object SubmissionHistoryPassed {
+  implicit val format: OFormat[SubmissionHistoryPassed] = Json.format[SubmissionHistoryPassed]
 }
