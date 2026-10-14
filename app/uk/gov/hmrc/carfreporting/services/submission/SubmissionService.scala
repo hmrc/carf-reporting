@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.carfreporting.services.submission
 
-import play.api.Logging
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.NotFoundError
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
 import uk.gov.hmrc.carfreporting.models.submission.*
@@ -24,6 +23,7 @@ import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Pending
 import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationErrors}
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.types.ResultT
+import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.Instant
@@ -32,7 +32,7 @@ import scala.concurrent.ExecutionContext
 
 class SubmissionService @Inject() (sdesService: SDESService, repository: SubmissionRepository)(implicit
     ec: ExecutionContext
-) extends Logging {
+) {
 
   def saveAndSubmit(submissionRequest: SubmissionRequest)(implicit headerCarrier: HeaderCarrier): ResultT[Unit] = {
     val submissionTime  = Instant.now
@@ -71,14 +71,14 @@ class SubmissionService @Inject() (sdesService: SDESService, repository: Submiss
     repository
       .findByUploadId(uploadId)
       .leftMap { error =>
-        logger.warn(
+        logWarn(
           s"[SubmissionService][getSubmissionDetailsByUploadId] Error getting submission details for uploadId $uploadId"
         )
         error
       }
       .subflatMap { maybeSubmissionDetails =>
         maybeSubmissionDetails.fold {
-          logger.warn(
+          logWarn(
             s"[SubmissionService][getSubmissionDetailsByUploadId] Submission details not found for uploadId $uploadId"
           )
           Left(NotFoundError)
@@ -87,7 +87,7 @@ class SubmissionService @Inject() (sdesService: SDESService, repository: Submiss
 
   def getSubmissionDetailsByCarfId(carfId: String): ResultT[Seq[SubmissionDetailsCache]] =
     repository.findByCarfId(carfId).leftMap { error =>
-      logger.warn(
+      logWarn(
         s"[SubmissionService][getSubmissionDetailsByCarfId] Error getting submission details for carfId $carfId"
       )
       error

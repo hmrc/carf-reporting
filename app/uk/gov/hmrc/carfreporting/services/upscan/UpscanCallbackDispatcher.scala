@@ -16,18 +16,17 @@
 
 package uk.gov.hmrc.carfreporting.services.upscan
 
-import play.api.Logging
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
 import uk.gov.hmrc.carfreporting.types.ResultT
+import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class UpscanCallbackDispatcher @Inject() (
     uploadProgressTracker: UploadProgressTracker
-)(implicit val ec: ExecutionContext)
-    extends Logging {
+)(implicit val ec: ExecutionContext) {
 
   def handleCallback(callback: CallbackBody): ResultT[Boolean] = {
     val uploadStatus: UploadStatus = callback match {
@@ -42,15 +41,15 @@ class UpscanCallbackDispatcher @Inject() (
         )
 
       case body: FailedCallbackBody if body.failureDetails.failureReason == "QUARANTINE" =>
-        logger.warn(s"FailedCallbackBody, QUARANTINE: ${body.reference.value}")
+        logWarn(s"[UpscanCallbackDispatcher][handleCallback] FailedCallbackBody, QUARANTINE: ${body.reference.value}")
         Quarantined
 
       case body: FailedCallbackBody if body.failureDetails.failureReason == "REJECTED" =>
-        logger.warn(s"FailedCallbackBody, REJECTED: ${body.reference.value}")
+        logWarn(s"[UpscanCallbackDispatcher][handleCallback] FailedCallbackBody, REJECTED: ${body.reference.value}")
         UploadRejected(body.failureDetails)
 
       case body: FailedCallbackBody =>
-        logger.warn(s"FailedCallbackBody: ${body.reference.value}")
+        logWarn(s"[UpscanCallbackDispatcher][handleCallback] FailedCallbackBody: ${body.reference.value}")
         Failed
     }
 

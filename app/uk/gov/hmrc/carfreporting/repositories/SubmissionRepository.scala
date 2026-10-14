@@ -22,13 +22,13 @@ import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Updates.set
 import org.mongodb.scala.model.{FindOneAndUpdateOptions, IndexModel, IndexOptions, Updates}
-import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus.{Pending, Rejected}
 import uk.gov.hmrc.carfreporting.models.submission.{FileStatus, SubmissionDetailsCache}
 import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationErrors}
 import uk.gov.hmrc.carfreporting.types.ResultT
+import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
@@ -58,8 +58,7 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
         )
       ),
       replaceIndexes = true
-    )
-    with Logging {
+    ) {
 
   def insert(submissionDetailsCache: SubmissionDetailsCache): ResultT[Boolean] =
     if (submissionDetailsCache.fileStatus == Pending) {
@@ -71,21 +70,23 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
           .recover {
             case e: MongoWriteException =>
               val errorMessage =
-                s"Exception from SubmissionRepository.insert with message: ${e.getMessage}"
-              logger.error(errorMessage)
+                s"[SubmissionRepository][insert] Exception from SubmissionRepository.insert with message: ${e.getMessage}"
+              logWarn(errorMessage)
               Left(
                 MongoError(errorMessage)
               )
             case e                      =>
-              val errorMessage = s"Failed to call SubmissionRepository .insert with message: ${e.getMessage}"
-              logger.error(errorMessage)
+              val errorMessage =
+                s"[SubmissionRepository][insert] Failed to call SubmissionRepository .insert with message: ${e.getMessage}"
+              logWarn(errorMessage)
               Left(MongoError(errorMessage))
           }
       }
     } else {
-      ResultT.fromError(
-        BusinessError("Tried to insert file with a status that is not Pending in SubmissionRepository .insert")
-      )
+      val errorMessage =
+        "[SubmissionRepository][insert] Tried to insert file with a status that is not Pending in SubmissionRepository .insert"
+      logWarn(errorMessage)
+      ResultT.fromError(BusinessError(errorMessage))
     }
 
   def updateStatus(
@@ -106,15 +107,16 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
           .toFuture()
           .map(_ => Right(true))
           .recover { case _ =>
-            Left(MongoError("Failed to call SubmissionRepository .updateStatus"))
+            val errorMessage = "[SubmissionRepository][updateStatus] Failed to call SubmissionRepository .updateStatus"
+            logWarn(errorMessage)
+            Left(MongoError(errorMessage))
           }
       }
     } else {
-      ResultT.fromError(
-        BusinessError(
-          "Error updateStatus called with rejected status in SubmissionRepository .updateStatus"
-        )
-      )
+      val errorMessage =
+        "[SubmissionRepository][updateStatus] Error updateStatus called with rejected status in SubmissionRepository .updateStatus"
+      logWarn(errorMessage)
+      ResultT.fromError(BusinessError(errorMessage))
     }
 
   def updateStatusWithErrors(
@@ -137,15 +139,17 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
           .toFuture()
           .map(_ => Right(true))
           .recover { case _ =>
-            Left(MongoError("Failed to call SubmissionRepository .updateStatus"))
+            val errorMessage =
+              "[SubmissionRepository][updateStatusWithErrors] Failed to call SubmissionRepository .updateStatus"
+            logWarn(errorMessage)
+            Left(MongoError(errorMessage))
           }
       }
     } else
-      ResultT.fromError(
-        BusinessError(
-          "Error updateStatusWithErrors called without rejected status in SubmissionRepository .updateStatusWithErrors"
-        )
-      )
+      val errorMessage =
+        "[SubmissionRepository][updateStatusWithErrors] Error updateStatusWithErrors called without rejected status in SubmissionRepository .updateStatusWithErrors"
+      logWarn(errorMessage)
+      ResultT.fromError(BusinessError(errorMessage))
 
   def findByUploadId(uploadId: UploadId): ResultT[Option[SubmissionDetailsCache]] =
     ResultT.fromFuture {
@@ -154,7 +158,10 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
         .headOption()
         .map(Right(_))
         .recover { case _ =>
-          Left(MongoError("Failed to call SubmissionRepository .findByUploadId"))
+          val errorMessage =
+            "[SubmissionRepository][findByUploadId] Failed to call SubmissionRepository .findByUploadId"
+          logWarn(errorMessage)
+          Left(MongoError(errorMessage))
         }
     }
 
@@ -165,6 +172,9 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
         .toFuture()
         .map(Right(_))
         .recover { case _ =>
+          val errorMessage =
+            "[SubmissionRepository][findByCarfId] Failed to call SubmissionRepository .findByCarfId"
+          logWarn(errorMessage)
           Left(MongoError("Failed to call SubmissionRepository .findByCarfId"))
         }
     }
