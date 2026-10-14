@@ -68,7 +68,7 @@ class SubmissionRepositorySpec
 
         setResult match {
           case Left(BusinessError(message)) =>
-            message mustBe "Tried to insert file with a status that is not Pending in SubmissionRepository .insert"
+            message mustBe "[SubmissionRepository][insert] Tried to insert file with a status that is not Pending in SubmissionRepository .insert"
           case _                            => fail()
         }
       }
@@ -93,7 +93,7 @@ class SubmissionRepositorySpec
 
         updateResult match {
           case Left(BusinessError(message)) =>
-            message mustBe "Error updateStatus called with rejected status in SubmissionRepository .updateStatus"
+            message mustBe "[SubmissionRepository][updateStatus] Error updateStatus called with rejected status in SubmissionRepository .updateStatus"
           case _                            => fail("Expected a BusinessError")
         }
       }
@@ -131,7 +131,7 @@ class SubmissionRepositorySpec
 
         updateResult match {
           case Left(BusinessError(message)) =>
-            message mustBe "Error updateStatusWithErrors called without rejected status in SubmissionRepository .updateStatusWithErrors"
+            message mustBe "[SubmissionRepository][updateStatusWithErrors] Error updateStatusWithErrors called without rejected status in SubmissionRepository .updateStatusWithErrors"
           case _                            => fail("Expected a BusinessError")
         }
       }

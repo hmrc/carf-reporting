@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.carfreporting.controllers
 
-import play.api.Logging
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
 import uk.gov.hmrc.carfreporting.services.submission.SubmissionService
+import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
@@ -28,15 +28,14 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class SubmissionController @Inject() (cc: ControllerComponents, service: SubmissionService)(implicit
     e: ExecutionContext
-) extends BackendController(cc)
-    with Logging {
+) extends BackendController(cc) {
 
   def submit: Action[JsValue] = Action.async(parse.json) { implicit request =>
     request.body
       .validate[SubmissionRequest]
       .fold(
         invalid =>
-          logger.error(
+          logWarn(
             s"[SubmissionController][submit] Failed to parse request body with message: ${invalid.mkString(",\n")}"
           )
           Future.successful(BadRequest(s"Request body provided is invalid with message: ${invalid.mkString(",\n")}"))
@@ -46,7 +45,7 @@ class SubmissionController @Inject() (cc: ControllerComponents, service: Submiss
             case Right(_)    =>
               NoContent
             case Left(error) =>
-              logger.error(
+              logWarn(
                 s"[SubmissionController][submit] Unexpected error with message: ${error.message}"
               )
               InternalServerError("Unexpected error")

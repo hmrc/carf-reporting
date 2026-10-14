@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.carfreporting.services.submission
 
-import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.connectors.SubmissionHistoryConnector
 import uk.gov.hmrc.carfreporting.models.requests.{SubmissionHistoryRequest, SubmissionHistoryRequestCommon, SubmissionHistoryRequestDetails, SubmissionsListRequest}
 import uk.gov.hmrc.carfreporting.models.responses.SubmissionHistoryStatus.Passed
 import uk.gov.hmrc.carfreporting.models.submission.*
 import uk.gov.hmrc.carfreporting.types.ResultT
+import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.temporal.ChronoUnit
@@ -34,8 +34,7 @@ class SubmissionHistoryService @Inject() (
     submissionHistoryConnector: SubmissionHistoryConnector,
     clock: Clock,
     appConfig: AppConfig
-)(implicit ec: ExecutionContext)
-    extends Logging {
+)(implicit ec: ExecutionContext) {
 
   def getSubmissionHistory(carfId: String)(implicit hc: HeaderCarrier): ResultT[Seq[SubmissionHistoryPassed]] = {
     val submissionHistoryRequest = SubmissionHistoryRequest(
@@ -53,7 +52,7 @@ class SubmissionHistoryService @Inject() (
     submissionHistoryConnector
       .getSubmissionHistory(submissionHistoryRequest)
       .leftMap { error =>
-        logger.warn(s"[SubmissionHistoryService][getSubmissionHistory] Error getting submission history: $error")
+        logWarn(s"[SubmissionHistoryService][getSubmissionHistory] Error getting submission history: $error")
         error
       }
       .map { submissionRecordList =>

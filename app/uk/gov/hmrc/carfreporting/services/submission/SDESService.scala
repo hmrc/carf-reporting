@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.carfreporting.services.submission
 
-import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.connectors.SDESConnector
 import uk.gov.hmrc.carfreporting.helpers.SDESFileMetadataHelper
@@ -30,6 +29,7 @@ import uk.gov.hmrc.carfreporting.models.submission.FileStatus
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.services.XmlParserService
 import uk.gov.hmrc.carfreporting.types.ResultT
+import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.Instant
@@ -41,8 +41,7 @@ class SDESService @Inject() (
     xmlParserService: XmlParserService,
     repository: SubmissionRepository,
     appConfig: AppConfig
-)(implicit ec: ExecutionContext)
-    extends Logging {
+)(implicit ec: ExecutionContext) {
 
   def sendNotification(submissionRequest: SubmissionRequest, submissionTime: Instant)(implicit
       hc: HeaderCarrier
@@ -76,37 +75,37 @@ class SDESService @Inject() (
           fileList
             .find(_.filename == fileName)
             .fold {
-              logger.warn(
+              logWarn(
                 s"[SDESService][getAndProcessBusinessRulesResponseFile] No file with matching file name in File Listing API response - uploadId: ${uploadId.value}"
               )
               repository.updateStatus(uploadId, FileStatus.UnexpectedError).value.map(_ => Left(InternalServerError))
             } { fileListingRecord =>
-              logger.info(
+              logInfo(
                 s"[SDESService][getAndProcessBusinessRulesResponseFile]\nStarting BR XML Validation <Upload ID: ${uploadId.value}>"
               )
               xmlParserService.validateAndExtractAEOI(fileListingRecord.downloadURL, uploadId).value.map {
                 case Right(_)                   =>
-                  logger.info(
+                  logInfo(
                     s"[SDESService][getAndProcessBusinessRulesResponseFile]\nFinished BR XML Validation with success <Upload ID: ${uploadId.value}>"
                   )
                   Right(())
                 case Left(xmlErrors: XmlErrors) =>
-                  logger.warn(
+                  logWarn(
                     s"[SDESService][getAndProcessBusinessRulesResponseFile] Failed to validate XML with (${xmlErrors.errors.size}) schema error(s)"
                   )
                   Left(xmlErrors)
                 case Left(InvalidXmlError)      =>
-                  logger.warn("[SDESService][getAndProcessBusinessRulesResponseFile] Error parsing XML file")
+                  logWarn("[SDESService][getAndProcessBusinessRulesResponseFile] Error parsing XML file")
                   Left(InvalidXmlError)
                 case Left(error)                =>
-                  logger.warn(
+                  logWarn(
                     s"[SDESService][getAndProcessBusinessRulesResponseFile] Unexpected error with message: ${error.message}"
                   )
                   Left(InternalServerError)
               }
             }
         case Left(error)     =>
-          logger.warn(
+          logWarn(
             s"[SDESService][getAndProcessBusinessRulesResponseFile] Error getting business rules file listing: $error"
           )
           repository.updateStatus(uploadId, FileStatus.UnexpectedError).value.map(_ => Left(error))

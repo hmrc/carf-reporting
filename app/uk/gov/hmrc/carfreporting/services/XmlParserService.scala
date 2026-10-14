@@ -17,15 +17,16 @@
 package uk.gov.hmrc.carfreporting.services
 
 import org.codehaus.stax2.validation.*
-import play.api.{Environment, Logging}
+import play.api.Environment
 import uk.gov.hmrc.carfreporting.dispatchers.XmlDispatcher
+import uk.gov.hmrc.carfreporting.models.*
 import uk.gov.hmrc.carfreporting.models.ValidationType.{AEOI, CARF}
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus.UnprocessableErrorFile
-import uk.gov.hmrc.carfreporting.models.*
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.types.ResultT
+import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 
 import java.io.{FileNotFoundException, InputStream}
 import java.net.URI
@@ -37,8 +38,7 @@ import scala.util.{Failure, Success, Try}
 class XmlParserService @Inject (
     dataHandlerService: XmlDataHandlerService,
     submissionRepository: SubmissionRepository
-)(env: Environment)(implicit xmlDispatcher: XmlDispatcher)
-    extends Logging {
+)(env: Environment)(implicit xmlDispatcher: XmlDispatcher) {
 
   def validateAndExtractCARF(path: String): ResultT[ExtractedCarfFileDetails] =
     for {
@@ -81,14 +81,14 @@ class XmlParserService @Inject (
       case _               => "UnexpectedFailure"
     }
 
-    logger.warn(
+    logWarn(
       s"[XmlParserService][validateAndExtractAEOI] XML Parsing Failure detected, caused by $savedStatus"
     )
 
     submissionRepository
       .updateStatus(conversationId, UnprocessableErrorFile)
       .leftMap { _ =>
-        logger.warn(
+        logWarn(
           "[XmlParserService][validateAndExtractAEOI] Repository call to submissionRepository.insert threw " +
             "an error but initial error is being returned"
         )
@@ -107,7 +107,7 @@ class XmlParserService @Inject (
       } andThen { _ =>
         inputStream.close()
       } recover { e =>
-        logger.error(s"Fatal Error XML Stream Failed with message: ${e.getMessage}")
+        logWarn(s"[XmlParserService][initiate] Fatal Error XML Stream Failed with message: ${e.getMessage}")
         Left(InternalServerError(e.getMessage))
       }
     }
@@ -122,8 +122,12 @@ class XmlParserService @Inject (
     } match {
       case Success(Some(in))                                 => ResultT.fromValue(in)
       case Success(None) | Failure(_: FileNotFoundException) =>
+        logError("[XmlParserService][openInputStream] XML file cannot be found with path provided")
         ResultT.fromError(InternalServerError("XML file cannot be found with path provided"))
       case Failure(e)                                        =>
+        logError(
+          s"[XmlParserService][openInputStream] Unexpected error when creating Buffered Input Stream: ${e.getMessage}"
+        )
         ResultT.fromError(
           InternalServerError(s"Unexpected error when creating Buffered Input Stream: ${e.getMessage}")
         )
@@ -146,8 +150,12 @@ class XmlParserService @Inject (
       case Success(Some(validationSchema)) => ResultT.fromValue(validationSchema)
       case Success(None)                   =>
         // Would have to delete schema for test coverage but would rely on test to be guaranteed last, not recommended
+        logError("[XmlParserService][loadSchema] Schema file cannot be found")
         ResultT.fromError(InternalServerError("Schema file cannot be found"))
       case Failure(e)                      =>
+        logError(
+          s"[XmlParserService][loadSchema] Unexpected error when creating Buffered Input Stream: ${e.getMessage}"
+        )
         ResultT.fromError(
           InternalServerError(s"Unexpected error when creating Buffered Input Stream: ${e.getMessage}")
         )

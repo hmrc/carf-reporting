@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.carfreporting.services.submission
 
-import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.NotFoundError
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
@@ -25,6 +24,7 @@ import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Pending
 import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationErrors}
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.types.ResultT
+import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.Instant
@@ -36,8 +36,7 @@ class SubmissionService @Inject() (
     repository: SubmissionRepository,
     submissionHistoryService: SubmissionHistoryService,
     appConfig: AppConfig
-)(implicit ec: ExecutionContext)
-    extends Logging {
+)(implicit ec: ExecutionContext) {
 
   def saveAndSubmit(submissionRequest: SubmissionRequest)(implicit headerCarrier: HeaderCarrier): ResultT[Unit] = {
     val submissionTime  = Instant.now
@@ -76,14 +75,14 @@ class SubmissionService @Inject() (
     repository
       .findByUploadId(uploadId)
       .leftMap { error =>
-        logger.warn(
+        logWarn(
           s"[SubmissionService][getSubmissionDetailsByUploadId] Error getting submission details for uploadId $uploadId"
         )
         error
       }
       .subflatMap { maybeSubmissionDetails =>
         maybeSubmissionDetails.fold {
-          logger.warn(
+          logWarn(
             s"[SubmissionService][getSubmissionDetailsByUploadId] Submission details not found for uploadId $uploadId"
           )
           Left(NotFoundError)
@@ -94,14 +93,14 @@ class SubmissionService @Inject() (
     ResultT.fromFuture {
       repository.findByCarfId(carfId).value.flatMap {
         case Left(error)                       =>
-          logger.warn(
+          logWarn(
             s"[SubmissionService][getSubmissionDetailsByCarfId] Error getting submission details from repository for carfId $carfId"
           )
           Future.successful(Left(error))
         case Right(submissionDetailsCacheList) =>
           submissionHistoryService.getSubmissionHistory(carfId).value.map {
             case Left(error)                        =>
-              logger.warn(
+              logWarn(
                 s"[SubmissionService][getSubmissionDetailsByCarfId] Error getting submission history for carfId $carfId"
               )
               Left(error)
