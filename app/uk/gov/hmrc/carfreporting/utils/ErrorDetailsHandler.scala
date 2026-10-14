@@ -31,12 +31,12 @@ object ErrorDetailsHandler {
     logWarn(s"[ErrorDetailsHandler][errorParse] Status code: ${response.status} from endpoint: ${endpoint.toURI}")
     Try(response.json.as[ErrorDetail]) match {
       case Success(error)     =>
-        logWarn(
+        logError(
           s"[ErrorDetailsHandler][errorParse] Error code: ${error.errorDetail.errorCode}. Error message: ${error.errorDetail.errorMessage}. Source fault detail: ${error.errorDetail.sourceFaultDetail}"
         )
         InternalServerError
       case Failure(exception) =>
-        logWarn(
+        logError(
           s"[ErrorDetailsHandler][errorParse] Error parsing response as ErrorDetails. Exception: <${exception.getMessage}>"
         )
         JsonValidationError
@@ -53,12 +53,12 @@ object ErrorDetailsHandler {
         )
         Right(Seq.empty[SubmissionHistoryRecord])
       case Success(error)     =>
-        logWarn(
+        logError(
           s"[ErrorDetailsHandler][errorParseForSubmissionHistory422] Error code: ${error.errorDetail.errorCode}. Error message: ${error.errorDetail.errorMessage}. Source fault detail: ${error.errorDetail.sourceFaultDetail}"
         )
         Left(InternalServerError)
       case Failure(exception) =>
-        logWarn(
+        logError(
           s"[ErrorDetailsHandler][errorParseForSubmissionHistory422] Error parsing response as ErrorDetails. Exception: <${exception.getMessage}>"
         )
         Left(JsonValidationError)
