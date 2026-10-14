@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.carfreporting.services
+package uk.gov.hmrc.carfreporting.services.submission
 
 import org.mockito.ArgumentMatchers.{any, argThat, eq as eqTo}
 import org.mockito.Mockito.{reset, times, verify, when}
 import uk.gov.hmrc.carfreporting.base.{NoGuiceSpecBase, TestData}
-import uk.gov.hmrc.carfreporting.models.UploadId
+import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.{InternalServerError, NotFoundError}
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
-import uk.gov.hmrc.carfreporting.models.submission.{FileStatus, SubmissionDetailsCache}
-import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Rejected
+import uk.gov.hmrc.carfreporting.models.submission.{DetailsOfFilesSent, FileStatus, SubmissionDetailsCache}
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
-import uk.gov.hmrc.carfreporting.services.submission.{SDESService, SubmissionService}
 import uk.gov.hmrc.carfreporting.types.ResultT
 
 class SubmissionServiceSpec extends NoGuiceSpecBase with TestData {
 
-  private val mockSDESService          = mock[SDESService]
-  private val mockSubmissionRepository = mock[SubmissionRepository]
-  private val submissionService        = new SubmissionService(mockSDESService, mockSubmissionRepository)(ec)
+  private val mockSDESService              = mock[SDESService]
+  private val mockSubmissionRepository     = mock[SubmissionRepository]
+  private val mockSubmissionHistoryService = mock[SubmissionHistoryService]
+  private val mockAppConfig                = mock[AppConfig]
+  private val submissionService            =
+    new SubmissionService(mockSDESService, mockSubmissionRepository, mockSubmissionHistoryService, mockAppConfig)(ec)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockSDESService)
-    reset(mockSubmissionRepository)
+    reset(mockSDESService, mockSubmissionRepository, mockSubmissionHistoryService)
   }
 
   "SubmissionService" - {
@@ -194,42 +194,154 @@ class SubmissionServiceSpec extends NoGuiceSpecBase with TestData {
     }
 
     ".getSubmissionDetailsByCarfId" - {
-      "must return a list of submission details" in {
-        val submissionDetailsList = Seq(
-          testSubmissionDetailsCache,
-          testSubmissionDetailsCache.copy(_id = UploadId("987654"), fileStatus = Rejected)
-        )
+      when(mockAppConfig.submittedFilesPageSize).thenReturn(50)
 
-        when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
-          .thenReturn(ResultT.fromValue(submissionDetailsList))
+      "must return a DetailsOfFilesSent" - {
+        "when there are no records from the repository or SubmissionHistoryService" in {
+          when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+            .thenReturn(ResultT.fromValue(Seq.empty))
 
-        val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef).value.futureValue
+          when(mockSubmissionHistoryService.getSubmissionHistory(eqTo(testCarfRef))(any()))
+            .thenReturn(ResultT.fromValue(Seq.empty))
 
-        result mustBe Right(submissionDetailsList)
+          val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef, 1).value.futureValue
 
-        verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
-      }
+          result mustBe Right(
+            DetailsOfFilesSent(Seq.empty, totalPages = 0)
+          )
 
-      "must return an empty list of submission details" in {
-        when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
-          .thenReturn(ResultT.fromValue(Seq.empty))
+          verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+          verify(mockSubmissionHistoryService, times(1)).getSubmissionHistory(eqTo(testCarfRef))(any())
+        }
 
-        val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef).value.futureValue
+        "when there are records from the repository but not SubmissionHistoryService (2 records, page 1)" in {
+          when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+            .thenReturn(ResultT.fromValue(submissionDetailsList))
 
-        result mustBe Right(Seq.empty[SubmissionDetailsCache])
+          when(mockSubmissionHistoryService.getSubmissionHistory(eqTo(testCarfRef))(any()))
+            .thenReturn(ResultT.fromValue(Seq.empty))
 
-        verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+          val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef, 1).value.futureValue
+
+          result mustBe Right(
+            DetailsOfFilesSent(submissionDetailsList, totalPages = 1)
+          )
+
+          verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+          verify(mockSubmissionHistoryService, times(1)).getSubmissionHistory(eqTo(testCarfRef))(any())
+        }
+
+        "when there are records from SubmissionHistoryService but not the repository (70 records, page 1)" in {
+          when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+            .thenReturn(ResultT.fromValue(Seq.empty))
+
+          when(mockSubmissionHistoryService.getSubmissionHistory(eqTo(testCarfRef))(any()))
+            .thenReturn(ResultT.fromValue(submissionHistoryPassedList(70)))
+
+          val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef, 1).value.futureValue
+
+          result mustBe Right(
+            DetailsOfFilesSent(submissionHistoryPassedList(50), totalPages = 2)
+          )
+
+          verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+          verify(mockSubmissionHistoryService, times(1)).getSubmissionHistory(eqTo(testCarfRef))(any())
+        }
+
+        "when there are records from both the repository and SubmissionHistoryService (72 records total, page 1)" in {
+          when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+            .thenReturn(ResultT.fromValue(submissionDetailsList))
+
+          when(mockSubmissionHistoryService.getSubmissionHistory(eqTo(testCarfRef))(any()))
+            .thenReturn(ResultT.fromValue(submissionHistoryPassedList(70)))
+
+          val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef, 1).value.futureValue
+
+          result mustBe Right(
+            DetailsOfFilesSent(submissionDetailsList ++ submissionHistoryPassedList(48), totalPages = 2)
+          )
+
+          verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+          verify(mockSubmissionHistoryService, times(1)).getSubmissionHistory(eqTo(testCarfRef))(any())
+        }
+
+        "when there are records from both the repository and SubmissionHistoryService (102 records total, page 2)" in {
+          when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+            .thenReturn(ResultT.fromValue(submissionDetailsList))
+
+          when(mockSubmissionHistoryService.getSubmissionHistory(eqTo(testCarfRef))(any()))
+            .thenReturn(ResultT.fromValue(submissionHistoryPassedList(100)))
+
+          val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef, 2).value.futureValue
+
+          result mustBe Right(
+            DetailsOfFilesSent(submissionHistoryPassedList(100).slice(48, 98), totalPages = 3)
+          )
+
+          verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+          verify(mockSubmissionHistoryService, times(1)).getSubmissionHistory(eqTo(testCarfRef))(any())
+        }
+
+        "when there are records from both the repository and SubmissionHistoryService (102 records total, page 3)" in {
+          when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+            .thenReturn(ResultT.fromValue(submissionDetailsList))
+
+          when(mockSubmissionHistoryService.getSubmissionHistory(eqTo(testCarfRef))(any()))
+            .thenReturn(ResultT.fromValue(submissionHistoryPassedList(100)))
+
+          val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef, 3).value.futureValue
+
+          result mustBe Right(
+            DetailsOfFilesSent(submissionHistoryPassedList(100).drop(98), totalPages = 3)
+          )
+
+          verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+          verify(mockSubmissionHistoryService, times(1)).getSubmissionHistory(eqTo(testCarfRef))(any())
+        }
+
+        "when page number is too large for the number of records (72 records total, page 3)" in {
+          when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+            .thenReturn(ResultT.fromValue(submissionDetailsList))
+
+          when(mockSubmissionHistoryService.getSubmissionHistory(eqTo(testCarfRef))(any()))
+            .thenReturn(ResultT.fromValue(submissionHistoryPassedList(70)))
+
+          val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef, 3).value.futureValue
+
+          result mustBe Right(
+            DetailsOfFilesSent(Seq.empty, totalPages = 2)
+          )
+
+          verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+          verify(mockSubmissionHistoryService, times(1)).getSubmissionHistory(eqTo(testCarfRef))(any())
+        }
       }
 
       "must return an error when the repository returns an error" in {
         when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
           .thenReturn(ResultT.fromError(MongoError("Error message")))
 
-        val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef).value.futureValue
+        val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef, 1).value.futureValue
 
         result mustBe Left(MongoError("Error message"))
 
         verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+        verify(mockSubmissionHistoryService, times(0)).getSubmissionHistory(any())(any())
+      }
+
+      "must return an error when SubmissionHistoryService returns an error" in {
+        when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+          .thenReturn(ResultT.fromValue(submissionDetailsList))
+
+        when(mockSubmissionHistoryService.getSubmissionHistory(eqTo(testCarfRef))(any()))
+          .thenReturn(ResultT.fromError(InternalServerError))
+
+        val result = submissionService.getSubmissionDetailsByCarfId(testCarfRef, 1).value.futureValue
+
+        result mustBe Left(InternalServerError)
+
+        verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+        verify(mockSubmissionHistoryService, times(1)).getSubmissionHistory(eqTo(testCarfRef))(any())
       }
     }
   }

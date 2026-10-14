@@ -25,6 +25,12 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
 
   final val appName: String = config.get[String]("appName")
 
+  val bearerToken: String => String =
+    (serviceName: String) => config.get[String](s"microservice.services.$serviceName.bearer-token")
+
+  val environment: String => String =
+    (serviceName: String) => config.get[String](s"microservice.services.$serviceName.environment")
+
   val cacheTtl: Long = config.get[Long]("mongodb.upscanTimeToLiveInSeconds")
 
   private val sdesBaseUrl: String = servicesConfig.baseUrl("sdes")
@@ -39,4 +45,10 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
     s"$sdesFileListingHost${config.get[String]("microservice.services.sdes-file-listing.uri")}"
 
   val submissionTtlDays: Long = config.get[Long]("mongodb.submissionTimeToLiveInDays")
+
+  private val submissionHistoryHost: String = servicesConfig.baseUrl("submission-history")
+  val submissionHistoryBaseUrl: String      =
+    s"$submissionHistoryHost${config.get[String]("microservice.services.submission-history.uri")}"
+
+  val submittedFilesPageSize: Int = config.get[Int]("submitted-files.page-size")
 }

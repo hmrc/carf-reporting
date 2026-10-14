@@ -20,12 +20,12 @@ import org.bson.types.ObjectId
 import uk.gov.hmrc.carfreporting.config.Constants.ukZoneId
 import uk.gov.hmrc.carfreporting.models.*
 import uk.gov.hmrc.carfreporting.models.errors.{XmlError, XmlErrors}
-import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
 import uk.gov.hmrc.carfreporting.models.requests.sdes.*
 import uk.gov.hmrc.carfreporting.models.requests.sdes.Algorithm.SHA256
-import uk.gov.hmrc.carfreporting.models.responses.{FileListing, FileListingMetadata}
+import uk.gov.hmrc.carfreporting.models.requests.*
+import uk.gov.hmrc.carfreporting.models.responses.*
 import uk.gov.hmrc.carfreporting.models.submission.*
-import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Pending
+import uk.gov.hmrc.carfreporting.models.submission.FileStatus.{Pending, Rejected}
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus.*
 
@@ -225,6 +225,11 @@ trait TestData {
     businessRuleErrors = ValidationErrors.apply()
   )
 
+  val submissionDetailsList = Seq(
+    testSubmissionDetailsCache,
+    testSubmissionDetailsCache.copy(_id = UploadId("987654"), fileStatus = Rejected)
+  )
+
   val testBusinessRulesFileName = "br-file-1.xml"
 
   val testSdesFileListing: Seq[FileListing] = Seq(
@@ -243,4 +248,76 @@ trait TestData {
       metadata = Seq.empty
     )
   )
+
+  val submissionHistoryRequest = SubmissionHistoryRequest(
+    submissionsListRequest = SubmissionsListRequest(
+      requestCommon = SubmissionHistoryRequestCommon(
+        originatingSystem = "MDTP",
+        transmittingSystem = "CADX",
+        regime = "CARF",
+        requestParameters = None
+      ),
+      requestDetails = SubmissionHistoryRequestDetails(
+        subscriptionId = testCarfRef,
+        rcaspId = None
+      )
+    )
+  )
+
+  val submissionHistoryResponse: SubmissionHistoryResponse =
+    SubmissionHistoryResponse(
+      submissionsListResponse = SubmissionsListResponse(
+        responseCommon = SubmissionHistoryResponseCommon(
+          regime = "CARF",
+          responseParameters = None
+        ),
+        responseDetails = SubmissionHistoryResponseDetails(
+          submissionsList = submissionHistoryRecordList(2)
+        )
+      )
+    )
+
+  val submissionHistoryRecord: SubmissionHistoryRecord =
+    SubmissionHistoryRecord(
+      rcaspId = "ZMCAR0123456789",
+      rcaspName = "Nemona Champion",
+      fileName = "filename1.xml",
+      submissionStatus = SubmissionHistoryStatus.Passed,
+      uploadDateTime = Instant.now(clock).minus(30, ChronoUnit.DAYS),
+      messageRefId = "MSG-2024-0001",
+      submissionFileType = "CARF-701",
+      reportingYear = "2024",
+      submissionCaseId = "CARF-SUB-001"
+    )
+
+  val submissionHistoryPassed: SubmissionHistoryPassed =
+    SubmissionHistoryPassed(
+      messageRefId = "MSG-2024-0001",
+      rcaspName = "Nemona Champion",
+      submissionTime = Instant.now(clock)
+    )
+
+  def submissionHistoryRecordList(numRecords: Int): Seq[SubmissionHistoryRecord] =
+    (1 to numRecords).map(_ + 28).map { daysAgo =>
+      SubmissionHistoryRecord(
+        rcaspId = "ZMCAR0123456780",
+        rcaspName = "Other RCASP Ltd",
+        fileName = s"filename$daysAgo.xml",
+        submissionStatus = SubmissionHistoryStatus.Passed,
+        uploadDateTime = Instant.now(clock).minus(daysAgo, ChronoUnit.DAYS),
+        messageRefId = s"MSG-2024-00$daysAgo",
+        submissionFileType = "CARF-701",
+        reportingYear = "2024",
+        submissionCaseId = s"CARF-SUB-0$daysAgo"
+      )
+    }
+
+  def submissionHistoryPassedList(numRecords: Int): Seq[SubmissionHistoryPassed] =
+    (1 to numRecords).map(_ + 28).map { daysAgo =>
+      SubmissionHistoryPassed(
+        messageRefId = s"MSG-2024-00$daysAgo",
+        rcaspName = "Other RCASP Ltd",
+        submissionTime = Instant.now(clock).minus(daysAgo, ChronoUnit.DAYS)
+      )
+    }
 }
