@@ -63,7 +63,7 @@ class SubmissionHistoryConnector @Inject() (
                   logInfo("[SubmissionHistoryConnector][getSubmissionHistory] Success getting submission history")
                   Right(submissionHistoryResponse.submissionsListResponse.responseDetails.submissionsList)
                 case Failure(exception)                 =>
-                  logWarn(
+                  logError(
                     s"[SubmissionHistoryConnector][getSubmissionHistory] Error parsing response as SubmissionHistoryResponse. Endpoint: <${url.toURI}> Exception: <${exception.getMessage}>"
                   )
                   Left(ApiError.JsonValidationError)
@@ -73,7 +73,7 @@ class SubmissionHistoryConnector @Inject() (
             case BAD_REQUEST | INTERNAL_SERVER_ERROR | SERVICE_UNAVAILABLE | FORBIDDEN | METHOD_NOT_ALLOWED =>
               Left(ErrorDetailsHandler.errorParse(httpResponse, url))
             case _                                                                                          =>
-              logWarn(
+              logError(
                 s"[SubmissionHistoryConnector][getSubmissionHistory] Unexpected response: status code: ${httpResponse.status}, from endpoint: ${url.toURI}"
               )
               Left(ApiError.InternalServerError)

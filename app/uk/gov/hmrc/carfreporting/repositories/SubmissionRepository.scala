@@ -71,14 +71,14 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
             case e: MongoWriteException =>
               val errorMessage =
                 s"[SubmissionRepository][insert] Exception from SubmissionRepository.insert with message: ${e.getMessage}"
-              logWarn(errorMessage)
+              logError(errorMessage)
               Left(
                 MongoError(errorMessage)
               )
             case e                      =>
               val errorMessage =
                 s"[SubmissionRepository][insert] Failed to call SubmissionRepository .insert with message: ${e.getMessage}"
-              logWarn(errorMessage)
+              logError(errorMessage)
               Left(MongoError(errorMessage))
           }
       }
@@ -108,7 +108,7 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
           .map(_ => Right(true))
           .recover { case _ =>
             val errorMessage = "[SubmissionRepository][updateStatus] Failed to call SubmissionRepository .updateStatus"
-            logWarn(errorMessage)
+            logError(errorMessage)
             Left(MongoError(errorMessage))
           }
       }
@@ -141,7 +141,7 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
           .recover { case _ =>
             val errorMessage =
               "[SubmissionRepository][updateStatusWithErrors] Failed to call SubmissionRepository .updateStatus"
-            logWarn(errorMessage)
+            logError(errorMessage)
             Left(MongoError(errorMessage))
           }
       }
@@ -160,7 +160,7 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
         .recover { case _ =>
           val errorMessage =
             "[SubmissionRepository][findByUploadId] Failed to call SubmissionRepository .findByUploadId"
-          logWarn(errorMessage)
+          logError(errorMessage)
           Left(MongoError(errorMessage))
         }
     }
@@ -175,7 +175,7 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
         .recover { case _ =>
           val errorMessage =
             "[SubmissionRepository][findByCarfId] Failed to call SubmissionRepository .findByCarfId"
-          logWarn(errorMessage)
+          logError(errorMessage)
           Left(MongoError("Failed to call SubmissionRepository .findByCarfId"))
         }
     }

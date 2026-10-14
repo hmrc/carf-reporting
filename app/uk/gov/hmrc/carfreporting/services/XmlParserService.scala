@@ -122,10 +122,10 @@ class XmlParserService @Inject (
     } match {
       case Success(Some(in))                                 => ResultT.fromValue(in)
       case Success(None) | Failure(_: FileNotFoundException) =>
-        logWarn("[XmlParserService][openInputStream] XML file cannot be found with path provided")
+        logError("[XmlParserService][openInputStream] XML file cannot be found with path provided")
         ResultT.fromError(InternalServerError("XML file cannot be found with path provided"))
       case Failure(e)                                        =>
-        logWarn(
+        logError(
           s"[XmlParserService][openInputStream] Unexpected error when creating Buffered Input Stream: ${e.getMessage}"
         )
         ResultT.fromError(
@@ -150,10 +150,12 @@ class XmlParserService @Inject (
       case Success(Some(validationSchema)) => ResultT.fromValue(validationSchema)
       case Success(None)                   =>
         // Would have to delete schema for test coverage but would rely on test to be guaranteed last, not recommended
-        logWarn("[XmlParserService][loadSchema] Schema file cannot be found")
+        logError("[XmlParserService][loadSchema] Schema file cannot be found")
         ResultT.fromError(InternalServerError("Schema file cannot be found"))
       case Failure(e)                      =>
-        logWarn(s"[XmlParserService][loadSchema] Unexpected error when creating Buffered Input Stream: ${e.getMessage}")
+        logError(
+          s"[XmlParserService][loadSchema] Unexpected error when creating Buffered Input Stream: ${e.getMessage}"
+        )
         ResultT.fromError(
           InternalServerError(s"Unexpected error when creating Buffered Input Stream: ${e.getMessage}")
         )

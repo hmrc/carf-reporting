@@ -39,7 +39,7 @@ class SDESCallbackController @Inject() (
       .validate[CallbackRequest]
       .fold(
         invalid =>
-          logWarn(
+          logError(
             s"[SDESCallbackController][callback] Failed to parse request body with message: ${invalid.mkString(",\n")}"
           )
           Future.successful(BadRequest(s"Request body provided is invalid with message: ${invalid.mkString(",\n")}"))
