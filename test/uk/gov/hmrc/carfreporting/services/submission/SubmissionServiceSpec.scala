@@ -344,5 +344,78 @@ class SubmissionServiceSpec extends NoGuiceSpecBase with TestData {
         verify(mockSubmissionHistoryService, times(1)).getSubmissionHistory(eqTo(testCarfRef))(any())
       }
     }
+
+    ".checkForSentFiles" - {
+      "must return true without calling SubmissionHistoryService when there are records in the repository" in {
+        when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+          .thenReturn(ResultT.fromValue(submissionDetailsList))
+
+        val result = submissionService.checkForSentFiles(testCarfRef).value.futureValue
+
+        result mustBe Right(true)
+
+        verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+        verify(mockSubmissionHistoryService, times(0)).checkSubmissionHistoryForPassedFiles(any())(any())
+      }
+
+      "when there are no records in the repository" - {
+        "must return true when SubmissionHistoryService returns true" in {
+          when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+            .thenReturn(ResultT.fromValue(Seq.empty[SubmissionDetailsCache]))
+
+          when(mockSubmissionHistoryService.checkSubmissionHistoryForPassedFiles(eqTo(testCarfRef))(any()))
+            .thenReturn(ResultT.fromValue(true))
+
+          val result = submissionService.checkForSentFiles(testCarfRef).value.futureValue
+
+          result mustBe Right(true)
+
+          verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+          verify(mockSubmissionHistoryService, times(1)).checkSubmissionHistoryForPassedFiles(eqTo(testCarfRef))(any())
+        }
+
+        "must return false when SubmissionHistoryService returns false" in {
+          when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+            .thenReturn(ResultT.fromValue(Seq.empty[SubmissionDetailsCache]))
+
+          when(mockSubmissionHistoryService.checkSubmissionHistoryForPassedFiles(eqTo(testCarfRef))(any()))
+            .thenReturn(ResultT.fromValue(false))
+
+          val result = submissionService.checkForSentFiles(testCarfRef).value.futureValue
+
+          result mustBe Right(false)
+
+          verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+          verify(mockSubmissionHistoryService, times(1)).checkSubmissionHistoryForPassedFiles(eqTo(testCarfRef))(any())
+        }
+      }
+
+      "must return an error when the repository returns an error" in {
+        when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+          .thenReturn(ResultT.fromError(MongoError("Error message")))
+
+        val result = submissionService.checkForSentFiles(testCarfRef).value.futureValue
+
+        result mustBe Left(MongoError("Error message"))
+
+        verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+        verify(mockSubmissionHistoryService, times(0)).checkSubmissionHistoryForPassedFiles(any())(any())
+      }
+
+      "must return an error when SubmissionHistoryService returns an error" in {
+        when(mockSubmissionRepository.findByCarfId(eqTo(testCarfRef)))
+          .thenReturn(ResultT.fromValue(Seq.empty[SubmissionDetailsCache]))
+
+        when(mockSubmissionHistoryService.checkSubmissionHistoryForPassedFiles(eqTo(testCarfRef))(any()))
+          .thenReturn(ResultT.fromError(InternalServerError))
+
+        val result = submissionService.checkForSentFiles(testCarfRef).value.futureValue
+
+        result mustBe Left(InternalServerError)
+
+        verify(mockSubmissionRepository, times(1)).findByCarfId(eqTo(testCarfRef))
+        verify(mockSubmissionHistoryService, times(1)).checkSubmissionHistoryForPassedFiles(eqTo(testCarfRef))(any())
+      }
+    }
   }
 }

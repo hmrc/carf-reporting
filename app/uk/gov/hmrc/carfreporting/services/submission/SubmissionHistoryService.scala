@@ -20,12 +20,10 @@ import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.connectors.SubmissionHistoryConnector
 import uk.gov.hmrc.carfreporting.models.requests.{SubmissionHistoryRequest, SubmissionHistoryRequestCommon, SubmissionHistoryRequestDetails, SubmissionsListRequest}
-import uk.gov.hmrc.carfreporting.models.responses.SubmissionHistoryStatus.Passed
 import uk.gov.hmrc.carfreporting.models.submission.*
 import uk.gov.hmrc.carfreporting.types.ResultT
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant}
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -37,8 +35,8 @@ class SubmissionHistoryService @Inject() (
 )(implicit ec: ExecutionContext)
     extends Logging {
 
-  def getSubmissionHistory(carfId: String)(implicit hc: HeaderCarrier): ResultT[Seq[SubmissionHistoryPassed]] = {
-    val submissionHistoryRequest = SubmissionHistoryRequest(
+  private def submissionHistoryRequest(carfId: String): SubmissionHistoryRequest =
+    SubmissionHistoryRequest(
       submissionsListRequest = SubmissionsListRequest(
         requestCommon = SubmissionHistoryRequestCommon(
           originatingSystem = "MDTP",
@@ -50,18 +48,16 @@ class SubmissionHistoryService @Inject() (
       )
     )
 
+  def getSubmissionHistory(carfId: String)(implicit hc: HeaderCarrier): ResultT[Seq[SubmissionHistoryPassed]] =
     submissionHistoryConnector
-      .getSubmissionHistory(submissionHistoryRequest)
+      .getSubmissionHistory(submissionHistoryRequest(carfId))
       .leftMap { error =>
         logger.warn(s"[SubmissionHistoryService][getSubmissionHistory] Error getting submission history: $error")
         error
       }
       .map { submissionRecordList =>
         submissionRecordList
-          .filter { submissionRecord =>
-            submissionRecord.submissionStatus == Passed && submissionRecord.uploadDateTime
-              .isBefore(Instant.now(clock).minus(appConfig.submissionTtlDays, ChronoUnit.DAYS))
-          }
+          .filter(_.shouldBeDisplayed(Instant.now(clock), appConfig.submissionTtlDays))
           .map { submissionRecord =>
             SubmissionHistoryPassed(
               submissionRecord.messageRefId,
@@ -71,6 +67,15 @@ class SubmissionHistoryService @Inject() (
           }
           .sortBy(_.submissionTime)(Ordering[Instant].reverse)
       }
-  }
 
+  def checkSubmissionHistoryForPassedFiles(carfId: String)(implicit hc: HeaderCarrier): ResultT[Boolean] =
+    submissionHistoryConnector
+      .getSubmissionHistory(submissionHistoryRequest(carfId))
+      .leftMap { error =>
+        logger.warn(
+          s"[SubmissionHistoryService][checkSubmissionHistoryForPassedFiles] Error getting submission history: $error"
+        )
+        error
+      }
+      .map(_.exists(_.shouldBeDisplayed(Instant.now(clock), appConfig.submissionTtlDays)))
 }

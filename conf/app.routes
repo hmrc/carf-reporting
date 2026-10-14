@@ -12,3 +12,4 @@ POST        /fts/callback                                 uk.gov.hmrc.carfreport
 
 GET         /submission-details/:uploadId                 uk.gov.hmrc.carfreporting.controllers.SubmissionDetailsController.getSubmissionDetailsByUploadId(uploadId: String)
 GET         /user-submission-history/:carfId/:page        uk.gov.hmrc.carfreporting.controllers.SubmissionDetailsController.getSubmissionDetailsByCarfId(carfId: String, page: Int)
+GET         /check-for-sent-files/:carfId                 uk.gov.hmrc.carfreporting.controllers.SubmissionDetailsController.checkForSentFiles(carfId: String)

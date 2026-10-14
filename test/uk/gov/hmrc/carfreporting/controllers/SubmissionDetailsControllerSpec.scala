@@ -125,5 +125,43 @@ class SubmissionDetailsControllerSpec extends SpecBase {
         verify(mockSubmissionService, times(1)).getSubmissionDetailsByCarfId(eqTo(testCarfRef), eqTo(1))(any())
       }
     }
+
+    ".checkForSentFiles" - {
+      "must return OK with true when submission records are found" in {
+        when(mockSubmissionService.checkForSentFiles(eqTo(testCarfRef))(any()))
+          .thenReturn(ResultT.fromValue(true))
+
+        val result = controller.checkForSentFiles(testCarfRef)(fakeRequest)
+
+        status(result)        mustEqual OK
+        contentAsJson(result) mustEqual Json.toJson(true)
+
+        verify(mockSubmissionService, times(1)).checkForSentFiles(eqTo(testCarfRef))(any())
+      }
+
+      "must return OK with false when no submission records are found" in {
+        when(mockSubmissionService.checkForSentFiles(eqTo(testCarfRef))(any()))
+          .thenReturn(ResultT.fromValue(false))
+
+        val result = controller.checkForSentFiles(testCarfRef)(fakeRequest)
+
+        status(result)        mustEqual OK
+        contentAsJson(result) mustEqual Json.toJson(false)
+
+        verify(mockSubmissionService, times(1)).checkForSentFiles(eqTo(testCarfRef))(any())
+      }
+
+      "must return InternalServerError when SubmissionService returns an error" in {
+        when(mockSubmissionService.checkForSentFiles(eqTo(testCarfRef))(any()))
+          .thenReturn(ResultT.fromError(MongoError("Error message")))
+
+        val result = controller.checkForSentFiles(testCarfRef)(fakeRequest)
+
+        status(result)     mustEqual INTERNAL_SERVER_ERROR
+        contentAsString(result) must include("Unexpected error")
+
+        verify(mockSubmissionService, times(1)).checkForSentFiles(eqTo(testCarfRef))(any())
+      }
+    }
   }
 }
