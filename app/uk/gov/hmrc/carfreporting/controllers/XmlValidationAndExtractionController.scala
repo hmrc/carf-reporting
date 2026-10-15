@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.carfreporting.controllers
 
-import play.api.Logging
 import play.api.libs.json.*
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.carfreporting.models.ExtractedCarfFileDetails
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.models.requests.XmlValidationRequest
 import uk.gov.hmrc.carfreporting.services.XmlParserService
+import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
@@ -30,34 +30,32 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class XmlValidationAndExtractionController @Inject() (cc: ControllerComponents, service: XmlParserService)(implicit
     e: ExecutionContext
-) extends BackendController(cc)
-    with Logging {
+) extends BackendController(cc) {
 
   def processXml: Action[JsValue] = Action.async(parse.json) { implicit request =>
     request.body
       .validate[XmlValidationRequest]
       .fold(
         invalid =>
-          logger.error("[XmlValidationAndExtractionController][processXml] Failed to parse request body")
+          logWarn("[XmlValidationAndExtractionController][processXml] Failed to parse request body")
           Future.successful(BadRequest("Request body provided is invalid"))
         ,
         valid =>
-          logger.info("[XmlValidationAndExtractionController][processXml]\nStarting CARF XML Validation")
+          logInfo("[XmlValidationAndExtractionController][processXml]\nStarting CARF XML Validation")
           service.validateAndExtractCARF(valid.path).value.map {
             case Right(extractedFileDetails) =>
-              logger
-                .info("[XmlValidationAndExtractionController][processXml]\nFinished CARF XML Validation with success")
+              logInfo("[XmlValidationAndExtractionController][processXml]\nFinished CARF XML Validation with success")
               Ok(Json.toJson(extractedFileDetails))
             case Left(xmlErrors: XmlErrors)  =>
-              logger.warn(
+              logWarn(
                 s"[XmlValidationAndExtractionController][processXml] Failed to validate XML with (${xmlErrors.errors.size}) error(s)"
               )
               UnprocessableEntity(Json.toJson(xmlErrors: XmlValidationError))
             case Left(InvalidXmlError)       =>
-              logger.warn("[XmlValidationAndExtractionController][processXml] Error parsing XML file")
+              logWarn("[XmlValidationAndExtractionController][processXml] Error parsing XML file")
               UnprocessableEntity(Json.toJson(InvalidXmlError: XmlValidationError))
             case Left(error)                 =>
-              logger.error(
+              logWarn(
                 s"[XmlValidationAndExtractionController][processXml] Unexpected error with message: ${error.message}"
               )
               InternalServerError("Unexpected error")

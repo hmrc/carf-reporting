@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.carfreporting.connectors
 
-import play.api.Logging
 import play.api.http.Status.{BAD_REQUEST, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.*
@@ -26,16 +25,17 @@ import uk.gov.hmrc.carfreporting.models.errors.ApiError.{BadRequestError, Intern
 import uk.gov.hmrc.carfreporting.models.requests.sdes.FileTransferNotification
 import uk.gov.hmrc.carfreporting.models.responses.FileListing
 import uk.gov.hmrc.carfreporting.types.ResultT
+import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
-class SDESConnector @Inject() (val config: AppConfig, val http: HttpClientV2) extends Logging {
+class SDESConnector @Inject() (val config: AppConfig, val http: HttpClientV2) {
 
   def sendFileReadyNotification(
       fileTransferNotification: FileTransferNotification
@@ -43,7 +43,7 @@ class SDESConnector @Inject() (val config: AppConfig, val http: HttpClientV2) ex
 
     val baseUrl = url"${config.sdesUrl}"
 
-    logger.debug(
+    logInfo(
       s"[SDESConnector][sendFileReadyNotification] Sending File Ready Notification for uploadId/correlationId: " +
         s"${fileTransferNotification.audit.correlationID}"
     )
@@ -58,20 +58,20 @@ class SDESConnector @Inject() (val config: AppConfig, val http: HttpClientV2) ex
           httpResponse.status match {
             case NO_CONTENT  => Right(())
             case BAD_REQUEST =>
-              logger.warn(
+              logError(
                 s"[SDESConnector][sendFileReadyNotification] Request Body was invalid: ${httpResponse.status} with " +
                   s"message: ${httpResponse.body}"
               )
               Left(BadRequestError)
             case _           =>
-              logger.warn(
+              logError(
                 s"[SDESConnector][sendFileReadyNotification] Unexpected response. Status code: ${httpResponse.status}, from endpoint: ${baseUrl.toURI}"
               )
               Left(InternalServerError)
           }
         }
         .recover { case NonFatal(e) =>
-          logger.error(
+          logError(
             s"[SDESConnector][sendFileReadyNotification] Asynchronous call failed with message " +
               s"${e.getMessage}"
           )
@@ -83,7 +83,7 @@ class SDESConnector @Inject() (val config: AppConfig, val http: HttpClientV2) ex
   def getBusinessRulesFileListing()(implicit hc: HeaderCarrier, ec: ExecutionContext): ResultT[Seq[FileListing]] = {
     val requestUrl = url"${config.sdesFileListingBaseUrl}/${config.sdesInformationType}"
 
-    logger.debug("[SDESConnector][getBusinessRulesFileListing] Getting list of business rules response XML files")
+    logInfo("[SDESConnector][getBusinessRulesFileListing] Getting list of business rules response XML files")
 
     ResultT.fromFuture(
       http
@@ -96,20 +96,20 @@ class SDESConnector @Inject() (val config: AppConfig, val http: HttpClientV2) ex
               Try(httpResponse.json.as[Seq[FileListing]]) match {
                 case Success(fileList) => Right(fileList)
                 case Failure(_)        =>
-                  logger.warn(
+                  logError(
                     s"[SDESConnector][getBusinessRulesFileListing] Error parsing response body from ${requestUrl.toURI}"
                   )
                   Left(JsonValidationError)
               }
             case otherStatus =>
-              logger.warn(
+              logError(
                 s"[SDESConnector][getBusinessRulesFileListing] Unexpected response. Status code: $otherStatus, from endpoint: ${requestUrl.toURI}"
               )
               Left(InternalServerError)
           }
         }
         .recover { case NonFatal(e) =>
-          logger.error(
+          logError(
             s"[SDESConnector][getBusinessRulesFileListing] Asynchronous call failed with message ${e.getMessage}"
           )
           Left(InternalServerError)

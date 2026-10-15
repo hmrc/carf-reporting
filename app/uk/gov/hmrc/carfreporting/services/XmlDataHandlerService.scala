@@ -20,13 +20,13 @@ import cats.data.NonEmptyChain
 import com.ctc.wstx.stax.WstxInputFactory
 import org.codehaus.stax2.XMLStreamReader2
 import org.codehaus.stax2.validation.{XMLValidationProblem, XMLValidationSchema}
-import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.Constants.*
 import uk.gov.hmrc.carfreporting.models.*
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.services.xmlElements.CarfBody.*
 import uk.gov.hmrc.carfreporting.services.xmlElements.CarfBody.RcaspName.*
 import uk.gov.hmrc.carfreporting.services.xmlElements.MessageSpec.*
+import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 
 import java.io.InputStream
 import javax.inject.{Inject, Singleton}
@@ -35,7 +35,7 @@ import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class XmlDataHandlerService @Inject() extends Logging {
+class XmlDataHandlerService @Inject() {
 
   inline private val maxErrors = 101
 
@@ -81,7 +81,9 @@ class XmlDataHandlerService @Inject() extends Logging {
       if (errors.size < maxErrors) {
         errors += XmlError(line, problem.getType, problem.getMessage)
       } else {
-        logger.warn(s"Truncated: more than $maxErrors schema errors in this file; further errors dropped.")
+        logWarn(
+          s"[XmlDataHandlerService][validateAndExtract] Truncated: more than $maxErrors schema errors in this file; further errors dropped."
+        )
         throw new XmlStreamFailSafeException
       }
     }
