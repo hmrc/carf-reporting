@@ -107,5 +107,75 @@ class SubmissionHistoryServiceSpec extends SpecBase {
         verify(mockSubmissionHistoryConnector, times(1)).getSubmissionHistory(eqTo(submissionHistoryRequest))(any())
       }
     }
+
+    ".checkSubmissionHistoryForPassedFiles" - {
+      "must return false when the connector returns no records" in {
+        when(mockSubmissionHistoryConnector.getSubmissionHistory(any())(any()))
+          .thenReturn(ResultT.fromValue(Seq.empty[SubmissionHistoryRecord]))
+
+        val result = service.checkSubmissionHistoryForPassedFiles(testCarfRef).value.futureValue
+
+        result mustBe Right(false)
+
+        verify(mockSubmissionHistoryConnector, times(1)).getSubmissionHistory(eqTo(submissionHistoryRequest))(any())
+      }
+
+      "must return false when there are only records for recent files and files not passed" in {
+        val submissionHistoryRecords = Seq(
+          submissionHistoryRecord.copy(uploadDateTime = Instant.now(clock).minus(1, ChronoUnit.DAYS)),
+          submissionHistoryRecord.copy(submissionStatus = Failed),
+          submissionHistoryRecord.copy(submissionStatus = Pending)
+        )
+
+        when(mockSubmissionHistoryConnector.getSubmissionHistory(any())(any()))
+          .thenReturn(ResultT.fromValue(submissionHistoryRecords))
+
+        val result = service.checkSubmissionHistoryForPassedFiles(testCarfRef).value.futureValue
+
+        result mustBe Right(false)
+
+        verify(mockSubmissionHistoryConnector, times(1)).getSubmissionHistory(eqTo(submissionHistoryRequest))(any())
+      }
+
+      "must return true when there are only records for passed files" in {
+        when(mockSubmissionHistoryConnector.getSubmissionHistory(any())(any()))
+          .thenReturn(ResultT.fromValue(submissionHistoryRecordList(5)))
+
+        val result = service.checkSubmissionHistoryForPassedFiles(testCarfRef).value.futureValue
+
+        result mustBe Right(true)
+
+        verify(mockSubmissionHistoryConnector, times(1)).getSubmissionHistory(eqTo(submissionHistoryRequest))(any())
+      }
+
+      "must return true when there are records with all submission statuses" in {
+        val submissionHistoryRecords = Seq(
+          submissionHistoryRecord.copy(submissionStatus = Pending),
+          submissionHistoryRecord.copy(uploadDateTime = Instant.now(clock).minus(1, ChronoUnit.DAYS))
+        ) ++ submissionHistoryRecordList(3) ++ Seq(
+          submissionHistoryRecord.copy(submissionStatus = Failed)
+        )
+
+        when(mockSubmissionHistoryConnector.getSubmissionHistory(any())(any()))
+          .thenReturn(ResultT.fromValue(submissionHistoryRecords))
+
+        val result = service.checkSubmissionHistoryForPassedFiles(testCarfRef).value.futureValue
+
+        result mustBe Right(true)
+
+        verify(mockSubmissionHistoryConnector, times(1)).getSubmissionHistory(eqTo(submissionHistoryRequest))(any())
+      }
+
+      "must return an error when the connector returns an error" in {
+        when(mockSubmissionHistoryConnector.getSubmissionHistory(any())(any()))
+          .thenReturn(ResultT.fromError(InternalServerError))
+
+        val result = service.checkSubmissionHistoryForPassedFiles(testCarfRef).value.futureValue
+
+        result mustBe Left(InternalServerError)
+
+        verify(mockSubmissionHistoryConnector, times(1)).getSubmissionHistory(eqTo(submissionHistoryRequest))(any())
+      }
+    }
   }
 }

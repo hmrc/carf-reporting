@@ -64,4 +64,16 @@ class SubmissionDetailsController @Inject() (
           InternalServerError(s"Unexpected error: $error")
       }
   }
+
+  def checkForSentFiles(carfId: String): Action[AnyContent] = authorise.async { implicit request =>
+    submissionService.checkForSentFiles(carfId).value.map {
+      case Right(hasSentFiles) =>
+        Ok(Json.toJson(hasSentFiles))
+      case Left(error)         =>
+        logWarn(
+          s"[SubmissionDetailsController][checkForSentFiles] Error getting submission details for carfId $carfId"
+        )
+        InternalServerError(s"Unexpected error: $error")
+    }
+  }
 }
