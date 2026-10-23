@@ -29,16 +29,22 @@ object SDESFileMetadataHelper {
   private final val formatter = DateTimeFormatter.ISO_INSTANT
 
   def generatePropertiesMetadata(submissionRequest: SubmissionRequest, submissionTime: Instant): List[Property] =
-    val conversationId = submissionRequest.uploadId.value
+    val conversationId      = submissionRequest.uploadId.value
+    val tradingNameProperty = submissionRequest.subscriptionDetails.tradingName
+      .map(tradingName => Property("requestAdditionalDetail/tradingName", tradingName))
+
     List(
       Property("requestCommon/conversationID", conversationId),
       Property("requestCommon/receiptDate", formatter.format(submissionTime)),
       Property("requestCommon/regime", "CARF"),
       Property("requestCommon/schemaVersion", "1.0.0"),
+      Property("requestAdditionalDetail/fileName", submissionRequest.fileName.value),
       Property("requestAdditionalDetail/subscriptionID", submissionRequest.subscriptionDetails.carfReference.value),
       Property("requestAdditionalDetail/isGBUser", submissionRequest.subscriptionDetails.gbUser.toString)
-    ) ++ individualOrOrganisationDetails(submissionRequest.subscriptionDetails.primaryContact, "primaryContact") ++
-      submissionRequest.subscriptionDetails.secondaryContact.fold(List.empty)(secondaryContact =>
+    )
+      ++ tradingNameProperty
+      ++ individualOrOrganisationDetails(submissionRequest.subscriptionDetails.primaryContact, "primaryContact")
+      ++ submissionRequest.subscriptionDetails.secondaryContact.fold(List.empty)(secondaryContact =>
         individualOrOrganisationDetails(secondaryContact, "secondaryContact")
       )
 
