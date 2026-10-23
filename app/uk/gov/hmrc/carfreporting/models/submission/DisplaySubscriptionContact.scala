@@ -20,6 +20,7 @@ import play.api.libs.json.{Json, OFormat}
 
 case class DisplaySubscriptionDetails(
     carfReference: CarfId,
+    tradingName: Option[String],
     gbUser: Boolean,
     primaryContact: DisplaySubscriptionContact,
     secondaryContact: Option[DisplaySubscriptionContact]

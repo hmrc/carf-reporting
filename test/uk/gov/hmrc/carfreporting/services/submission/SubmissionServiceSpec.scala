@@ -46,7 +46,7 @@ class SubmissionServiceSpec extends NoGuiceSpecBase with TestData {
         when(mockSubmissionRepository.insert(any())).thenReturn(ResultT.fromValue(true))
         when(mockSDESService.sendNotification(any(), any())(any())).thenReturn(ResultT.fromValue(()))
 
-        val result = submissionService.saveAndSubmit(testSubmissionRequest).value.futureValue
+        val result = submissionService.saveAndSubmit(testSubmissionRequestOrg).value.futureValue
 
         result mustBe Right(())
 
@@ -62,13 +62,13 @@ class SubmissionServiceSpec extends NoGuiceSpecBase with TestData {
               cache.businessRuleErrors == testSubmissionDetailsCache.businessRuleErrors
           )
         )
-        verify(mockSDESService).sendNotification(eqTo(testSubmissionRequest), any())(any())
+        verify(mockSDESService).sendNotification(eqTo(testSubmissionRequestOrg), any())(any())
       }
 
       "must pass on failure if the repository fails during submission request" in {
         when(mockSubmissionRepository.insert(any())).thenReturn(ResultT.fromError(InternalServerError))
 
-        val result = submissionService.saveAndSubmit(testSubmissionRequest).value.futureValue
+        val result = submissionService.saveAndSubmit(testSubmissionRequestOrg).value.futureValue
 
         result mustBe Left(InternalServerError)
 
@@ -90,7 +90,7 @@ class SubmissionServiceSpec extends NoGuiceSpecBase with TestData {
         when(mockSubmissionRepository.insert(any())).thenReturn(ResultT.fromValue(true))
         when(mockSDESService.sendNotification(any(), any())(any())).thenReturn(ResultT.fromError(InternalServerError))
 
-        val result = submissionService.saveAndSubmit(testSubmissionRequest).value.futureValue
+        val result = submissionService.saveAndSubmit(testSubmissionRequestOrg).value.futureValue
 
         result mustBe Left(InternalServerError)
 
@@ -106,7 +106,7 @@ class SubmissionServiceSpec extends NoGuiceSpecBase with TestData {
               cache.businessRuleErrors == testSubmissionDetailsCache.businessRuleErrors
           )
         )
-        verify(mockSDESService).sendNotification(eqTo(testSubmissionRequest), any())(any())
+        verify(mockSDESService).sendNotification(eqTo(testSubmissionRequestOrg), any())(any())
       }
     }
 

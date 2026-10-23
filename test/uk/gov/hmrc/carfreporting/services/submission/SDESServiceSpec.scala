@@ -52,12 +52,12 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
   val expectedNotification = FileTransferNotification(
     informationType = testInformationType,
     file = File(
-      name = testSubmissionRequest.fileName,
-      location = testSubmissionRequest.documentUrl,
-      checksum = Checksum(Algorithm.SHA256, testSubmissionRequest.checksum),
-      size = testSubmissionRequest.fileSize,
+      name = testSubmissionRequestOrg.fileName,
+      location = testSubmissionRequestOrg.documentUrl,
+      checksum = Checksum(Algorithm.SHA256, testSubmissionRequestOrg.checksum),
+      size = testSubmissionRequestOrg.fileSize,
       recipientOrSender = Some(testSrn),
-      properties = SDESFileMetadataHelper.generatePropertiesMetadata(testSubmissionRequest, testSubmissionTime)
+      properties = SDESFileMetadataHelper.generatePropertiesMetadata(testSubmissionRequestOrg, testSubmissionTime)
     ),
     audit = Audit(testUploadId.value)
   )
@@ -77,7 +77,7 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
         when(mockSdesConnector.sendFileReadyNotification(eqTo(expectedNotification))(any(), any()))
           .thenReturn(EitherT.rightT[Future, uk.gov.hmrc.carfreporting.models.errors.ApiError](()))
 
-        val result = service.sendNotification(testSubmissionRequest, testSubmissionTime).value.futureValue
+        val result = service.sendNotification(testSubmissionRequestOrg, testSubmissionTime).value.futureValue
 
         result mustBe Right(())
         verify(mockSdesConnector, times(1)).sendFileReadyNotification(eqTo(expectedNotification))(any(), any())
@@ -87,7 +87,7 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
         when(mockSdesConnector.sendFileReadyNotification(any())(any(), any()))
           .thenReturn(EitherT.leftT[Future, Unit](InternalServerError))
 
-        val result = service.sendNotification(testSubmissionRequest, testSubmissionTime).value.futureValue
+        val result = service.sendNotification(testSubmissionRequestOrg, testSubmissionTime).value.futureValue
 
         result mustBe Left(InternalServerError)
         verify(mockSdesConnector, times(1)).sendFileReadyNotification(eqTo(expectedNotification))(any(), any())

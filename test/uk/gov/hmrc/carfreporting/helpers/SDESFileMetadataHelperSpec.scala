@@ -35,19 +35,25 @@ class SDESFileMetadataHelperSpec extends AnyFreeSpec with Matchers with TestData
     Property("requestCommon/receiptDate", expectedReceiptDate),
     Property("requestCommon/regime", "CARF"),
     Property("requestCommon/schemaVersion", "1.0.0"),
+    Property("requestAdditionalDetail/fileName", testFileName),
     Property("requestAdditionalDetail/subscriptionID", testCarfRef),
     Property("requestAdditionalDetail/isGBUser", "true")
   )
 
   def buildSubmissionRequest(
+      isOrganisation: Boolean,
       primaryContact: DisplaySubscriptionContact,
       secondaryContact: Option[DisplaySubscriptionContact] = None
   ): SubmissionRequest = {
+    val testSubmissionRequest = if (isOrganisation) {
+      testSubmissionRequestOrg
+    } else testSubmissionRequestInd
+
     val modifiedSubscriptionDetails = testSubmissionRequest.subscriptionDetails.copy(
       primaryContact = primaryContact,
       secondaryContact = secondaryContact
     )
-    testSubmissionRequest.copy(
+    testSubmissionRequestOrg.copy(
       subscriptionDetails = modifiedSubscriptionDetails
     )
   }
@@ -62,7 +68,7 @@ class SDESFileMetadataHelperSpec extends AnyFreeSpec with Matchers with TestData
           email = "jane.doe@example.com"
         )
 
-        val request = buildSubmissionRequest(primaryContact)
+        val request = buildSubmissionRequest(false, primaryContact)
         val result  = SDESFileMetadataHelper.generatePropertiesMetadata(request, testSubmissionTime)
 
         val expectedContactProperties = List(
@@ -87,7 +93,7 @@ class SDESFileMetadataHelperSpec extends AnyFreeSpec with Matchers with TestData
           email = "john.smith@acmecorp.com"
         )
 
-        val request = buildSubmissionRequest(primaryContact, Some(secondaryContact))
+        val request = buildSubmissionRequest(true, primaryContact, Some(secondaryContact))
         val result  = SDESFileMetadataHelper.generatePropertiesMetadata(request, testSubmissionTime)
 
         val expectedPrimaryContactProperties = List(
@@ -101,7 +107,9 @@ class SDESFileMetadataHelperSpec extends AnyFreeSpec with Matchers with TestData
           Property("requestAdditionalDetail/secondaryContact/emailAddress", "john.smith@acmecorp.com")
         )
 
-        result mustBe (expectedBaseProperties ++ expectedPrimaryContactProperties ++ expectedSecondaryContactProperties)
+        val expectedOrganisationProperty = List(Property("requestAdditionalDetail/tradingName", testTradingName))
+
+        result mustBe (expectedBaseProperties ++ expectedOrganisationProperty ++ expectedPrimaryContactProperties ++ expectedSecondaryContactProperties)
       }
 
       "must default to Organisation and log a warning when both individual and organisation are provided for " +
@@ -112,7 +120,7 @@ class SDESFileMetadataHelperSpec extends AnyFreeSpec with Matchers with TestData
             email = "mixed@example.com"
           )
 
-          val request = buildSubmissionRequest(mixedContact)
+          val request = buildSubmissionRequest(true, mixedContact)
           val result  = SDESFileMetadataHelper.generatePropertiesMetadata(request, testSubmissionTime)
 
           val expectedContactProperties = List(
@@ -120,7 +128,9 @@ class SDESFileMetadataHelperSpec extends AnyFreeSpec with Matchers with TestData
             Property("requestAdditionalDetail/primaryContact/emailAddress", "mixed@example.com")
           )
 
-          result mustBe (expectedBaseProperties ++ expectedContactProperties)
+          val expectedOrganisationProperty = List(Property("requestAdditionalDetail/tradingName", testTradingName))
+
+          result mustBe (expectedBaseProperties ++ expectedOrganisationProperty ++ expectedContactProperties)
         }
 
       "must append only the emailAddress and log an error when neither individual nor organisation is provided" in {
@@ -130,7 +140,7 @@ class SDESFileMetadataHelperSpec extends AnyFreeSpec with Matchers with TestData
           email = "nobody@example.com"
         )
 
-        val request = buildSubmissionRequest(emptyContact)
+        val request = buildSubmissionRequest(false, emptyContact)
         val result  = SDESFileMetadataHelper.generatePropertiesMetadata(request, testSubmissionTime)
 
         val expectedContactProperties = List(

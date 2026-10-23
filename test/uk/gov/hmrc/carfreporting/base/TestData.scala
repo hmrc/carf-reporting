@@ -179,10 +179,26 @@ trait TestData {
     audit = Audit("correlation-id-123456789")
   )
 
-  inline val testCarfRef = "XACARF000001234"
+  inline val testCarfRef     = "XACARF000001234"
+  inline val testFileName    = "test-file.xml"
+  inline val testTradingName = "Hello 123 ltd"
+  inline val testOrgName     = "Goodbye 123 ltd"
 
-  lazy val displaySubscriptionDetails: DisplaySubscriptionDetails = DisplaySubscriptionDetails(
+  lazy val displaySubscriptionDetailsOrg: DisplaySubscriptionDetails = DisplaySubscriptionDetails(
     carfReference = CarfId(testCarfRef),
+    tradingName = Some(testTradingName),
+    gbUser = true,
+    primaryContact = DisplaySubscriptionContact(
+      individual = None,
+      organisation = Some(DisplaySubscriptionOrganisation(testOrgName)),
+      email = "jane.smith@example.com"
+    ),
+    secondaryContact = None
+  )
+
+  lazy val displaySubscriptionDetailsInd: DisplaySubscriptionDetails = DisplaySubscriptionDetails(
+    carfReference = CarfId(testCarfRef),
+    tradingName = None,
     gbUser = true,
     primaryContact = DisplaySubscriptionContact(
       individual = Some(DisplaySubscriptionIndividual("Jane", "Smith")),
@@ -201,31 +217,51 @@ trait TestData {
       PrimaryContactDetails = RcaspContactDetails(ContactName = "testContactName", EmailAddress = "test@example.com")
     )
 
-  val testSubmissionRequest: SubmissionRequest = SubmissionRequest(
-    fileName = FileName("test-file.xml"),
+  val organisationRcaspDetails =
+    OrganisationRcaspDetailsStandard(
+      RCASPID = "ZMCAR0123456788",
+      IsRCASPUser = false,
+      RCASPName = "testFirstName",
+      PrimaryContactDetails = RcaspContactDetails(ContactName = "testContactName", EmailAddress = "test@example.com"),
+      SecondaryContactDetails = None
+    )
+
+  val testSubmissionRequestOrg: SubmissionRequest = SubmissionRequest(
+    fileName = FileName(testFileName),
     uploadId = testUploadId,
     fileSize = 1024L,
     documentUrl = "http://localhost:8080/file",
     checksum = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     rcaspDetails = individualRcaspDetails,
-    subscriptionDetails = displaySubscriptionDetails,
+    subscriptionDetails = displaySubscriptionDetailsOrg,
+    extractedFileDetails = extractedFileDetailsCarf
+  )
+
+  val testSubmissionRequestInd: SubmissionRequest = SubmissionRequest(
+    fileName = FileName(testFileName),
+    uploadId = testUploadId,
+    fileSize = 1024L,
+    documentUrl = "http://localhost:8080/file",
+    checksum = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    rcaspDetails = individualRcaspDetails,
+    subscriptionDetails = displaySubscriptionDetailsInd,
     extractedFileDetails = extractedFileDetailsCarf
   )
 
   lazy val testSubmissionDetailsCache: SubmissionDetailsCache = SubmissionDetailsCache(
-    testSubmissionRequest.uploadId,
-    testSubmissionRequest.subscriptionDetails.carfReference,
+    testSubmissionRequestOrg.uploadId,
+    testSubmissionRequestOrg.subscriptionDetails.carfReference,
     Pending,
-    testSubmissionRequest.fileName,
+    testSubmissionRequestOrg.fileName,
     extractedFileDetailsCarf,
     rcaspDetails = individualRcaspDetails,
-    subscriptionDetails = displaySubscriptionDetails,
+    subscriptionDetails = displaySubscriptionDetailsOrg,
     submissionTime = Instant.ofEpochSecond(1),
     lastStatusUpdateTime = Instant.now.truncatedTo(ChronoUnit.SECONDS),
     businessRuleErrors = ValidationErrors.apply()
   )
 
-  val submissionDetailsList = Seq(
+  val submissionDetailsList: Seq[SubmissionDetailsCache] = Seq(
     testSubmissionDetailsCache,
     testSubmissionDetailsCache.copy(_id = UploadId("987654"), fileStatus = Rejected)
   )

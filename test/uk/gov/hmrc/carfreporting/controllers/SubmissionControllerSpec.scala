@@ -62,11 +62,11 @@ class SubmissionControllerSpec extends SpecBase {
              |  },
              |  "subscriptionDetails": {
              |    "carfReference": "XACARF000001234",
+             |    "tradingName": "$testTradingName",
              |    "gbUser": true,
              |    "primaryContact": {
-             |      "individual": {
-             |        "firstName": "Jane",
-             |        "lastName": "Smith"
+             |      "organisation": {
+             |        "name": "$testOrgName"
              |      },
              |      "email": "jane.smith@example.com"
              |    }
@@ -95,7 +95,7 @@ class SubmissionControllerSpec extends SpecBase {
 
         status(result) mustEqual NO_CONTENT
 
-        verify(mockSubmissionService).saveAndSubmit(eqTo(testSubmissionRequest))(any())
+        verify(mockSubmissionService).saveAndSubmit(eqTo(testSubmissionRequestOrg))(any())
       }
 
       "must return BAD_REQUEST (400) when the Json request is malformed or missing fields" in {
@@ -118,7 +118,7 @@ class SubmissionControllerSpec extends SpecBase {
       }
 
       "must return INTERNAL_SERVER_ERROR (500) when the submission service fails" in {
-        val requestBody = Json.toJson(testSubmissionRequest)
+        val requestBody = Json.toJson(testSubmissionRequestOrg)
 
         when(mockSubmissionService.saveAndSubmit(any())(any()))
           .thenReturn(ResultT.fromError(InternalServerError("Database connection failed")))
@@ -128,7 +128,7 @@ class SubmissionControllerSpec extends SpecBase {
         status(result)          mustEqual INTERNAL_SERVER_ERROR
         contentAsString(result) mustEqual "Unexpected error"
 
-        verify(mockSubmissionService).saveAndSubmit(eqTo(testSubmissionRequest))(any())
+        verify(mockSubmissionService).saveAndSubmit(eqTo(testSubmissionRequestOrg))(any())
       }
     }
   }
