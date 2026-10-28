@@ -17,8 +17,10 @@
 package uk.gov.hmrc.carfreporting.models.responses
 
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.carfreporting.models.responses.SubmissionHistoryStatus.Passed
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 case class SubmissionHistoryRecord(
     rcaspId: String,
@@ -30,7 +32,10 @@ case class SubmissionHistoryRecord(
     submissionFileType: String,
     reportingYear: String,
     submissionCaseId: String
-)
+) {
+  def shouldBeDisplayed(now: Instant, submissionTtlDays: Long): Boolean =
+    submissionStatus == Passed && uploadDateTime.isBefore(now.minus(submissionTtlDays, ChronoUnit.DAYS))
+}
 
 object SubmissionHistoryRecord {
   implicit val format: OFormat[SubmissionHistoryRecord] = Json.format[SubmissionHistoryRecord]

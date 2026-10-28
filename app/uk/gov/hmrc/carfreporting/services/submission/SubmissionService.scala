@@ -117,4 +117,25 @@ class SubmissionService @Inject() (
           }
       }
     }
+
+  def checkForSentFiles(carfId: String)(implicit hc: HeaderCarrier): ResultT[Boolean] =
+    ResultT.fromFuture {
+      repository.findByCarfId(carfId).value.flatMap {
+        case Left(error)                                                              =>
+          logWarn(
+            s"[SubmissionService][checkForSentFiles] Error getting submission details from repository for carfId $carfId"
+          )
+          Future.successful(Left(error))
+        case Right(submissionDetailsCacheList) if submissionDetailsCacheList.nonEmpty =>
+          Future.successful(Right(true))
+        case Right(submissionDetailsCacheList)                                        =>
+          submissionHistoryService.checkSubmissionHistoryForPassedFiles(carfId).value.map {
+            case Left(error)               =>
+              logWarn(s"[SubmissionService][checkForSentFiles] Error getting submission history for carfId $carfId")
+              Left(error)
+            case Right(hasSentPassedFiles) =>
+              Right(hasSentPassedFiles)
+          }
+      }
+    }
 }
