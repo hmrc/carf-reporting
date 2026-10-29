@@ -18,7 +18,7 @@ package uk.gov.hmrc.carfreporting.services.submission
 
 import uk.gov.hmrc.carfreporting.config.Constants.*
 import uk.gov.hmrc.carfreporting.connectors.{EmailConnector, EmailSent, EmailStatus}
-import uk.gov.hmrc.carfreporting.models.{getReportType, ExtractedCarfFileDetails}
+import uk.gov.hmrc.carfreporting.models.{ExtractedCarfFileDetails, getReportType}
 import uk.gov.hmrc.carfreporting.models.submission.*
 import uk.gov.hmrc.carfreporting.utils.EmailDateTimeFormatter
 import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
