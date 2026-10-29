@@ -26,6 +26,10 @@ object Constants {
   val correctionDocTypeIndic: String     = "OECD2"
   val deletionDocTypeIndic: String       = "OECD3"
   val nilReportMessageTypeIndic: String  = "CARF703"
+  
+  val carf701MessageTypeIndic: String = "CARF701"
+  val carf702MessageTypeIndic: String = "CARF702"
+  val oecd0DocTypeIndic: String = "OECD0"
 
   val clientIdHeader = "x-client-id"
   val sdesKeyHeader  = "x-sdes-Key"

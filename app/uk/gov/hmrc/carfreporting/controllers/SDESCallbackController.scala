@@ -18,19 +18,25 @@ package uk.gov.hmrc.carfreporting.controllers
 
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
+import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.carfreporting.models.requests.sdes.CallbackRequest
 import uk.gov.hmrc.carfreporting.models.submission.NotificationType.*
-import uk.gov.hmrc.carfreporting.services.submission.{SDESService, SubmissionService}
+import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
+import uk.gov.hmrc.carfreporting.services.submission.{EmailService, SDESService, SubmissionService}
 import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class SDESCallbackController @Inject() (
     cc: ControllerComponents,
     submissionService: SubmissionService,
-    sdesService: SDESService
+    sdesService: SDESService,
+    submissionRepository: SubmissionRepository,
+    emailService: EmailService
 )(implicit e: ExecutionContext)
     extends BackendController(cc) {
 
@@ -50,18 +56,16 @@ class SDESCallbackController @Inject() (
               submissionService.updateFileStatusAsFailure(valid.correlationID, valid.failureReason).value.map {
                 case Right(_)    => Ok
                 case Left(error) =>
-                  logWarn(
-                    s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}"
-                  )
+                  logWarn(s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}")
                   InternalServerError("Unexpected error")
               }
             case FileReady                    =>
               sdesService.getAndProcessBusinessRulesResponseFile(valid.correlationID, valid.filename).value.map {
-                case Right(_)    => Ok
+                case Right(_)    =>
+                  triggerStatusEmails(valid.correlationID)
+                  Ok
                 case Left(error) =>
-                  logWarn(
-                    s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}"
-                  )
+                  logWarn(s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}")
                   InternalServerError("Unexpected error")
               }
             case FileProcessed | FileReceived =>
@@ -72,4 +76,21 @@ class SDESCallbackController @Inject() (
           }
       )
   }
+
+  private def triggerStatusEmails(uploadId: UploadId)(implicit hc: HeaderCarrier): Unit =
+    submissionRepository
+      .findByUploadId(uploadId)
+      .value
+      .flatMap {
+        case Right(Some(submission)) => emailService.sendStatusEmails(submission)
+        case Right(None)             =>
+          logWarn(s"[SDESCallbackController][triggerStatusEmails] Submission not found for $uploadId, no emails sent")
+          Future.unit
+        case Left(error)             =>
+          logWarn(s"[SDESCallbackController][triggerStatusEmails] Error fetching submission $uploadId: $error")
+          Future.unit
+      }
+      .recover { case NonFatal(ex) =>
+        logWarn(s"[SDESCallbackController][triggerStatusEmails] Unexpected error: ${ex.getMessage}")
+      }
 }
