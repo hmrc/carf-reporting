@@ -33,4 +33,9 @@ object Constants {
 
   val clientIdHeader = "x-client-id"
   val sdesKeyHeader  = "x-sdes-Key"
+
+  val carfFilePassedUserTemplateId = "carf_file_passed_user"
+  val carfFilePassedRcaspTemplateId = "carf_file_passed_rcasp"
+  val carfFileFailedUserTemplateId = "carf_file_failed_user"
+
 }

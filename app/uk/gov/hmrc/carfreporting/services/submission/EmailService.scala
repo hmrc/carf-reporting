@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.carfreporting.services.submission
 
+import uk.gov.hmrc.carfreporting.config.Constants.{carfFileFailedUserTemplateId, carfFilePassedRcaspTemplateId, carfFilePassedUserTemplateId}
 import uk.gov.hmrc.carfreporting.config.{AppConfig, Constants}
 import uk.gov.hmrc.carfreporting.connectors.{EmailConnector, EmailSent, EmailStatus}
 import uk.gov.hmrc.carfreporting.models.{ExtractedCarfFileDetails, getReportType}
@@ -55,7 +56,7 @@ class EmailService @Inject() (
     )
 
     val userSends = userRecipients(submission).map { r =>
-      emailConnector.sendEmail(r.email, appConfig.carfFilePassedUserTemplateId, common + ("contactName" -> r.name))
+      emailConnector.sendEmail(r.email, carfFilePassedUserTemplateId, common + ("contactName" -> r.name))
     }
 
     val rcaspSends =
@@ -65,7 +66,7 @@ class EmailService @Inject() (
       } else {
         val params = common + ("userBusinessName" -> userBusinessName(submission))
         rcaspRecipients(submission).map { r =>
-          emailConnector.sendEmail(r.email, appConfig.carfFilePassedRcaspTemplateId, params + ("contactName" -> r.name))
+          emailConnector.sendEmail(r.email, carfFilePassedRcaspTemplateId, params + ("contactName" -> r.name))
         }
       }
 
@@ -84,7 +85,7 @@ class EmailService @Inject() (
     )
 
     val sends = userRecipients(submission).map { r =>
-      emailConnector.sendEmail(r.email, appConfig.carfFileFailedUserTemplateId, common + ("contactName" -> r.name))
+      emailConnector.sendEmail(r.email, carfFileFailedUserTemplateId, common + ("contactName" -> r.name))
     }
 
     Future.sequence(sends).map(logOutcome("sendFileFailedEmails"))
