@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.carfreporting.models
 
+import uk.gov.hmrc.carfreporting.config.Constants
+
 enum ReportType(val description: String) {
   case TestData extends ReportType("Test data")
   case NilReport extends ReportType("No reportable information")
@@ -43,28 +45,43 @@ extension (details: ExtractedCarfFileDetails) {
   def getReportType: ReportType = {
     import ReportType.*
 
-    if (details.isTestData) TestData
-    else {
+    if (details.isTestData) {
+      TestData
+    } else {
       details.messageTypeIndic match {
-        case "CARF701" =>
-          if (details.hasOtherNexus && !details.hasCryptoUsers) NotificationOfReportingOutsideUk
-          else if (details.docTypeIndic.contains("OECD0")) AdditionalInformationForExistingReport
-          else NewInformation
+        case Constants.carf701MessageTypeIndic =>
+          if (details.hasOtherNexus && !details.hasCryptoUsers)
+            NotificationOfReportingOutsideUk
+          else if (details.docTypeIndic.contains(Constants.oecd0DocTypeIndic))
+            AdditionalInformationForExistingReport
+          else
+            NewInformation
 
-        case "CARF702" =>
+        case Constants.carf702MessageTypeIndic =>
           details.docTypeIndic match {
-            case Some("OECD3")                 => DeletionOfExistingReport
-            case Some("OECD0") | Some("OECD2") =>
+            case Some(Constants.deletionDocTypeIndic) =>
+              DeletionOfExistingReport
+
+            case Some(Constants.oecd0DocTypeIndic) | Some(Constants.correctionDocTypeIndic) =>
               if (details.allCryptoUsersAreCorrections || !details.hasCryptoUsers)
                 CorrectedInformationForExistingReport
-              else if (details.docTypeIndic.contains("OECD0") && details.allCryptoUsersAreDeletions)
+              else if (
+                details.docTypeIndic.contains(Constants.oecd0DocTypeIndic) &&
+                details.allCryptoUsersAreDeletions
+              )
                 DeletedInformationForExistingReport
-              else CorrectedAndDeletedInformationForExistingReport
-            case _                             => ReportableInformationFallback
+              else
+                CorrectedAndDeletedInformationForExistingReport
+
+            case _ =>
+              ReportableInformationFallback
           }
 
-        case "CARF703" => NilReport
-        case _         => ReportableInformationFallback
+        case Constants.nilReportMessageTypeIndic =>
+          NilReport
+
+        case _ =>
+          ReportableInformationFallback
       }
     }
   }
