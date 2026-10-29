@@ -60,4 +60,9 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   val enrolmentKey: String        = config.get[String]("keys.enrolmentKey.carf")
 
   val mongoEncryptionEnabled: Boolean = config.get[Boolean]("mongodb.encryptionEnabled")
+
+  val emailUrl: String = s"${servicesConfig.baseUrl("email")}/hmrc/email"
+
+  def emailSendForce: Boolean = servicesConfig.getBoolean("microservice.services.email.force")
+
 }
