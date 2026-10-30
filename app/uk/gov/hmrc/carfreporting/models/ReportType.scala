@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.carfreporting.models
 
+import play.api.libs.json.*
 import uk.gov.hmrc.carfreporting.config.Constants
 
 enum ReportType(val description: String) {
@@ -40,10 +41,24 @@ enum ReportType(val description: String) {
   case ReportableInformationFallback extends ReportType("Reportable information")
 }
 
+object ReportType {
+
+  implicit val format: Format[ReportType] = Format(
+    Reads {
+      case JsString(name) =>
+        ReportType.values
+          .find(_.toString == name)
+          .fold[JsResult[ReportType]](JsError(s"Unknown ReportType: $name"))(JsSuccess(_))
+      case _              => JsError("Expected a string for ReportType")
+    },
+    Writes(reportType => JsString(reportType.toString))
+  )
+}
+
 extension (details: ExtractedCarfFileDetails) {
 
   def getReportType: ReportType = {
-    import ReportType.*
+    import ReportType.{format as _, *}
 
     if (details.isTestData) {
       TestData
