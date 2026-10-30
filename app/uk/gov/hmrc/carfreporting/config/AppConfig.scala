@@ -51,4 +51,9 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
     s"$submissionHistoryHost${config.get[String]("microservice.services.submission-history.uri")}"
 
   val submittedFilesPageSize: Int = config.get[Int]("submitted-files.page-size")
+
+  val emailUrl: String = s"${servicesConfig.baseUrl("email")}/hmrc/email"
+
+  def emailSendForce: Boolean = servicesConfig.getBoolean("microservice.services.email.force")
+
 }

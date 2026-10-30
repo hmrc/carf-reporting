@@ -22,20 +22,29 @@ import play.api.libs.json.Json
 import play.api.test.Helpers.*
 import uk.gov.hmrc.carfreporting.base.SpecBase
 import uk.gov.hmrc.carfreporting.models.errors.InternalServerError
-import uk.gov.hmrc.carfreporting.services.submission.{SDESService, SubmissionService}
+import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
+import uk.gov.hmrc.carfreporting.services.submission.{EmailService, SDESService, SubmissionService}
 import uk.gov.hmrc.carfreporting.types.ResultT
 
 class SDESCallbackControllerSpec extends SpecBase {
 
-  private val mockSubmissionService = mock[SubmissionService]
-  private val mockSdesService       = mock[SDESService]
+  private val mockSubmissionService    = mock[SubmissionService]
+  private val mockSdesService          = mock[SDESService]
+  private val mockSubmissionRepository = mock[SubmissionRepository]
+  private val mockEmailService         = mock[EmailService]
 
   val testController: SDESCallbackController =
-    new SDESCallbackController(cc, mockSubmissionService, mockSdesService)
+    new SDESCallbackController(
+      cc,
+      mockSubmissionService,
+      mockSdesService,
+      mockSubmissionRepository,
+      mockEmailService
+    )
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockSubmissionService, mockSdesService)
+    reset(mockSubmissionService, mockSdesService, mockSubmissionRepository, mockEmailService)
   }
 
   "SDESCallbackController" - {
@@ -110,6 +119,9 @@ class SDESCallbackControllerSpec extends SpecBase {
 
         when(mockSdesService.getAndProcessBusinessRulesResponseFile(any(), any())(any()))
           .thenReturn(ResultT.fromValue(()))
+
+        when(mockSubmissionRepository.findByUploadId(any()))
+          .thenReturn(ResultT.fromValue(None))
 
         val result = testController.callback(fakeRequestWithJsonBody(requestBody))
 
