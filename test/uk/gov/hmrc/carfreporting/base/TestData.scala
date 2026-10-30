@@ -88,7 +88,7 @@ trait TestData {
 
   val uploadRejected: UploadStatus.UploadRejected = UploadRejected(errorDetails("REJECTED"))
 
-  val extractedFileDetailsCarf = ExtractedCarfFileDetails(
+  private val baseExtractedFileDetailsCarf = ExtractedCarfFileDetails(
     messageRefId = "MSG-2024-0001",
     sendingEntityIn = "SENDER-001",
     rcaspName = Some("Acme Crypto Exchange Ltd"),
@@ -100,6 +100,10 @@ trait TestData {
     allCryptoUsersAreCorrections = false,
     allCryptoUsersAreDeletions = false
   )
+
+  // TODO: remove the copy when reportType is made required (follow-up ticket CARF-743)
+  val extractedFileDetailsCarf: ExtractedCarfFileDetails =
+    baseExtractedFileDetailsCarf.copy(reportType = Some(baseExtractedFileDetailsCarf.getReportType))
 
   val xmlErrors = XmlErrors(
     errors = Vector(
