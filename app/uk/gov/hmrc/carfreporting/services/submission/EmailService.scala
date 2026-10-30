@@ -50,7 +50,7 @@ class EmailService @Inject() (
       "fileId"     -> details.messageRefId,
       "rcaspId"    -> details.sendingEntityIn,
       "rcaspName"  -> rcaspName(submission),
-      "reportType" -> details.getReportType.description
+      "reportType" -> details.reportType.getOrElse(details.getReportType).description
     )
 
     val userSends = userRecipients(submission).map { r =>

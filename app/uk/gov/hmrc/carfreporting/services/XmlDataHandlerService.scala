@@ -183,7 +183,7 @@ class XmlDataHandlerService @Inject() {
         case _ => // Nothing
       }
 
-    ExtractedCarfFileDetails(
+    val extractedFileDetails = ExtractedCarfFileDetails(
       messageRefId = messageRefId,
       sendingEntityIn = if sendingEntityIn.isEmpty then "missing" else sendingEntityIn,
       rcaspName = if messageTypeIndic == nilReportMessageTypeIndic then None else rcaspName,
@@ -200,6 +200,7 @@ class XmlDataHandlerService @Inject() {
       allCryptoUsersAreDeletions =
         cryptoUserDocTypeIndics.nonEmpty && cryptoUserDocTypeIndics.forall(_ == deletionDocTypeIndic)
     )
+    extractedFileDetails.copy(reportType = Some(extractedFileDetails.getReportType))
   }
 
   private def readAEOIXml(reader: XMLStreamReader2): ExtractedAEOIFileDetails = {

@@ -28,9 +28,17 @@ case class ExtractedCarfFileDetails(
     docTypeIndic: Option[String],
     isTestData: Boolean,
     allCryptoUsersAreCorrections: Boolean,
-    allCryptoUsersAreDeletions: Boolean
+    allCryptoUsersAreDeletions: Boolean,
+    reportType: Option[ReportType] = None // TODO: make required (follow-up ticket)
 )
 
 object ExtractedCarfFileDetails {
-  implicit val format: OFormat[ExtractedCarfFileDetails] = Json.format[ExtractedCarfFileDetails]
+
+  private val baseFormat: OFormat[ExtractedCarfFileDetails] = Json.format[ExtractedCarfFileDetails]
+
+  // TODO: remove this fallback when reportType is made required (follow-up ticket)
+  private val readsWithFallback: Reads[ExtractedCarfFileDetails] =
+    baseFormat.map(details => details.copy(reportType = details.reportType.orElse(Some(details.getReportType))))
+
+  implicit val format: OFormat[ExtractedCarfFileDetails] = OFormat(readsWithFallback, baseFormat)
 }
