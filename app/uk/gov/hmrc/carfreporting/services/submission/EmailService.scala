@@ -106,7 +106,7 @@ class EmailService @Inject() (
         subscriptionContactName(c) match {
           case Some(name) => Some(Recipient(name, c.email))
           case None       =>
-            logWarn(s"[EmailService][userRecipients] Contact has no name, skipping email to ${c.email}")
+            logWarn(s"[EmailService][userRecipients] Contact has no name, skipping email")
             None
         }
       }
