@@ -50,7 +50,9 @@ trait ApplicationWithWiremock
       "microservice.services.sdes-file-listing.host"  -> WireMockConstants.stubHost,
       "microservice.services.sdes-file-listing.port"  -> WireMockConstants.stubPort,
       "microservice.services.submission-history.host" -> WireMockConstants.stubHost,
-      "microservice.services.submission-history.port" -> WireMockConstants.stubPort
+      "microservice.services.submission-history.port" -> WireMockConstants.stubPort,
+      "microservice.services.email.host"              -> WireMockConstants.stubHost,
+      "microservice.services.email.port"              -> WireMockConstants.stubPort
     )
 
   override lazy val app: Application = new GuiceApplicationBuilder()
