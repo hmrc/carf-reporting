@@ -54,6 +54,6 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
 
   val emailUrl: String = s"${servicesConfig.baseUrl("email")}/hmrc/email"
 
-  def emailSendForce: Boolean = servicesConfig.getBoolean("microservice.services.email.force")
+  val emailSendForce: Boolean = servicesConfig.getBoolean("microservice.services.email.force")
 
 }
