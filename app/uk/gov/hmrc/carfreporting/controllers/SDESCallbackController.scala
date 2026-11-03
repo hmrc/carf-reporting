@@ -18,9 +18,10 @@ package uk.gov.hmrc.carfreporting.controllers
 
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
-import uk.gov.hmrc.carfreporting.models.UploadId
+import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationStatus}
 import uk.gov.hmrc.carfreporting.models.requests.sdes.CallbackRequest
 import uk.gov.hmrc.carfreporting.models.submission.NotificationType.*
+import uk.gov.hmrc.carfreporting.models.submission.SubmissionDetailsCache
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.services.submission.{EmailService, SDESService, SubmissionService}
 import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
@@ -61,10 +62,10 @@ class SDESCallbackController @Inject() (
               }
             case FileReady                    =>
               sdesService.getAndProcessBusinessRulesResponseFile(valid.correlationID, valid.filename).value.map {
-                case Right(_)    =>
-                  triggerStatusEmails(valid.correlationID)
+                case Right(status) =>
+                  triggerStatusEmails(valid.correlationID, status)
                   Ok
-                case Left(error) =>
+                case Left(error)   =>
                   logWarn(s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}")
                   InternalServerError("Unexpected error")
               }
@@ -77,12 +78,17 @@ class SDESCallbackController @Inject() (
       )
   }
 
-  private def triggerStatusEmails(uploadId: UploadId)(implicit hc: HeaderCarrier): Unit =
+  private def triggerStatusEmails(uploadId: UploadId, status: ValidationStatus)(implicit hc: HeaderCarrier): Unit = {
+    val sendEmails: SubmissionDetailsCache => Future[Unit] = status match {
+      case ValidationStatus.Accepted => submission => emailService.sendFilePassedEmails(submission)
+      case ValidationStatus.Rejected => submission => emailService.sendFileFailedEmails(submission)
+    }
+
     submissionRepository
       .findByUploadId(uploadId)
       .value
       .flatMap {
-        case Right(Some(submission)) => emailService.sendStatusEmails(submission)
+        case Right(Some(submission)) => sendEmails(submission)
         case Right(None)             =>
           logWarn(s"[SDESCallbackController][triggerStatusEmails] Submission not found for $uploadId, no emails sent")
           Future.unit
@@ -93,4 +99,6 @@ class SDESCallbackController @Inject() (
       .recover { case NonFatal(ex) =>
         logWarn(s"[SDESCallbackController][triggerStatusEmails] Unexpected error: ${ex.getMessage}")
       }
+    ()
+  }
 }

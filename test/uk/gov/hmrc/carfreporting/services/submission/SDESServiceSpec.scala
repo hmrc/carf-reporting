@@ -24,6 +24,7 @@ import uk.gov.hmrc.carfreporting.base.{NoGuiceSpecBase, TestData}
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.connectors.SDESConnector
 import uk.gov.hmrc.carfreporting.helpers.SDESFileMetadataHelper
+import uk.gov.hmrc.carfreporting.models.ValidationStatus
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.InternalServerError
 import uk.gov.hmrc.carfreporting.models.errors.{InvalidXmlError, XmlErrors}
 import uk.gov.hmrc.carfreporting.models.requests.sdes.*
@@ -95,7 +96,7 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
     }
 
     ".getAndProcessBusinessRulesResponseFile" - {
-      "must return a Right when the file is found and processed successfully" in {
+      "must return the Accepted status when the file is found and the business rules result is Accepted" in {
         when(mockSdesConnector.getBusinessRulesFileListing()(any(), any()))
           .thenReturn(ResultT.fromValue(testSdesFileListing))
         when(mockXmlParserService.validateAndExtractAEOI(any(), any()))
@@ -104,9 +105,24 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
         val result =
           service.getAndProcessBusinessRulesResponseFile(testUploadId, testBusinessRulesFileName).value.futureValue
 
-        result mustBe Right(())
+        result mustBe Right(ValidationStatus.Accepted)
 
         verify(mockSdesConnector, times(1)).getBusinessRulesFileListing()(any(), any())
+        verify(mockXmlParserService, times(1)).validateAndExtractAEOI(eqTo(testDownloadUrl), eqTo(testUploadId))
+        verify(mockSubmissionRepository, times(0)).updateStatus(any(), any())
+      }
+
+      "must return the Rejected status when the file is found and the business rules result is Rejected" in {
+        when(mockSdesConnector.getBusinessRulesFileListing()(any(), any()))
+          .thenReturn(ResultT.fromValue(testSdesFileListing))
+        when(mockXmlParserService.validateAndExtractAEOI(any(), any()))
+          .thenReturn(ResultT.fromValue(validExtractedAEOIFileDetailsWithErrors))
+
+        val result =
+          service.getAndProcessBusinessRulesResponseFile(testUploadId, testBusinessRulesFileName).value.futureValue
+
+        result mustBe Right(ValidationStatus.Rejected)
+
         verify(mockXmlParserService, times(1)).validateAndExtractAEOI(eqTo(testDownloadUrl), eqTo(testUploadId))
         verify(mockSubmissionRepository, times(0)).updateStatus(any(), any())
       }

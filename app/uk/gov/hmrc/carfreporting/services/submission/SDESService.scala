@@ -19,7 +19,7 @@ package uk.gov.hmrc.carfreporting.services.submission
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.connectors.SDESConnector
 import uk.gov.hmrc.carfreporting.helpers.SDESFileMetadataHelper
-import uk.gov.hmrc.carfreporting.models.UploadId
+import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationStatus}
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.InternalServerError
 import uk.gov.hmrc.carfreporting.models.errors.{InvalidXmlError, XmlErrors}
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
@@ -68,7 +68,7 @@ class SDESService @Inject() (
   def getAndProcessBusinessRulesResponseFile(
       uploadId: UploadId,
       fileName: String
-  )(implicit hc: HeaderCarrier): ResultT[Unit] =
+  )(implicit hc: HeaderCarrier): ResultT[ValidationStatus] =
     ResultT.fromFuture {
       sdesConnector.getBusinessRulesFileListing().value.flatMap {
         case Right(fileList) =>
@@ -84,20 +84,20 @@ class SDESService @Inject() (
                 s"[SDESService][getAndProcessBusinessRulesResponseFile]\nStarting BR XML Validation <Upload ID: ${uploadId.value}>"
               )
               xmlParserService.validateAndExtractAEOI(fileListingRecord.downloadURL, uploadId).value.map {
-                case Right(_)                   =>
+                case Right(extractedFileDetails) =>
                   logInfo(
                     s"[SDESService][getAndProcessBusinessRulesResponseFile]\nFinished BR XML Validation with success <Upload ID: ${uploadId.value}>"
                   )
-                  Right(())
-                case Left(xmlErrors: XmlErrors) =>
+                  Right(extractedFileDetails.validationResult.status)
+                case Left(xmlErrors: XmlErrors)  =>
                   logWarn(
                     s"[SDESService][getAndProcessBusinessRulesResponseFile] Failed to validate XML with (${xmlErrors.errors.size}) schema error(s)"
                   )
                   Left(xmlErrors)
-                case Left(InvalidXmlError)      =>
+                case Left(InvalidXmlError)       =>
                   logWarn("[SDESService][getAndProcessBusinessRulesResponseFile] Error parsing XML file")
                   Left(InvalidXmlError)
-                case Left(error)                =>
+                case Left(error)                 =>
                   logWarn(
                     s"[SDESService][getAndProcessBusinessRulesResponseFile] Unexpected error with message: ${error.message}"
                   )
