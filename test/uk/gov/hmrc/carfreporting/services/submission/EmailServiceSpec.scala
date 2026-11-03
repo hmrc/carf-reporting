@@ -21,7 +21,7 @@ import org.mockito.Mockito.{never, reset, times, verify, verifyNoInteractions, w
 import uk.gov.hmrc.carfreporting.base.SpecBase
 import uk.gov.hmrc.carfreporting.config.Constants.*
 import uk.gov.hmrc.carfreporting.connectors.{EmailConnector, EmailNotSent, EmailSent}
-import uk.gov.hmrc.carfreporting.models.ReportType
+import uk.gov.hmrc.carfreporting.models.{ExtractedCarfFileDetails, ReportType}
 import uk.gov.hmrc.carfreporting.models.submission.*
 
 import java.time.Instant
@@ -45,13 +45,11 @@ class EmailServiceSpec extends SpecBase {
   private val rcaspUser = OrganisationRcaspDetailsRcaspUser("ZMCAR0123456788", true, "Crypto Co")
 
   private def submission(
-      status: FileStatus = FileStatus.Accepted,
       subscription: DisplaySubscriptionDetails = displaySubscriptionDetailsOrg,
       rcasp: RcaspDetails = individualRcaspDetails,
-      details: uk.gov.hmrc.carfreporting.models.ExtractedCarfFileDetails = extractedFileDetailsCarf
+      details: ExtractedCarfFileDetails = extractedFileDetailsCarf
   ): SubmissionDetailsCache =
     testSubmissionDetailsCache.copy(
-      fileStatus = status,
       subscriptionDetails = subscription,
       rcaspDetails = rcasp,
       extractedFileDetails = details,
@@ -85,6 +83,15 @@ class EmailServiceSpec extends SpecBase {
   private val secondUserContact =
     DisplaySubscriptionContact(None, Some(DisplaySubscriptionOrganisation(secondUserOrgName)), secondUserEmail)
 
+  private def passedUserParams(contactName: String): Map[String, String] =
+    passedCommon + ("contactName" -> contactName)
+
+  private def passedRcaspParams(contactName: String): Map[String, String] =
+    passedCommon ++ Map("contactName" -> contactName, "userBusinessName" -> testOrgName)
+
+  private def failedParams(contactName: String): Map[String, String] =
+    failedCommon + ("contactName" -> contactName)
+
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockEmailConnector)
@@ -99,265 +106,216 @@ class EmailServiceSpec extends SpecBase {
     verify(mockEmailConnector, times(count)).sendEmail(any(), any(), any())(any(), any())
 
   "EmailService" - {
-    "sendStatusEmails" - {
 
-      "when the file status is Accepted" - {
+    "sendFilePassedEmails" - {
 
-        "must email the user and the RCASP contact when the user is not the RCASP" in {
-          service.sendStatusEmails(submission()).futureValue
+      "must email the user and the RCASP contact when the user is not the RCASP" in {
+        service.sendFilePassedEmails(submission()).futureValue
 
-          verifySent(userEmail, carfFilePassedUserTemplateId, passedCommon + ("contactName" -> testOrgName))
-          verifySent(
-            rcaspEmail,
-            carfFilePassedRcaspTemplateId,
-            passedCommon + ("contactName"                                                   -> "testContactName", "userBusinessName" -> testOrgName)
-          )
-          verifyTotalSent(2)
-        }
+        verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgName))
+        verifySent(rcaspEmail, carfFilePassedRcaspTemplateId, passedRcaspParams("testContactName"))
+        verifyTotalSent(2)
+      }
 
-        "must email every user contact and every RCASP contact" in {
-          val subscription = displaySubscriptionDetailsOrg.copy(secondaryContact = Some(secondUserContact))
-          val rcasp        = organisationRcaspDetails.copy(
-            SecondaryContactDetails = Some(RcaspContactDetails(secondRcaspContact, secondRcaspEmail))
-          )
+      "must email every user contact and every RCASP contact" in {
+        val subscription = displaySubscriptionDetailsOrg.copy(secondaryContact = Some(secondUserContact))
+        val rcasp        = organisationRcaspDetails.copy(
+          SecondaryContactDetails = Some(RcaspContactDetails(secondRcaspContact, secondRcaspEmail))
+        )
 
-          service.sendStatusEmails(submission(subscription = subscription, rcasp = rcasp)).futureValue
+        service.sendFilePassedEmails(submission(subscription = subscription, rcasp = rcasp)).futureValue
 
-          verifySent(userEmail, carfFilePassedUserTemplateId, passedCommon + ("contactName" -> testOrgName))
-          verifySent(
-            secondUserEmail,
-            carfFilePassedUserTemplateId,
-            passedCommon + ("contactName"                                                   -> secondUserOrgName)
-          )
-          verifySent(
-            rcaspEmail,
-            carfFilePassedRcaspTemplateId,
-            passedCommon + ("contactName"                                                   -> "testContactName", "userBusinessName"  -> testOrgName)
-          )
-          verifySent(
-            secondRcaspEmail,
-            carfFilePassedRcaspTemplateId,
-            passedCommon + ("contactName"                                                   -> secondRcaspContact, "userBusinessName" -> testOrgName)
-          )
-          verifyTotalSent(4)
-        }
+        verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgName))
+        verifySent(secondUserEmail, carfFilePassedUserTemplateId, passedUserParams(secondUserOrgName))
+        verifySent(rcaspEmail, carfFilePassedRcaspTemplateId, passedRcaspParams("testContactName"))
+        verifySent(secondRcaspEmail, carfFilePassedRcaspTemplateId, passedRcaspParams(secondRcaspContact))
+        verifyTotalSent(4)
+      }
 
-        "must email only the user when the user is the RCASP" in {
-          service.sendStatusEmails(submission(rcasp = rcaspUser)).futureValue
+      "must email only the user when the user is the RCASP" in {
+        service.sendFilePassedEmails(submission(rcasp = rcaspUser)).futureValue
 
-          verifySent(userEmail, carfFilePassedUserTemplateId, passedCommon + ("contactName" -> testOrgName))
-          verify(mockEmailConnector, never())
-            .sendEmail(any(), eqTo(carfFilePassedRcaspTemplateId), any())(any(), any())
-          verifyTotalSent(1)
-        }
+        verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgName))
+        verify(mockEmailConnector, never())
+          .sendEmail(any(), eqTo(carfFilePassedRcaspTemplateId), any())(any(), any())
+        verifyTotalSent(1)
+      }
 
-        "must email only the user when an individual RCASP is also the user" in {
-          service
-            .sendStatusEmails(submission(rcasp = individualRcaspDetails.copy(IsRCASPUser = true)))
-            .futureValue
+      "must email only the user when an individual RCASP is also the user" in {
+        service
+          .sendFilePassedEmails(submission(rcasp = individualRcaspDetails.copy(IsRCASPUser = true)))
+          .futureValue
 
-          verifyTotalSent(1)
-          verify(mockEmailConnector, never()).sendEmail(eqTo(rcaspEmail), any(), any())(any(), any())
-        }
+        verifyTotalSent(1)
+        verify(mockEmailConnector, never()).sendEmail(eqTo(rcaspEmail), any(), any())(any(), any())
+      }
 
-        "must use the individual's full name when the primary contact is an individual" in {
-          service
-            .sendStatusEmails(submission(subscription = displaySubscriptionDetailsInd, rcasp = rcaspUser))
-            .futureValue
+      "must use the individual's full name when the primary contact is an individual" in {
+        service
+          .sendFilePassedEmails(submission(subscription = displaySubscriptionDetailsInd, rcasp = rcaspUser))
+          .futureValue
 
-          verifySent(userEmail, carfFilePassedUserTemplateId, passedCommon + ("contactName" -> "Jane Smith"))
-        }
+        verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams("Jane Smith"))
+      }
 
-        "must put the business name from the primary contact, not the trading name, in the RCASP email" in {
-          service.sendStatusEmails(submission()).futureValue
+      "must put the business name from the primary contact, not the trading name, in the RCASP email" in {
+        service.sendFilePassedEmails(submission()).futureValue
 
-          verify(mockEmailConnector, never())
-            .sendEmail(any(), any(), eqTo(passedCommon + ("userBusinessName" -> testTradingName)))(any(), any())
-          verifySent(
-            rcaspEmail,
-            carfFilePassedRcaspTemplateId,
-            passedCommon + ("contactName" -> "testContactName", "userBusinessName" -> testOrgName)
-          )
-        }
+        verify(mockEmailConnector, never())
+          .sendEmail(any(), any(), eqTo(passedCommon + ("userBusinessName" -> testTradingName)))(any(), any())
+        verifySent(rcaspEmail, carfFilePassedRcaspTemplateId, passedRcaspParams("testContactName"))
+      }
 
-        "must use the reportType already stored on the file details when there is one" in {
-          val details = extractedFileDetailsCarf.copy(reportType = Some(ReportType.DeletionOfExistingReport))
+      "must use the reportType already stored on the file details when there is one" in {
+        val details = extractedFileDetailsCarf.copy(reportType = Some(ReportType.DeletionOfExistingReport))
 
-          service.sendStatusEmails(submission(rcasp = rcaspUser, details = details)).futureValue
+        service.sendFilePassedEmails(submission(rcasp = rcaspUser, details = details)).futureValue
 
-          verifySent(
-            userEmail,
-            carfFilePassedUserTemplateId,
-            passedCommon + ("contactName" -> testOrgName, "reportType" -> "Deletion of the whole of an existing report")
-          )
-        }
+        verifySent(
+          userEmail,
+          carfFilePassedUserTemplateId,
+          passedUserParams(testOrgName) + ("reportType" -> "Deletion of the whole of an existing report")
+        )
+      }
 
-        "must work out the reportType from the file details when none is stored" in {
-          val details = extractedFileDetailsCarf.copy(reportType = None)
+      "must work out the reportType from the file details when none is stored" in {
+        val details = extractedFileDetailsCarf.copy(reportType = None)
 
-          service.sendStatusEmails(submission(rcasp = rcaspUser, details = details)).futureValue
+        service.sendFilePassedEmails(submission(rcasp = rcaspUser, details = details)).futureValue
 
-          verifySent(userEmail, carfFilePassedUserTemplateId, passedCommon + ("contactName" -> testOrgName))
-        }
+        verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgName))
+      }
 
-        "must use the RCASP name from management data for a nil report (individual RCASP)" in {
-          service.sendStatusEmails(submission(details = nilReportDetails)).futureValue
+      "must use the RCASP name from management data for a nil report (individual RCASP)" in {
+        service.sendFilePassedEmails(submission(details = nilReportDetails)).futureValue
 
-          val expected = passedCommon ++ Map(
+        verifySent(
+          userEmail,
+          carfFilePassedUserTemplateId,
+          passedUserParams(testOrgName) ++ Map(
             "rcaspName"  -> "testFirstName testLastName",
             "reportType" -> ReportType.NilReport.description
           )
-
-          verifySent(userEmail, carfFilePassedUserTemplateId, expected + ("contactName" -> testOrgName))
-        }
-
-        "must use the RCASP name from management data for a nil report (organisation RCASP)" in {
-          service
-            .sendStatusEmails(submission(rcasp = organisationRcaspDetails, details = nilReportDetails))
-            .futureValue
-
-          verifySent(
-            userEmail,
-            carfFilePassedUserTemplateId,
-            passedCommon ++ Map(
-              "rcaspName"   -> "testFirstName",
-              "reportType"  -> ReportType.NilReport.description,
-              "contactName" -> testOrgName
-            )
-          )
-        }
-
-        "must send no email when the primary contact has neither an organisation nor an individual" in {
-          val invalidPrimary = DisplaySubscriptionContact(None, None, userEmail)
-          val subscription   = displaySubscriptionDetailsOrg.copy(primaryContact = invalidPrimary)
-
-          service.sendStatusEmails(submission(subscription = subscription)).futureValue
-
-          verifyNoInteractions(mockEmailConnector)
-        }
-
-        "must skip a user contact with no name but still email the other contact" in {
-          val noNameContact = DisplaySubscriptionContact(None, None, "noname@example.com")
-          val subscription  = displaySubscriptionDetailsOrg.copy(secondaryContact = Some(noNameContact))
-
-          service.sendStatusEmails(submission(subscription = subscription, rcasp = rcaspUser)).futureValue
-
-          verifySent(userEmail, carfFilePassedUserTemplateId, passedCommon + ("contactName" -> testOrgName))
-          verify(mockEmailConnector, never()).sendEmail(eqTo("noname@example.com"), any(), any())(any(), any())
-          verifyTotalSent(1)
-        }
-
-        "must still send the other emails when one fails to send" in {
-          when(mockEmailConnector.sendEmail(eqTo(userEmail), any(), any())(any(), any()))
-            .thenReturn(Future.successful(EmailNotSent))
-
-          service.sendStatusEmails(submission()).futureValue
-
-          verifySent(
-            rcaspEmail,
-            carfFilePassedRcaspTemplateId,
-            passedCommon + ("contactName" -> "testContactName", "userBusinessName" -> testOrgName)
-          )
-          verifyTotalSent(2)
-        }
-
-        "must complete successfully when every email fails to send" in {
-          when(mockEmailConnector.sendEmail(any(), any(), any())(any(), any()))
-            .thenReturn(Future.successful(EmailNotSent))
-
-          service.sendStatusEmails(submission()).futureValue mustBe ((): Unit)
-        }
+        )
       }
 
-      "when the file status is Rejected" - {
+      "must use the RCASP name from management data for a nil report (organisation RCASP)" in {
+        service
+          .sendFilePassedEmails(submission(rcasp = organisationRcaspDetails, details = nilReportDetails))
+          .futureValue
 
-        "must email the user with the failed template" in {
-          service.sendStatusEmails(submission(status = FileStatus.Rejected)).futureValue
-
-          verifySent(userEmail, carfFileFailedUserTemplateId, failedCommon + ("contactName" -> testOrgName))
-          verifyTotalSent(1)
-        }
-
-        "must email every user contact" in {
-          val subscription = displaySubscriptionDetailsOrg.copy(secondaryContact = Some(secondUserContact))
-
-          service.sendStatusEmails(submission(status = FileStatus.Rejected, subscription = subscription)).futureValue
-
-          verifySent(userEmail, carfFileFailedUserTemplateId, failedCommon + ("contactName" -> testOrgName))
-          verifySent(
-            secondUserEmail,
-            carfFileFailedUserTemplateId,
-            failedCommon + ("contactName"                                                   -> secondUserOrgName)
+        verifySent(
+          userEmail,
+          carfFilePassedUserTemplateId,
+          passedUserParams(testOrgName) ++ Map(
+            "rcaspName"  -> "testFirstName",
+            "reportType" -> ReportType.NilReport.description
           )
-          verifyTotalSent(2)
-        }
-
-        "must not email the RCASP, even when the user is not the RCASP" in {
-          service.sendStatusEmails(submission(status = FileStatus.Rejected)).futureValue
-
-          verify(mockEmailConnector, never()).sendEmail(eqTo(rcaspEmail), any(), any())(any(), any())
-          verify(mockEmailConnector, never())
-            .sendEmail(any(), eqTo(carfFilePassedRcaspTemplateId), any())(any(), any())
-        }
-
-        "must use the individual's full name for an individual user" in {
-          service
-            .sendStatusEmails(submission(status = FileStatus.Rejected, subscription = displaySubscriptionDetailsInd))
-            .futureValue
-
-          verifySent(
-            userEmail,
-            carfFileFailedUserTemplateId,
-            failedCommon + ("contactName" -> "Jane Smith", "userBusinessName" -> "Jane Smith")
-          )
-        }
-
-        "must use the label RCASP and the management data name for a nil report" in {
-          service
-            .sendStatusEmails(submission(status = FileStatus.Rejected, details = nilReportDetails))
-            .futureValue
-
-          verifySent(
-            userEmail,
-            carfFileFailedUserTemplateId,
-            failedCommon ++ Map(
-              "rcaspLabel"  -> "RCASP",
-              "rcaspName"   -> "testFirstName testLastName",
-              "contactName" -> testOrgName
-            )
-          )
-        }
-
-        "must send no email when the primary contact has neither an organisation nor an individual" in {
-          val subscription =
-            displaySubscriptionDetailsOrg.copy(primaryContact = DisplaySubscriptionContact(None, None, userEmail))
-
-          service.sendStatusEmails(submission(status = FileStatus.Rejected, subscription = subscription)).futureValue
-
-          verifyNoInteractions(mockEmailConnector)
-        }
-
-        "must complete successfully when the email fails to send" in {
-          when(mockEmailConnector.sendEmail(any(), any(), any())(any(), any()))
-            .thenReturn(Future.successful(EmailNotSent))
-
-          service.sendStatusEmails(submission(status = FileStatus.Rejected)).futureValue mustBe ((): Unit)
-        }
+        )
       }
 
-      "when the file status is not Accepted or Rejected" - {
-        "must send no email" in {
-          List(
-            FileStatus.Pending,
-            FileStatus.VirusFound,
-            FileStatus.UnprocessableErrorFile,
-            FileStatus.UnexpectedError
-          ).foreach { status =>
-            service.sendStatusEmails(submission(status = status)).futureValue
+      "must send no email when the primary contact has neither an organisation nor an individual" in {
+        val subscription =
+          displaySubscriptionDetailsOrg.copy(primaryContact = DisplaySubscriptionContact(None, None, userEmail))
 
-            verifyNoInteractions(mockEmailConnector)
-          }
-        }
+        service.sendFilePassedEmails(submission(subscription = subscription)).futureValue
+
+        verifyNoInteractions(mockEmailConnector)
+      }
+
+      "must skip a user contact with no name but still email the other contact" in {
+        val noNameContact = DisplaySubscriptionContact(None, None, "noname@example.com")
+        val subscription  = displaySubscriptionDetailsOrg.copy(secondaryContact = Some(noNameContact))
+
+        service.sendFilePassedEmails(submission(subscription = subscription, rcasp = rcaspUser)).futureValue
+
+        verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgName))
+        verify(mockEmailConnector, never()).sendEmail(eqTo("noname@example.com"), any(), any())(any(), any())
+        verifyTotalSent(1)
+      }
+
+      "must still send the other emails when one fails to send" in {
+        when(mockEmailConnector.sendEmail(eqTo(userEmail), any(), any())(any(), any()))
+          .thenReturn(Future.successful(EmailNotSent))
+
+        service.sendFilePassedEmails(submission()).futureValue
+
+        verifySent(rcaspEmail, carfFilePassedRcaspTemplateId, passedRcaspParams("testContactName"))
+        verifyTotalSent(2)
+      }
+
+      "must complete successfully when every email fails to send" in {
+        when(mockEmailConnector.sendEmail(any(), any(), any())(any(), any()))
+          .thenReturn(Future.successful(EmailNotSent))
+
+        service.sendFilePassedEmails(submission()).futureValue mustBe ((): Unit)
+      }
+    }
+
+    "sendFileFailedEmails" - {
+
+      "must email the user with the failed template" in {
+        service.sendFileFailedEmails(submission()).futureValue
+
+        verifySent(userEmail, carfFileFailedUserTemplateId, failedParams(testOrgName))
+        verifyTotalSent(1)
+      }
+
+      "must email every user contact" in {
+        val subscription = displaySubscriptionDetailsOrg.copy(secondaryContact = Some(secondUserContact))
+
+        service.sendFileFailedEmails(submission(subscription = subscription)).futureValue
+
+        verifySent(userEmail, carfFileFailedUserTemplateId, failedParams(testOrgName))
+        verifySent(secondUserEmail, carfFileFailedUserTemplateId, failedParams(secondUserOrgName))
+        verifyTotalSent(2)
+      }
+
+      "must not email the RCASP, even when the user is not the RCASP" in {
+        service.sendFileFailedEmails(submission()).futureValue
+
+        verify(mockEmailConnector, never()).sendEmail(eqTo(rcaspEmail), any(), any())(any(), any())
+        verify(mockEmailConnector, never())
+          .sendEmail(any(), eqTo(carfFilePassedRcaspTemplateId), any())(any(), any())
+      }
+
+      "must use the individual's full name for an individual user" in {
+        service.sendFileFailedEmails(submission(subscription = displaySubscriptionDetailsInd)).futureValue
+
+        verifySent(
+          userEmail,
+          carfFileFailedUserTemplateId,
+          failedCommon ++ Map("contactName" -> "Jane Smith", "userBusinessName" -> "Jane Smith")
+        )
+      }
+
+      "must use the label RCASP and the management data name for a nil report" in {
+        service.sendFileFailedEmails(submission(details = nilReportDetails)).futureValue
+
+        verifySent(
+          userEmail,
+          carfFileFailedUserTemplateId,
+          failedParams(testOrgName) ++ Map(
+            "rcaspLabel" -> "RCASP",
+            "rcaspName"  -> "testFirstName testLastName"
+          )
+        )
+      }
+
+      "must send no email when the primary contact has neither an organisation nor an individual" in {
+        val subscription =
+          displaySubscriptionDetailsOrg.copy(primaryContact = DisplaySubscriptionContact(None, None, userEmail))
+
+        service.sendFileFailedEmails(submission(subscription = subscription)).futureValue
+
+        verifyNoInteractions(mockEmailConnector)
+      }
+
+      "must complete successfully when the email fails to send" in {
+        when(mockEmailConnector.sendEmail(any(), any(), any())(any(), any()))
+          .thenReturn(Future.successful(EmailNotSent))
+
+        service.sendFileFailedEmails(submission()).futureValue mustBe ((): Unit)
       }
     }
   }

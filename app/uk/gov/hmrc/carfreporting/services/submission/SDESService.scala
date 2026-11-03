@@ -20,7 +20,7 @@ import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.connectors.FtsConnector
 import uk.gov.hmrc.carfreporting.helpers.SDESFileMetadataHelper
-import uk.gov.hmrc.carfreporting.models.UploadId
+import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationStatus}
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.InternalServerError
 import uk.gov.hmrc.carfreporting.models.errors.{InvalidXmlError, XmlErrors}
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
@@ -69,7 +69,7 @@ class SDESService @Inject() (
   def getAndProcessBusinessRulesResponseFile(
       uploadId: UploadId,
       fileName: String
-  )(implicit hc: HeaderCarrier): ResultT[Unit] =
+  )(implicit hc: HeaderCarrier): ResultT[ValidationStatus] =
     ResultT.fromFuture {
       ftsConnector.getBusinessRulesFileListing().value.flatMap {
         case Right(fileList) =>
@@ -85,12 +85,12 @@ class SDESService @Inject() (
                 s"[SDESService][getAndProcessBusinessRulesResponseFile]\nStarting BR XML Validation <Upload ID: ${uploadId.value}>"
               )
               xmlParserService.validateAndExtractBusinessRules(fileListingRecord.downloadURL, uploadId).value.map {
-                case Right(_)                   =>
+                case Right(extractedFileDetails) =>
                   logger.info(
                     s"[SDESService][getAndProcessBusinessRulesResponseFile]\nFinished BR XML Validation with success <Upload ID: ${uploadId.value}>"
                   )
-                  Right(())
-                case Left(xmlErrors: XmlErrors) =>
+                  Right(extractedFileDetails.validationResult.status)
+                case Left(xmlErrors: XmlErrors)  =>
                   logger.warn(
                     s"[SDESService][getAndProcessBusinessRulesResponseFile] Failed to validate XML with (${xmlErrors.errors.size}) schema error(s)"
                   )

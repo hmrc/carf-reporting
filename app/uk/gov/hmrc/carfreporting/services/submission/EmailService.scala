@@ -34,16 +34,7 @@ class EmailService @Inject() (
 
   private case class Recipient(name: String, email: String)
 
-  def sendStatusEmails(submission: SubmissionDetailsCache)(implicit hc: HeaderCarrier): Future[Unit] =
-    submission.fileStatus match {
-      case FileStatus.Accepted => sendFilePassedEmails(submission)
-      case FileStatus.Rejected => sendFileFailedEmails(submission)
-      case other               =>
-        logInfo(s"[EmailService][sendStatusEmails] No email sent for file status: $other")
-        Future.successful(())
-    }
-
-  private def sendFilePassedEmails(submission: SubmissionDetailsCache)(implicit hc: HeaderCarrier): Future[Unit] = {
+  def sendFilePassedEmails(submission: SubmissionDetailsCache)(implicit hc: HeaderCarrier): Future[Unit] = {
     val details = submission.extractedFileDetails
     val common  = Map(
       "dateTime"   -> EmailDateTimeFormatter.format(submission.lastStatusUpdateTime),
@@ -77,7 +68,7 @@ class EmailService @Inject() (
     Future.sequence(userSends ++ rcaspSends).map(logOutcome("sendFilePassedEmails"))
   }
 
-  private def sendFileFailedEmails(submission: SubmissionDetailsCache)(implicit hc: HeaderCarrier): Future[Unit] =
+  def sendFileFailedEmails(submission: SubmissionDetailsCache)(implicit hc: HeaderCarrier): Future[Unit] =
     userBusinessName(submission) match {
       case None               =>
         logWarn("[EmailService][sendFileFailedEmails] Invalid primary contact, skipping user emails")
@@ -106,7 +97,7 @@ class EmailService @Inject() (
         subscriptionContactName(c) match {
           case Some(name) => Some(Recipient(name, c.email))
           case None       =>
-            logWarn(s"[EmailService][userRecipients] Contact has no name, skipping email")
+            logWarn("[EmailService][userRecipients] Contact has no name, skipping email")
             None
         }
       }
