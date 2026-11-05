@@ -285,6 +285,29 @@ trait TestData {
     )
   )
 
+  val testIntegrationSdesFileListing: Seq[FileListing] = Seq(
+    FileListing(
+      filename = testBusinessRulesFileName,
+      fileSize = 100L,
+      downloadURL = testDownloadUrl,
+      metadata = Seq(
+        FileListingMetadata(metadata = "FileType", value = "XML")
+      )
+    ),
+    FileListing(
+      filename = "br-file-2.xml",
+      fileSize = 345L,
+      downloadURL = testDownloadUrl,
+      metadata = Seq.empty
+    ),
+    FileListing(
+      filename = "br-file-3.xml",
+      fileSize = 2177L,
+      downloadURL = testDownloadUrl,
+      metadata = Seq.empty
+    )
+  )
+
   val submissionHistoryRequest = SubmissionHistoryRequest(
     submissionsListRequest = SubmissionsListRequest(
       requestCommon = SubmissionHistoryRequestCommon(
