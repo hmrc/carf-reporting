@@ -137,11 +137,16 @@ class SDESConnectorISpec extends ApplicationWithWiremock {
         |        "fileSize": 345,
         |        "downloadURL": "$testDownloadUrl",
         |        "metadata": []
+        |    },
+        |    {
+        |        "filename": "br-file-3.xml",
+        |        "fileSize": 2177,
+        |        "downloadURL": "$testDownloadUrl"
         |    }
         |]
         |""".stripMargin
 
-    "must return the list of files given a 200 response" in {
+    "must return the list of files given a 200 response and body with all possible values of metadata" in {
       stubFor(
         get(urlPathMatching(testUrl))
           .willReturn(
@@ -152,7 +157,7 @@ class SDESConnectorISpec extends ApplicationWithWiremock {
       )
 
       val result = connector.getBusinessRulesFileListing().value.futureValue
-      result mustBe Right(testSdesFileListing)
+      result mustBe Right(testIntegrationSdesFileListing)
     }
 
     "must return JsonValidationError when the response body cannot be parsed" in {

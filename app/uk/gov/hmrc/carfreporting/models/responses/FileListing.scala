@@ -22,7 +22,7 @@ case class FileListing(
     filename: String,
     fileSize: Long,
     downloadURL: String,
-    metadata: Seq[FileListingMetadata]
+    metadata: Seq[FileListingMetadata] = Seq.empty
 )
 
 object FileListing {
