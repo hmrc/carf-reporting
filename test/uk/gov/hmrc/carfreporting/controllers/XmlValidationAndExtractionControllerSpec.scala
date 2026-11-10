@@ -30,7 +30,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
 
   private val mockXmlParserService                         = mock[XmlParserService]
   val testController: XmlValidationAndExtractionController =
-    new XmlValidationAndExtractionController(cc, mockXmlParserService)
+    new XmlValidationAndExtractionController(cc, mockXmlParserService, fakeAuthAction, fakeCheckCarfIdAction)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -52,7 +52,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
         when(mockXmlParserService.validateAndExtractCARF(eqTo(path)))
           .thenReturn(ResultT.fromValue(extractedFileDetailsCarf))
 
-        val result = testController.processXml(fakeRequestWithJsonBody(requestBody))
+        val result = testController.processXml(testCarfRef)(fakeRequestWithJsonBody(requestBody))
 
         status(result)        mustEqual OK
         contentAsJson(result) mustEqual Json.toJson(extractedFileDetailsCarf)
@@ -74,7 +74,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
         when(mockXmlParserService.validateAndExtractCARF(eqTo(invalidPath)))
           .thenReturn(ResultT.fromError(XmlErrors(Vector(validationError))))
 
-        val result = testController.processXml(fakeRequestWithJsonBody(requestBody))
+        val result = testController.processXml(testCarfRef)(fakeRequestWithJsonBody(requestBody))
 
         status(result)        mustEqual UNPROCESSABLE_ENTITY
         contentAsJson(result) mustEqual Json.toJson(XmlErrors(Vector(validationError)): XmlValidationError)
@@ -95,7 +95,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
         when(mockXmlParserService.validateAndExtractCARF(eqTo(invalidPath)))
           .thenReturn(ResultT.fromError(InvalidXmlError))
 
-        val result = testController.processXml(fakeRequestWithJsonBody(requestBody))
+        val result = testController.processXml(testCarfRef)(fakeRequestWithJsonBody(requestBody))
 
         status(result)        mustEqual UNPROCESSABLE_ENTITY
         contentAsJson(result) mustEqual Json.toJson(InvalidXmlError: XmlValidationError)
@@ -114,7 +114,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
 
         val expectedResponse = "Request body provided is invalid"
 
-        val result = testController.processXml(fakeRequestWithJsonBody(requestBody))
+        val result = testController.processXml(testCarfRef)(fakeRequestWithJsonBody(requestBody))
 
         status(result)          mustEqual BAD_REQUEST
         contentAsString(result) mustEqual expectedResponse
@@ -135,7 +135,7 @@ class XmlValidationAndExtractionControllerSpec extends SpecBase {
         when(mockXmlParserService.validateAndExtractCARF(eqTo(path)))
           .thenReturn(ResultT.fromError(InternalServerError("message")))
 
-        val result = testController.processXml(fakeRequestWithJsonBody(requestBody))
+        val result = testController.processXml(testCarfRef)(fakeRequestWithJsonBody(requestBody))
 
         status(result) mustEqual INTERNAL_SERVER_ERROR
 

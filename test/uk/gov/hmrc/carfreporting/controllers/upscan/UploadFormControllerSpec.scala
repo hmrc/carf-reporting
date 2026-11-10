@@ -31,7 +31,7 @@ class UploadFormControllerSpec extends SpecBase {
 
   val mockUploadProgressTracker: UploadProgressTracker = mock[UploadProgressTracker]
 
-  val controller = new UploadFormController(mockUploadProgressTracker, fakeAuthAction, cc)
+  val controller = new UploadFormController(mockUploadProgressTracker, fakeAuthAction, fakeCheckCarfIdAction, cc)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -46,7 +46,7 @@ class UploadFormControllerSpec extends SpecBase {
         when(mockUploadProgressTracker.requestUpload(eqTo(testUploadId), eqTo(testReference)))
           .thenReturn(ResultT.fromValue(true))
 
-        val result = controller.saveRequestedUpload(
+        val result = controller.saveRequestedUpload(testCarfRef)(
           fakeRequestWithJsonBody(Json.toJson(upscanIdentifiers))
         )
 
@@ -61,7 +61,7 @@ class UploadFormControllerSpec extends SpecBase {
         when(mockUploadProgressTracker.requestUpload(eqTo(testUploadId), eqTo(testReference)))
           .thenReturn(ResultT.fromError(MongoError("Error message")))
 
-        val result = controller.saveRequestedUpload(
+        val result = controller.saveRequestedUpload(testCarfRef)(
           fakeRequestWithJsonBody(Json.toJson(upscanIdentifiers))
         )
 
@@ -74,7 +74,7 @@ class UploadFormControllerSpec extends SpecBase {
       "must return BadRequest when passed an invalid request body" in {
         val requestBody = """{ "fileReference" : "test" }"""
 
-        val result = controller.saveRequestedUpload(
+        val result = controller.saveRequestedUpload(testCarfRef)(
           fakeRequestWithJsonBody(Json.toJson(requestBody))
         )
 
@@ -88,7 +88,7 @@ class UploadFormControllerSpec extends SpecBase {
       "must return NOT_FOUND when no upload status is retrieved" in {
         when(mockUploadProgressTracker.getUploadResult(eqTo(testUploadId))).thenReturn(ResultT.fromValue(None))
 
-        val result = controller.getStatus(testUploadId.value)(fakeRequest)
+        val result = controller.getStatus(testUploadId.value, testCarfRef)(fakeRequest)
 
         status(result) mustEqual NOT_FOUND
 
@@ -99,7 +99,7 @@ class UploadFormControllerSpec extends SpecBase {
         when(mockUploadProgressTracker.getUploadResult(eqTo(testUploadId)))
           .thenReturn(ResultT.fromValue(Some(Quarantined)))
 
-        val result = controller.getStatus(testUploadId.value)(fakeRequest)
+        val result = controller.getStatus(testUploadId.value, testCarfRef)(fakeRequest)
 
         status(result)        mustEqual OK
         contentAsJson(result) mustEqual Json.parse("""{"_type":"Quarantined"}""")
@@ -111,7 +111,7 @@ class UploadFormControllerSpec extends SpecBase {
         when(mockUploadProgressTracker.getUploadResult(eqTo(testUploadId)))
           .thenReturn(ResultT.fromValue(Some(uploadedSuccessfully)))
 
-        val result = controller.getStatus(testUploadId.value)(fakeRequest)
+        val result = controller.getStatus(testUploadId.value, testCarfRef)(fakeRequest)
 
         val expectedJson: String =
           """{
@@ -133,7 +133,7 @@ class UploadFormControllerSpec extends SpecBase {
         when(mockUploadProgressTracker.getUploadResult(eqTo(testUploadId)))
           .thenReturn(ResultT.fromValue(Some(uploadRejected)))
 
-        val result = controller.getStatus(testUploadId.value)(fakeRequest)
+        val result = controller.getStatus(testUploadId.value, testCarfRef)(fakeRequest)
 
         val expectedJson: String =
           """{
@@ -154,7 +154,7 @@ class UploadFormControllerSpec extends SpecBase {
         when(mockUploadProgressTracker.getUploadResult(eqTo(testUploadId)))
           .thenReturn(ResultT.fromError(MongoError("Error message")))
 
-        val result = controller.getStatus(testUploadId.value)(fakeRequest)
+        val result = controller.getStatus(testUploadId.value, testCarfRef)(fakeRequest)
 
         status(result)     mustEqual INTERNAL_SERVER_ERROR
         contentAsString(result) must include("Error message")

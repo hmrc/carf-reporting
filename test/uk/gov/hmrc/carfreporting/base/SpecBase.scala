@@ -28,7 +28,7 @@ import play.api.libs.json.JsValue
 import play.api.mvc.{AnyContentAsEmpty, ControllerComponents, PlayBodyParsers}
 import play.api.test.Helpers.stubControllerComponents
 import play.api.test.{DefaultAwaitTimeout, FakeHeaders, FakeRequest}
-import uk.gov.hmrc.carfreporting.controllers.actions.FakeAuthAction
+import uk.gov.hmrc.carfreporting.controllers.actions.{FakeAuthAction, FakeCheckCarfIdAction}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext
@@ -61,5 +61,7 @@ trait SpecBase
 
   implicit val hc: HeaderCarrier    = HeaderCarrier()
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+
+  lazy val fakeCheckCarfIdAction = new FakeCheckCarfIdAction()
 
 }

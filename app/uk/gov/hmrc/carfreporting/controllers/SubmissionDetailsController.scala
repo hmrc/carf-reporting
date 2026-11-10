@@ -18,7 +18,7 @@ package uk.gov.hmrc.carfreporting.controllers
 
 import play.api.libs.json.*
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.carfreporting.controllers.actions.AuthAction
+import uk.gov.hmrc.carfreporting.controllers.actions.{AuthAction, CheckCarfIdAction}
 import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.NotFoundError
 import uk.gov.hmrc.carfreporting.services.submission.SubmissionService
@@ -30,30 +30,32 @@ import scala.concurrent.ExecutionContext
 
 class SubmissionDetailsController @Inject() (
     authorise: AuthAction,
+    checkCarfId: CheckCarfIdAction,
     cc: ControllerComponents,
     submissionService: SubmissionService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def getSubmissionDetailsByUploadId(uploadId: String): Action[AnyContent] = authorise.async { implicit request =>
-    submissionService.getSubmissionDetailsByUploadId(UploadId(uploadId)).value.map {
-      case Right(submissionDetails) =>
-        Ok(Json.toJson(submissionDetails))
-      case Left(NotFoundError)      =>
-        logWarn(
-          s"[SubmissionDetailsController][getSubmissionDetailsByUploadId] Submission details not found for uploadId $uploadId"
-        )
-        NotFound
-      case Left(error)              =>
-        logWarn(
-          s"[SubmissionDetailsController][getSubmissionDetailsByUploadId] Error getting submission details for uploadId $uploadId"
-        )
-        InternalServerError(s"Unexpected error: $error")
+  def getSubmissionDetailsByUploadId(uploadId: String, carfId: String): Action[AnyContent] =
+    (authorise andThen checkCarfId(carfId)).async { implicit request =>
+      submissionService.getSubmissionDetailsByUploadId(UploadId(uploadId)).value.map {
+        case Right(submissionDetails) =>
+          Ok(Json.toJson(submissionDetails))
+        case Left(NotFoundError)      =>
+          logWarn(
+            s"[SubmissionDetailsController][getSubmissionDetailsByUploadId] Submission details not found for uploadId $uploadId"
+          )
+          NotFound
+        case Left(error)              =>
+          logWarn(
+            s"[SubmissionDetailsController][getSubmissionDetailsByUploadId] Error getting submission details for uploadId $uploadId"
+          )
+          InternalServerError(s"Unexpected error: $error")
+      }
     }
-  }
 
-  def getSubmissionDetailsByCarfId(carfId: String, page: Int): Action[AnyContent] = authorise.async {
-    implicit request =>
+  def getSubmissionDetailsByCarfId(carfId: String, page: Int): Action[AnyContent] =
+    (authorise andThen checkCarfId(carfId)).async { implicit request =>
       submissionService.getSubmissionDetailsByCarfId(carfId, page).value.map {
         case Right(detailsOfFilesSent) =>
           Ok(Json.toJson(detailsOfFilesSent))
@@ -63,17 +65,18 @@ class SubmissionDetailsController @Inject() (
           )
           InternalServerError(s"Unexpected error: $error")
       }
-  }
-
-  def checkForSentFiles(carfId: String): Action[AnyContent] = authorise.async { implicit request =>
-    submissionService.checkForSentFiles(carfId).value.map {
-      case Right(hasSentFiles) =>
-        Ok(Json.toJson(hasSentFiles))
-      case Left(error)         =>
-        logWarn(
-          s"[SubmissionDetailsController][checkForSentFiles] Error getting submission details for carfId $carfId"
-        )
-        InternalServerError(s"Unexpected error: $error")
     }
+
+  def checkForSentFiles(carfId: String): Action[AnyContent] = (authorise andThen checkCarfId(carfId)).async {
+    implicit request =>
+      submissionService.checkForSentFiles(carfId).value.map {
+        case Right(hasSentFiles) =>
+          Ok(Json.toJson(hasSentFiles))
+        case Left(error)         =>
+          logWarn(
+            s"[SubmissionDetailsController][checkForSentFiles] Error getting submission details for carfId $carfId"
+          )
+          InternalServerError(s"Unexpected error: $error")
+      }
   }
 }

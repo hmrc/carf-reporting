@@ -25,9 +25,10 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues, TryVa
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Environment
 import play.api.libs.json.JsValue
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{ControllerComponents, PlayBodyParsers}
 import play.api.test.Helpers.stubControllerComponents
 import play.api.test.{DefaultAwaitTimeout, FakeHeaders, FakeRequest}
+import uk.gov.hmrc.carfreporting.controllers.actions.{FakeAuthAction, FakeCheckCarfIdAction}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.io.File
@@ -63,4 +64,7 @@ trait NoGuiceSpecBase
   implicit val hc: HeaderCarrier    = HeaderCarrier()
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
+  val mockBodyParser: PlayBodyParsers = mock[PlayBodyParsers]
+  val fakeAuthAction: FakeAuthAction                   = new FakeAuthAction(mockBodyParser)
+  val fakeCheckCarfIdAction = new FakeCheckCarfIdAction()
 }
