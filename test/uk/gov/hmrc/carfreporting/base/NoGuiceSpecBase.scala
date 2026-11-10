@@ -65,6 +65,6 @@ trait NoGuiceSpecBase
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   val mockBodyParser: PlayBodyParsers = mock[PlayBodyParsers]
-  val fakeAuthAction: FakeAuthAction                   = new FakeAuthAction(mockBodyParser)
-  val fakeCheckCarfIdAction = new FakeCheckCarfIdAction()
+  val fakeAuthAction: FakeAuthAction  = new FakeAuthAction(mockBodyParser)
+  val fakeCheckCarfIdAction           = new FakeCheckCarfIdAction()
 }
