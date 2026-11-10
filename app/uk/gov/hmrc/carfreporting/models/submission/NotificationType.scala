@@ -19,13 +19,14 @@ package uk.gov.hmrc.carfreporting.models.submission
 import play.api.libs.json.{JsError, JsString, JsSuccess, Reads, Writes}
 
 enum NotificationType:
-  case FileReady, FileReceived, FileProcessed, FileProcessingFailure
+  case FileReady, FileReceived, FileProcessed, FileDelayed, FileProcessingFailure
 
 object NotificationType {
   given Writes[NotificationType] = Writes[NotificationType] {
     case FileReady             => JsString("FileReady")
     case FileReceived          => JsString("FileReceived")
     case FileProcessed         => JsString("FileProcessed")
+    case FileDelayed           => JsString("FileDelayed")
     case FileProcessingFailure => JsString("FileProcessingFailure")
   }
 
@@ -33,6 +34,7 @@ object NotificationType {
     case JsString("FileReady")             => JsSuccess(FileReady)
     case JsString("FileReceived")          => JsSuccess(FileReceived)
     case JsString("FileProcessed")         => JsSuccess(FileProcessed)
+    case JsString("FileDelayed")           => JsSuccess(FileDelayed)
     case JsString("FileProcessingFailure") => JsSuccess(FileProcessingFailure)
     case other                             =>
       JsError(s"Invalid SdesCallback: $other")
