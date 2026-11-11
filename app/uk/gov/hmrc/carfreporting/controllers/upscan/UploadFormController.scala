@@ -18,7 +18,7 @@ package uk.gov.hmrc.carfreporting.controllers.upscan
 
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.carfreporting.controllers.actions.AuthAction
+import uk.gov.hmrc.carfreporting.controllers.actions.{AuthAction, CheckCarfIdAction}
 import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.carfreporting.models.upscan.UpscanIdentifiers
 import uk.gov.hmrc.carfreporting.services.upscan.UploadProgressTracker
@@ -30,27 +30,29 @@ import scala.concurrent.{ExecutionContext, Future}
 class UploadFormController @Inject() (
     uploadProgressTracker: UploadProgressTracker,
     authorise: AuthAction,
+    checkCarfId: CheckCarfIdAction,
     cc: ControllerComponents
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def saveRequestedUpload: Action[JsValue] = authorise.async(parse.json) { implicit request =>
-    request.body
-      .validate[UpscanIdentifiers]
-      .fold(
-        invalid = _ => Future.successful(BadRequest("Could not parse request body as UpscanIdentifiers")),
-        valid = identifiers =>
-          uploadProgressTracker
-            .requestUpload(identifiers.uploadId, identifiers.fileReference)
-            .value
-            .map {
-              case Right(_)    => Ok
-              case Left(error) => InternalServerError(s"Unexpected error: $error")
-            }
-      )
+  def saveRequestedUpload(carfId: String): Action[JsValue] = (authorise andThen checkCarfId(carfId)).async(parse.json) {
+    implicit request =>
+      request.body
+        .validate[UpscanIdentifiers]
+        .fold(
+          invalid = _ => Future.successful(BadRequest("Could not parse request body as UpscanIdentifiers")),
+          valid = identifiers =>
+            uploadProgressTracker
+              .requestUpload(identifiers.uploadId, identifiers.fileReference)
+              .value
+              .map {
+                case Right(_)    => Ok
+                case Left(error) => InternalServerError(s"Unexpected error: $error")
+              }
+        )
   }
 
-  def getStatus(uploadId: String): Action[AnyContent] = authorise.async {
+  def getStatus(uploadId: String, carfId: String): Action[AnyContent] = (authorise andThen checkCarfId(carfId)).async {
     uploadProgressTracker.getUploadResult(UploadId(uploadId)).value.map {
       case Right(Some(uploadStatus)) => Ok(Json.toJson(uploadStatus))
       case Right(None)               => NotFound

@@ -32,7 +32,7 @@ class SubmissionControllerSpec extends SpecBase {
   private val mockSubmissionService = mock[SubmissionService]
 
   val testController: SubmissionController =
-    new SubmissionController(cc, mockSubmissionService)
+    new SubmissionController(cc, mockSubmissionService, fakeAuthAction, fakeCheckCarfIdAction)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -91,7 +91,7 @@ class SubmissionControllerSpec extends SpecBase {
         when(mockSubmissionService.saveAndSubmit(any())(any()))
           .thenReturn(ResultT.fromValue(()))
 
-        val result = testController.submit(fakeRequestWithJsonBody(requestBody))
+        val result = testController.submit(testCarfRef)(fakeRequestWithJsonBody(requestBody))
 
         status(result) mustEqual NO_CONTENT
 
@@ -109,7 +109,7 @@ class SubmissionControllerSpec extends SpecBase {
 
         val expectedResponse = "Request body provided is invalid"
 
-        val result = testController.submit(fakeRequestWithJsonBody(requestBody))
+        val result = testController.submit(testCarfRef)(fakeRequestWithJsonBody(requestBody))
 
         status(result)                                     mustEqual BAD_REQUEST
         contentAsString(result).contains(expectedResponse) mustEqual true
@@ -123,7 +123,7 @@ class SubmissionControllerSpec extends SpecBase {
         when(mockSubmissionService.saveAndSubmit(any())(any()))
           .thenReturn(ResultT.fromError(InternalServerError("Database connection failed")))
 
-        val result = testController.submit(fakeRequestWithJsonBody(requestBody))
+        val result = testController.submit(testCarfRef)(fakeRequestWithJsonBody(requestBody))
 
         status(result)          mustEqual INTERNAL_SERVER_ERROR
         contentAsString(result) mustEqual "Unexpected error"

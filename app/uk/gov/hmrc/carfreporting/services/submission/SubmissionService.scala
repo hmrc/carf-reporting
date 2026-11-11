@@ -90,52 +90,43 @@ class SubmissionService @Inject() (
       }
 
   def getSubmissionDetailsByCarfId(carfId: String, page: Int)(implicit hc: HeaderCarrier): ResultT[DetailsOfFilesSent] =
-    ResultT.fromFuture {
-      repository.findByCarfId(carfId).value.flatMap {
-        case Left(error)                       =>
-          logWarn(
-            s"[SubmissionService][getSubmissionDetailsByCarfId] Error getting submission details from repository for carfId $carfId"
-          )
-          Future.successful(Left(error))
-        case Right(submissionDetailsCacheList) =>
-          submissionHistoryService.getSubmissionHistory(carfId).value.map {
-            case Left(error)                        =>
-              logWarn(
-                s"[SubmissionService][getSubmissionDetailsByCarfId] Error getting submission history for carfId $carfId"
-              )
-              Left(error)
-            case Right(submissionHistoryPassedList) =>
-              val submissionRecordList: Seq[SubmissionRecord] =
-                submissionDetailsCacheList ++ submissionHistoryPassedList
+    for {
+      submissionDetailsCacheList  <- repository.findByCarfId(carfId).leftMap { error =>
+                                       logWarn(
+                                         s"[SubmissionService][getSubmissionDetailsByCarfId] Error getting submission details from repository for carfId $carfId"
+                                       )
+                                       error
+                                     }
+      submissionHistoryPassedList <- submissionHistoryService.getSubmissionHistory(carfId).leftMap { error =>
+                                       logWarn(
+                                         s"[SubmissionService][getSubmissionDetailsByCarfId] Error getting submission history for carfId $carfId"
+                                       )
+                                       error
+                                     }
+    } yield {
+      val submissionRecordList: Seq[SubmissionRecord] =
+        submissionDetailsCacheList ++ submissionHistoryPassedList
 
-              val pageSize                   = appConfig.submittedFilesPageSize
-              val totalPages                 = (submissionRecordList.size + pageSize - 1) / pageSize
-              val submissionRecordSlicedList =
-                submissionRecordList.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize)
+      val pageSize                   = appConfig.submittedFilesPageSize
+      val totalPages                 = (submissionRecordList.size + pageSize - 1) / pageSize
+      val submissionRecordSlicedList =
+        submissionRecordList.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize)
 
-              Right(DetailsOfFilesSent(submissionRecordSlicedList, totalPages))
-          }
-      }
+      DetailsOfFilesSent(submissionRecordSlicedList, totalPages)
     }
 
   def checkForSentFiles(carfId: String)(implicit hc: HeaderCarrier): ResultT[Boolean] =
-    ResultT.fromFuture {
-      repository.findByCarfId(carfId).value.flatMap {
-        case Left(error)                                                              =>
-          logWarn(
-            s"[SubmissionService][checkForSentFiles] Error getting submission details from repository for carfId $carfId"
-          )
-          Future.successful(Left(error))
-        case Right(submissionDetailsCacheList) if submissionDetailsCacheList.nonEmpty =>
-          Future.successful(Right(true))
-        case Right(submissionDetailsCacheList)                                        =>
-          submissionHistoryService.checkSubmissionHistoryForPassedFiles(carfId).value.map {
-            case Left(error)               =>
-              logWarn(s"[SubmissionService][checkForSentFiles] Error getting submission history for carfId $carfId")
-              Left(error)
-            case Right(hasSentPassedFiles) =>
-              Right(hasSentPassedFiles)
+    for {
+      submissionDetailsCacheList <- repository.findByCarfId(carfId)
+      result                     <- {
+        if (submissionDetailsCacheList.nonEmpty) {
+          ResultT.fromValue(true)
+        } else {
+          submissionHistoryService.checkSubmissionHistoryForPassedFiles(carfId).leftMap { error =>
+            logWarn(s"[SubmissionService][checkForSentFiles] Error getting submission history for carfId $carfId")
+            error
           }
+        }
       }
-    }
+    } yield result
 }
