@@ -20,7 +20,6 @@ import org.mockito.Mockito.when
 import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.model.Filters
 import org.scalactic.Prettifier.default
-import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.freespec.AnyFreeSpec
 import play.api.Configuration
 import play.api.libs.json.Json
@@ -36,10 +35,7 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import java.time.Instant
 
-class SubmissionRepositorySpec
-    extends SpecBase
-    with IntegrationPatience
-    with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
+class SubmissionRepositorySpec extends SpecBase with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
 
   val config: AppConfig = mock[AppConfig]
   when(config.cacheTtl) thenReturn 1L

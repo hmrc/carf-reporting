@@ -17,6 +17,7 @@
 package uk.gov.hmrc.carfreporting.models.crypto
 
 import uk.gov.hmrc.carfreporting.models.submission.{CarfId, DisplaySubscriptionDetails, FileName, RcaspDetails}
+import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus
 import uk.gov.hmrc.carfreporting.models.{ExtractedCarfFileDetails, ValidationErrors}
 import uk.gov.hmrc.crypto.Sensitive
 
@@ -33,3 +34,5 @@ case class SensitiveDisplaySubscriptionDetails(override val decryptedValue: Disp
     extends Sensitive[DisplaySubscriptionDetails]
 
 case class SensitiveValidationErrors(override val decryptedValue: ValidationErrors) extends Sensitive[ValidationErrors]
+
+case class SensitiveStatus(override val decryptedValue: UploadStatus) extends Sensitive[UploadStatus]
