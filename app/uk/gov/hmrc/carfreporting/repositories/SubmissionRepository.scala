@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.carfreporting.repositories
 
+import cats.Show.Shown.mat
 import com.mongodb.MongoWriteException
 import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.*
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Updates.set
-import org.mongodb.scala.model.{FindOneAndUpdateOptions, IndexModel, IndexOptions, Sorts, Updates}
 import uk.gov.hmrc.carfreporting.config.AppConfig
+import uk.gov.hmrc.carfreporting.models.crypto.CryptoType.CryptoT
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus.{Pending, Rejected}
 import uk.gov.hmrc.carfreporting.models.submission.{FileStatus, SubmissionDetailsCache}
@@ -39,11 +41,12 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig: AppConfig, clock: Clock)(implicit
-    ec: ExecutionContext
+    ec: ExecutionContext,
+    crypto: CryptoT
 ) extends PlayMongoRepository[SubmissionDetailsCache](
       mongoComponent = mongoComponent,
       collectionName = "submissionRepository",
-      domainFormat = SubmissionDetailsCache.format,
+      domainFormat = SubmissionDetailsCache.mongoFormat(appConfig.mongoEncryptionEnabled),
       indexes = Seq(
         IndexModel(
           ascending("submissionTime"),
@@ -125,26 +128,36 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
       businessRuleErrors: ValidationErrors
   ): ResultT[Boolean] =
     if (newStatus == Rejected) {
-      val filter: Bson                     = equal("_id", Codecs.toBson(uploadId.value))
-      val modifier: Bson                   = Updates.combine(
-        set("fileStatus", Codecs.toBson(newStatus)),
-        set("lastStatusUpdateTime", Instant.now(clock)),
-        set("businessRuleErrors", Codecs.toBson(businessRuleErrors))
-      )
-      val options: FindOneAndUpdateOptions = FindOneAndUpdateOptions().upsert(true)
+      findByUploadId(uploadId).flatMap {
+        case Some(fileToUpdate) =>
+          val filter: Bson                         = equal("_id", Codecs.toBson(uploadId.value))
+          val fileToInsert: SubmissionDetailsCache = fileToUpdate.copy(
+            fileStatus = newStatus,
+            lastStatusUpdateTime = Instant.now(clock),
+            businessRuleErrors = businessRuleErrors
+          )
+          val options: ReplaceOptions              = ReplaceOptions().upsert(true)
 
-      ResultT.fromFuture {
-        collection
-          .findOneAndUpdate(filter, modifier, options)
-          .toFuture()
-          .map(_ => Right(true))
-          .recover { case _ =>
-            val errorMessage =
-              "[SubmissionRepository][updateStatusWithErrors] Failed to call SubmissionRepository .updateStatus"
-            logError(errorMessage)
-            Left(MongoError(errorMessage))
+          ResultT.fromFuture {
+            collection
+              .replaceOne(filter, fileToInsert, options)
+              .toFuture()
+              .map(_ => Right(true))
+              .recover { case _ =>
+                val errorMessage =
+                  "[SubmissionRepository][updateStatusWithErrors] Failed to call SubmissionRepository .updateStatus"
+                logError(errorMessage)
+                Left(MongoError(errorMessage))
+              }
+
           }
+        case None               =>
+          val errorMessage =
+            "[SubmissionRepository][updateStatusWithErrors] Failed to retrieve record to update"
+          logError(errorMessage)
+          ResultT.fromError(MongoError(errorMessage))
       }
+
     } else
       val errorMessage =
         "[SubmissionRepository][updateStatusWithErrors] Error updateStatusWithErrors called without rejected status in SubmissionRepository .updateStatusWithErrors"
@@ -179,4 +192,5 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
           Left(MongoError("Failed to call SubmissionRepository .findByCarfId"))
         }
     }
+
 }

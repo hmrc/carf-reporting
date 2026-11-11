@@ -6,12 +6,14 @@ object AppDependencies {
   private val hmrcMongoVersion = "2.14.0"
   private val catsVersion      = "2.13.0"
   private val woodstoxVersion  = "6.5.1"
+  private val cryptoVersion    = "8.4.0"
 
   val compile: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"           %% "bootstrap-backend-play-30" % bootstrapVersion,
     "uk.gov.hmrc.mongo"     %% "hmrc-mongo-play-30"        % hmrcMongoVersion,
     "org.typelevel"         %% "cats-core"                 % catsVersion,
-    "com.fasterxml.woodstox" % "woodstox-core"             % woodstoxVersion
+    "com.fasterxml.woodstox" % "woodstox-core"             % woodstoxVersion,
+    "uk.gov.hmrc"           %% "crypto-json-play-30"       % cryptoVersion
   )
 
   val test: Seq[ModuleID] = Seq(

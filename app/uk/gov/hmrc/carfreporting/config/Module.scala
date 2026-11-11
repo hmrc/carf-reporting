@@ -17,8 +17,10 @@
 package uk.gov.hmrc.carfreporting.config
 
 import com.google.inject.AbstractModule
+import config.CryptoProvider
 import uk.gov.hmrc.carfreporting.controllers.actions.{AuthAction, DefaultAuthAction}
 import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, MainDispatcherName, XmlDispatcher}
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 
 import java.time.{Clock, ZoneOffset}
 
@@ -30,5 +32,7 @@ class Module extends AbstractModule {
     bind(classOf[AppConfig]).asEagerSingleton()
     bind(classOf[XmlDispatcher]).asEagerSingleton()
     bind(classOf[DispatcherName]).toInstance(new MainDispatcherName())
+    bind(classOf[Encrypter]).toProvider(classOf[CryptoProvider])
+    bind(classOf[Decrypter]).toProvider(classOf[CryptoProvider])
   }
 }
