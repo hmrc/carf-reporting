@@ -16,12 +16,11 @@
 
 package uk.gov.hmrc.carfreporting.performance
 
-import config.CryptoProvider
 import org.mockito.Mockito.when
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.carfreporting.base.NoGuiceSpecBase
-import uk.gov.hmrc.carfreporting.config.AppConfig
+import uk.gov.hmrc.carfreporting.config.{AppConfig, CryptoProvider}
 import uk.gov.hmrc.carfreporting.config.Constants.ukZoneId
 import uk.gov.hmrc.carfreporting.controllers.XmlValidationAndExtractionController
 import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, XmlDispatcher}

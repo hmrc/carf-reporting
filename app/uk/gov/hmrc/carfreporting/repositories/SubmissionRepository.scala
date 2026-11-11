@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.carfreporting.repositories
 
-import cats.Show.Shown.mat
 import com.mongodb.MongoWriteException
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.carfreporting.repositories
 
-import config.CryptoProvider
 import org.mockito.Mockito.when
 import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.model.Filters
@@ -26,7 +25,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.carfreporting.base.SpecBase
-import uk.gov.hmrc.carfreporting.config.AppConfig
+import uk.gov.hmrc.carfreporting.config.{AppConfig, CryptoProvider}
 import uk.gov.hmrc.carfreporting.models.crypto.CryptoType.{randomAesKey, CryptoT}
 import uk.gov.hmrc.carfreporting.models.errors.BusinessError
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus.{Accepted, Rejected, VirusFound}
