@@ -65,7 +65,7 @@ class SDESConnector @Inject() (val config: AppConfig, val http: HttpClientV2) {
               Left(BadRequestError)
             case _           =>
               logError(
-                s"[SDESConnector][sendFileReadyNotification] Unexpected response. Status code: ${httpResponse.status}, from endpoint: ${baseUrl.toURI}"
+                s"[SDESConnector][sendFileReadyNotification] Unexpected response from file ready call. Status code: ${httpResponse.status}"
               )
               Left(InternalServerError)
           }
@@ -97,13 +97,13 @@ class SDESConnector @Inject() (val config: AppConfig, val http: HttpClientV2) {
                 case Success(fileList) => Right(fileList)
                 case Failure(_)        =>
                   logError(
-                    s"[SDESConnector][getBusinessRulesFileListing] Error parsing response body from ${requestUrl.toURI}"
+                    s"[SDESConnector][getBusinessRulesFileListing] Error parsing response body from business rules lookup"
                   )
                   Left(JsonValidationError)
               }
             case otherStatus =>
               logError(
-                s"[SDESConnector][getBusinessRulesFileListing] Unexpected response. Status code: $otherStatus, from endpoint: ${requestUrl.toURI}"
+                s"[SDESConnector][getBusinessRulesFileListing] Unexpected response from business rules lookup. Status code: $otherStatus"
               )
               Left(InternalServerError)
           }
