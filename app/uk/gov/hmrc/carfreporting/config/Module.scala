@@ -17,7 +17,6 @@
 package uk.gov.hmrc.carfreporting.config
 
 import com.google.inject.AbstractModule
-import config.CryptoProvider
 import uk.gov.hmrc.carfreporting.controllers.actions.{AuthAction, DefaultAuthAction}
 import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, MainDispatcherName, XmlDispatcher}
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
