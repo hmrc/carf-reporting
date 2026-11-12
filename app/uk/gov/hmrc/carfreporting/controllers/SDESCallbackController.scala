@@ -69,6 +69,11 @@ class SDESCallbackController @Inject() (
                 s"[SDESCallbackController][callback] Callback received for upload/correlation ID: ${valid.correlationID}"
               )
               Future.successful(Ok)
+            case FileDelayed                  =>
+              logInfo(
+                s"[SDESCallbackController][callback] Callback received with status ${FileDelayed.toString} for upload/correlation ID: ${valid.correlationID}"
+              )
+              Future.successful(Ok)
           }
       )
   }
