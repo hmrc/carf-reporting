@@ -18,6 +18,7 @@ package uk.gov.hmrc.carfreporting.controllers
 
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
+import uk.gov.hmrc.carfreporting.controllers.actions.{AuthAction, CheckCarfIdAction}
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
 import uk.gov.hmrc.carfreporting.services.submission.SubmissionService
 import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
@@ -26,30 +27,37 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class SubmissionController @Inject() (cc: ControllerComponents, service: SubmissionService)(implicit
+class SubmissionController @Inject() (
+    cc: ControllerComponents,
+    service: SubmissionService,
+    authorise: AuthAction,
+    checkCarfId: CheckCarfIdAction
+)(implicit
     e: ExecutionContext
 ) extends BackendController(cc) {
 
-  def submit: Action[JsValue] = Action.async(parse.json) { implicit request =>
-    request.body
-      .validate[SubmissionRequest]
-      .fold(
-        invalid =>
-          logWarn(
-            s"[SubmissionController][submit] Failed to parse request body with message: ${invalid.mkString(",\n")}"
-          )
-          Future.successful(BadRequest(s"Request body provided is invalid with message: ${invalid.mkString(",\n")}"))
-        ,
-        valid =>
-          service.saveAndSubmit(valid).value.map {
-            case Right(_)    =>
-              NoContent
-            case Left(error) =>
-              logWarn(
-                s"[SubmissionController][submit] Unexpected error with message: ${error.message}"
-              )
-              InternalServerError("Unexpected error")
-          }
-      )
+  def submit(carfId: String): Action[JsValue] = (authorise andThen checkCarfId(carfId)).async(parse.json) {
+    implicit request =>
+      request.body
+        .validate[SubmissionRequest]
+        .fold(
+          invalid =>
+            logWarn(
+              s"[SubmissionController][submit] Failed to parse request body with message: ${invalid.mkString(",\n")}"
+            )
+            Future.successful(BadRequest(s"Request body provided is invalid with message: ${invalid.mkString(",\n")}"))
+          ,
+          valid =>
+            service.saveAndSubmit(valid).value.map {
+              case Right(_)    =>
+                NoContent
+              case Left(error) =>
+                logWarn(
+                  s"[SubmissionController][submit] Unexpected error with message: ${error.message}"
+                )
+                InternalServerError("Unexpected error")
+            }
+        )
   }
+
 }

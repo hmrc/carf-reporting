@@ -1,15 +1,15 @@
 # microservice specific routes
 
-POST        /upscan/callback                              uk.gov.hmrc.carfreporting.controllers.upscan.UploadCallbackController.callback
-GET         /upscan/status/:uploadId                      uk.gov.hmrc.carfreporting.controllers.upscan.UploadFormController.getStatus(uploadId: String)
-POST        /upscan/upload                                uk.gov.hmrc.carfreporting.controllers.upscan.UploadFormController.saveRequestedUpload
+POST        /upscan/callback                                uk.gov.hmrc.carfreporting.controllers.upscan.UploadCallbackController.callback
+GET         /upscan/status/:uploadId/:carfId                uk.gov.hmrc.carfreporting.controllers.upscan.UploadFormController.getStatus(uploadId: String, carfId: String)
+POST        /upscan/upload/:carfId                          uk.gov.hmrc.carfreporting.controllers.upscan.UploadFormController.saveRequestedUpload(carfId: String)
 
-POST        /validate-extract-xml                         uk.gov.hmrc.carfreporting.controllers.XmlValidationAndExtractionController.processXml
+POST        /validate-extract-xml/:carfId                   uk.gov.hmrc.carfreporting.controllers.XmlValidationAndExtractionController.processXml(carfId: String)
 
-POST        /submit                                       uk.gov.hmrc.carfreporting.controllers.SubmissionController.submit
+POST        /submit/:carfId                                 uk.gov.hmrc.carfreporting.controllers.SubmissionController.submit(carfId: String)
 
-POST        /fts/callback                                 uk.gov.hmrc.carfreporting.controllers.SDESCallbackController.callback
+POST        /fts/callback                                   uk.gov.hmrc.carfreporting.controllers.SDESCallbackController.callback
 
-GET         /submission-details/:uploadId                 uk.gov.hmrc.carfreporting.controllers.SubmissionDetailsController.getSubmissionDetailsByUploadId(uploadId: String)
-GET         /user-submission-history/:carfId/:page        uk.gov.hmrc.carfreporting.controllers.SubmissionDetailsController.getSubmissionDetailsByCarfId(carfId: String, page: Int)
-GET         /check-for-sent-files/:carfId                 uk.gov.hmrc.carfreporting.controllers.SubmissionDetailsController.checkForSentFiles(carfId: String)
+GET         /submission-details/:uploadId/:carfId           uk.gov.hmrc.carfreporting.controllers.SubmissionDetailsController.getSubmissionDetailsByUploadId(uploadId: String, carfId: String)
+GET         /user-submission-history/:carfId/:page          uk.gov.hmrc.carfreporting.controllers.SubmissionDetailsController.getSubmissionDetailsByCarfId(carfId: String, page: Int)
+GET         /check-for-sent-files/:carfId                   uk.gov.hmrc.carfreporting.controllers.SubmissionDetailsController.checkForSentFiles(carfId: String)

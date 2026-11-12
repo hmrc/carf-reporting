@@ -68,32 +68,6 @@ class SDESCallbackControllerSpec extends SpecBase {
         verify(mockSubmissionService).updateFileStatusAsFailure(eqTo(testUploadId), eqTo(Some(failureReason)))
       }
 
-      "must return INTERNAL_SERVER_ERROR (500) when notification is FileProcessingFailure and the service returns an error" in {
-
-        val requestBodyJson =
-          s"""
-             |{
-             |  "notification": "FileProcessingFailure",
-             |  "checksumAlgorithm": "SHA-256",
-             |  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-             |  "filename": "test-file.xml",
-             |  "correlationID": "${testUploadId.value}"
-             |}
-             |""".stripMargin
-
-        val requestBody = Json.parse(requestBodyJson)
-
-        when(mockSubmissionService.updateFileStatusAsFailure(any(), any()))
-          .thenReturn(ResultT.fromError(InternalServerError("Database timeout")))
-
-        val result = testController.callback(fakeRequestWithJsonBody(requestBody))
-
-        status(result)          mustEqual INTERNAL_SERVER_ERROR
-        contentAsString(result) mustEqual "Unexpected error"
-
-        verify(mockSubmissionService).updateFileStatusAsFailure(eqTo(testUploadId), eqTo(None))
-      }
-
       "must return OK (200) when notification is FileReady and the call to SdesService is successful" in {
         val requestBodyJson =
           s"""
@@ -117,37 +91,34 @@ class SDESCallbackControllerSpec extends SpecBase {
         verify(mockSdesService).getAndProcessBusinessRulesResponseFile(eqTo(testUploadId), eqTo("br-file.xml"))(any())
       }
 
-      "must return INTERNAL_SERVER_ERROR (500) when notification is FileReady and SdesService returns an error" in {
-        val requestBodyJson =
-          s"""
-             |{
-             |  "notification": "FileReady",
-             |  "filename": "br-file.xml",
-             |  "checksumAlgorithm": "SHA-256",
-             |  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-             |  "correlationID": "${testUploadId.value}"
-             |}
-             |""".stripMargin
-
-        val requestBody = Json.parse(requestBodyJson)
-
-        when(mockSdesService.getAndProcessBusinessRulesResponseFile(any(), any())(any()))
-          .thenReturn(ResultT.fromError(InternalServerError("Unexpected error")))
-
-        val result = testController.callback(fakeRequestWithJsonBody(requestBody))
-
-        status(result)          mustEqual INTERNAL_SERVER_ERROR
-        contentAsString(result) mustEqual "Unexpected error"
-
-        verify(mockSdesService).getAndProcessBusinessRulesResponseFile(eqTo(testUploadId), eqTo("br-file.xml"))(any())
-      }
-
       "must return OK (200) without calling the service when notification is NOT FileProcessingFailure or FileReady (e.g., FileProcessed)" in {
 
         val requestBodyJson =
           s"""
              |{
              |  "notification": "FileProcessed",
+             |  "filename": "test-file.xml",
+             |  "checksumAlgorithm": "SHA-256",
+             |  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+             |  "correlationID": "correlation-12345"
+             |}
+             |""".stripMargin
+
+        val requestBody = Json.parse(requestBodyJson)
+
+        val result = testController.callback(fakeRequestWithJsonBody(requestBody))
+
+        status(result) mustEqual OK
+
+        verify(mockSubmissionService, times(0)).updateFileStatusAsFailure(any(), any())
+      }
+
+      "must return OK (200) without calling the service when notification is FileDelayed" in {
+
+        val requestBodyJson =
+          s"""
+             |{
+             |  "notification": "FileDelayed",
              |  "filename": "test-file.xml",
              |  "checksumAlgorithm": "SHA-256",
              |  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -180,6 +151,57 @@ class SDESCallbackControllerSpec extends SpecBase {
         contentAsString(result) must include("Request body provided is invalid")
 
         verify(mockSubmissionService, times(0)).updateFileStatusAsFailure(any(), any())
+      }
+
+      "must return INTERNAL_SERVER_ERROR (500) when notification is FileReady and SdesService returns an error" in {
+        val requestBodyJson =
+          s"""
+             |{
+             |  "notification": "FileReady",
+             |  "filename": "br-file.xml",
+             |  "checksumAlgorithm": "SHA-256",
+             |  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+             |  "correlationID": "${testUploadId.value}"
+             |}
+             |""".stripMargin
+
+        val requestBody = Json.parse(requestBodyJson)
+
+        when(mockSdesService.getAndProcessBusinessRulesResponseFile(any(), any())(any()))
+          .thenReturn(ResultT.fromError(InternalServerError("Unexpected error")))
+
+        val result = testController.callback(fakeRequestWithJsonBody(requestBody))
+
+        status(result)          mustEqual INTERNAL_SERVER_ERROR
+        contentAsString(result) mustEqual "Unexpected error"
+
+        verify(mockSdesService).getAndProcessBusinessRulesResponseFile(eqTo(testUploadId), eqTo("br-file.xml"))(any())
+      }
+
+      "must return INTERNAL_SERVER_ERROR (500) when notification is FileProcessingFailure and the service returns an error" in {
+
+        val requestBodyJson =
+          s"""
+             |{
+             |  "notification": "FileProcessingFailure",
+             |  "checksumAlgorithm": "SHA-256",
+             |  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+             |  "filename": "test-file.xml",
+             |  "correlationID": "${testUploadId.value}"
+             |}
+             |""".stripMargin
+
+        val requestBody = Json.parse(requestBodyJson)
+
+        when(mockSubmissionService.updateFileStatusAsFailure(any(), any()))
+          .thenReturn(ResultT.fromError(InternalServerError("Database timeout")))
+
+        val result = testController.callback(fakeRequestWithJsonBody(requestBody))
+
+        status(result)          mustEqual INTERNAL_SERVER_ERROR
+        contentAsString(result) mustEqual "Unexpected error"
+
+        verify(mockSubmissionService).updateFileStatusAsFailure(eqTo(testUploadId), eqTo(None))
       }
     }
   }

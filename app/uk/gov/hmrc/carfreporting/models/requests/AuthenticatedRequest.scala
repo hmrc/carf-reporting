@@ -24,5 +24,6 @@ case class AuthenticatedRequest[A](
     private val request: Request[A],
     internalId: String,
     sessionId: SessionId,
-    affinityGroup: AffinityGroup
+    affinityGroup: AffinityGroup,
+    carfId: Option[String]
 ) extends WrappedRequest[A](request)

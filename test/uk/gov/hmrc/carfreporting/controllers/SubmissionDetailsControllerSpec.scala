@@ -33,7 +33,7 @@ class SubmissionDetailsControllerSpec extends SpecBase {
 
   val mockSubmissionService: SubmissionService = mock[SubmissionService]
 
-  val controller = new SubmissionDetailsController(fakeAuthAction, cc, mockSubmissionService)
+  val controller = new SubmissionDetailsController(fakeAuthAction, fakeCheckCarfIdAction, cc, mockSubmissionService)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -46,7 +46,7 @@ class SubmissionDetailsControllerSpec extends SpecBase {
         when(mockSubmissionService.getSubmissionDetailsByUploadId(eqTo(testUploadId)))
           .thenReturn(ResultT.fromValue(testSubmissionDetailsCache))
 
-        val result = controller.getSubmissionDetailsByUploadId(testUploadId.value)(fakeRequest)
+        val result = controller.getSubmissionDetailsByUploadId(testUploadId.value, testCarfRef)(fakeRequest)
 
         status(result)        mustEqual OK
         contentAsJson(result) mustEqual Json.toJson(testSubmissionDetailsCache)
@@ -58,7 +58,7 @@ class SubmissionDetailsControllerSpec extends SpecBase {
         when(mockSubmissionService.getSubmissionDetailsByUploadId(eqTo(testUploadId)))
           .thenReturn(ResultT.fromError(NotFoundError))
 
-        val result = controller.getSubmissionDetailsByUploadId(testUploadId.value)(fakeRequest)
+        val result = controller.getSubmissionDetailsByUploadId(testUploadId.value, testCarfRef)(fakeRequest)
 
         status(result) mustEqual NOT_FOUND
 
@@ -69,7 +69,7 @@ class SubmissionDetailsControllerSpec extends SpecBase {
         when(mockSubmissionService.getSubmissionDetailsByUploadId(eqTo(testUploadId)))
           .thenReturn(ResultT.fromError(MongoError("Error message")))
 
-        val result = controller.getSubmissionDetailsByUploadId(testUploadId.value)(fakeRequest)
+        val result = controller.getSubmissionDetailsByUploadId(testUploadId.value, testCarfRef)(fakeRequest)
 
         status(result)     mustEqual INTERNAL_SERVER_ERROR
         contentAsString(result) must include("Unexpected error")

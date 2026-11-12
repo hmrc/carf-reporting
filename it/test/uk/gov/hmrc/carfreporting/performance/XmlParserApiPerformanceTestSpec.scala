@@ -75,7 +75,9 @@ class XmlParserApiPerformanceTestSpec
     val dataHandlerService = new XmlDataHandlerService
     val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
 
-    val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service)
+    val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(
+      cc, service, fakeAuthAction, fakeCheckCarfIdAction
+    )
 
     val validCarfXmlSizeOnDisk = 4000L
 
@@ -105,7 +107,7 @@ class XmlParserApiPerformanceTestSpec
     val dataHandlerService = new XmlDataHandlerService
     val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
 
-    val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service)
+    val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service, fakeAuthAction, fakeCheckCarfIdAction)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(testController)
@@ -133,7 +135,7 @@ class XmlParserApiPerformanceTestSpec
     val dataHandlerService = new XmlDataHandlerService
     val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
 
-    val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service)
+    val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service, fakeAuthAction, fakeCheckCarfIdAction)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(testController)
@@ -161,7 +163,7 @@ class XmlParserApiPerformanceTestSpec
     val dataHandlerService = new XmlDataHandlerService
     val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
 
-    val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service)
+    val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(cc, service, fakeAuthAction, fakeCheckCarfIdAction)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(testController)
@@ -359,7 +361,7 @@ class XmlParserApiPerformanceTestSpec
 
     Future {
       val startTime = System.nanoTime()
-      controller.processXml(fakeRequestWithJsonBody(requestBody)) map { _ =>
+      controller.processXml("testCarfId")(fakeRequestWithJsonBody(requestBody)) map { _ =>
         FileInfo(fileSizeInBytes, System.nanoTime() - startTime)
       }
     }.flatten
