@@ -16,10 +16,13 @@
 
 package uk.gov.hmrc.carfreporting.performance
 
+import org.mockito.Mockito.when
+import play.api.Configuration
 import uk.gov.hmrc.carfreporting.base.NoGuiceSpecBase
-import uk.gov.hmrc.carfreporting.config.AppConfig
+import uk.gov.hmrc.carfreporting.config.{AppConfig, CryptoProvider}
 import uk.gov.hmrc.carfreporting.config.Constants.ukZoneId
 import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, XmlDispatcher}
+import uk.gov.hmrc.carfreporting.models.crypto.CryptoType.{randomAesKey, CryptoT}
 import uk.gov.hmrc.carfreporting.models.submission.SubmissionDetailsCache
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.services.{XmlDataHandlerService, XmlParserService}
@@ -37,6 +40,9 @@ class XmlParserPerformanceTestSpec
   import uk.gov.hmrc.carfreporting.itutil.Reporter.*
 
   val config: AppConfig = mock[AppConfig]
+  when(config.mongoEncryptionEnabled) thenReturn false
+
+  private implicit val crypto: CryptoT = new CryptoProvider(Configuration("crypto.key" -> randomAesKey)).get()
 
   val clock: Clock = Clock.fixed(Instant.ofEpochMilli(1718118467838L), ukZoneId)
 

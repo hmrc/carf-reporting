@@ -17,16 +17,18 @@
 package uk.gov.hmrc.carfreporting.repositories
 
 import com.mongodb.MongoWriteException
+import com.mongodb.client.model.ReplaceOptions
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model.Updates.set
-import org.mongodb.scala.model.{FindOneAndUpdateOptions, IndexModel, IndexOptions, Updates}
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.UploadId
+import uk.gov.hmrc.carfreporting.models.crypto.CryptoType.CryptoT
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.types.ResultT
+import uk.gov.hmrc.carfreporting.utils.LoggerUtil.logError
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
@@ -40,11 +42,11 @@ class UpscanSessionRepository @Inject() (
     mongoComponent: MongoComponent,
     clock: Clock,
     appConfig: AppConfig
-)(implicit ec: ExecutionContext)
+)(implicit ec: ExecutionContext, crypto: CryptoT)
     extends PlayMongoRepository[UploadSessionDetails](
       mongoComponent = mongoComponent,
       collectionName = "upscanSessionRepository",
-      domainFormat = UploadSessionDetails.format,
+      domainFormat = UploadSessionDetails.mongoFormat(appConfig.mongoEncryptionEnabled),
       indexes = Seq(
         IndexModel(
           ascending("lastUpdated"),
@@ -79,28 +81,45 @@ class UpscanSessionRepository @Inject() (
         }
     }
 
-  def updateStatus(
-      reference: Reference,
-      newStatus: UploadStatus
-  ): ResultT[Boolean] = {
-    val filter: Bson                     = equal("reference", Codecs.toBson(reference.value))
-    val modifier: Bson                   = Updates.combine(
-      set("status", Codecs.toBson(newStatus)),
-      set("lastUpdated", Instant.now(clock))
-    )
-    val options: FindOneAndUpdateOptions = FindOneAndUpdateOptions().upsert(true)
-
+  private def findByReference(reference: Reference): ResultT[Option[UploadSessionDetails]] =
     ResultT.fromFuture {
       collection
-        .findOneAndUpdate(filter, modifier, options)
-        .toFuture()
-        .map(_ => Right(true))
+        .find(equal("reference", Codecs.toBson(reference.value)))
+        .headOption()
+        .map(Right(_))
         .recover { case _ =>
-          Left(MongoError("Failed to call UpscanSessionRepository .updateStatus"))
+          Left(MongoError("Failed to call UpscanSessionRepository .findByReference"))
         }
     }
 
-  }
+  def updateStatus(
+      reference: Reference,
+      newStatus: UploadStatus
+  ): ResultT[Boolean] =
+    findByReference(reference).flatMap {
+      case Some(fileToUpdate) =>
+        val filter: Bson                       = equal("reference", Codecs.toBson(reference.value))
+        val fileToInsert: UploadSessionDetails = fileToUpdate.copy(
+          status = newStatus,
+          lastUpdated = Instant.now(clock)
+        )
+        val options: ReplaceOptions            = ReplaceOptions().upsert(true)
+
+        ResultT.fromFuture {
+          collection
+            .replaceOne(filter, fileToInsert, options)
+            .toFuture()
+            .map(_ => Right(true))
+            .recover { case _ =>
+              Left(MongoError("Failed to call UpscanSessionRepository .updateStatus"))
+            }
+        }
+      case None               =>
+        val errorMessage =
+          "[UpscanSessionRepository][updateStatus] Failed to retrieve record to update"
+        logError(errorMessage)
+        ResultT.fromError(MongoError(errorMessage))
+    }
 
   def insert(uploadDetails: UploadSessionDetails): ResultT[Boolean] =
     ResultT.fromFuture {

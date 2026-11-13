@@ -17,7 +17,10 @@
 package uk.gov.hmrc.carfreporting.models.submission
 
 import play.api.libs.json.*
+import uk.gov.hmrc.carfreporting.models.crypto.CryptoType.CryptoT
+import uk.gov.hmrc.carfreporting.models.crypto.*
 import uk.gov.hmrc.carfreporting.models.{ExtractedCarfFileDetails, UploadId, ValidationErrors}
+import uk.gov.hmrc.crypto.json.JsonEncryption
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
@@ -99,6 +102,73 @@ object SubmissionDetailsCache {
 
   implicit val format: OFormat[SubmissionDetailsCache] = OFormat(reads, writes)
 
+  def mongoFormat(encryptionEnabled: Boolean)(implicit crypto: CryptoT): OFormat[SubmissionDetailsCache] = {
+
+    implicit val sensitiveCarfIdFormat: Format[SensitiveCarfId] =
+      JsonEncryption.sensitiveEncrypterDecrypter(SensitiveCarfId.apply)
+
+    implicit val sensitiveFileNameFormat: Format[SensitiveFileName] =
+      JsonEncryption.sensitiveEncrypterDecrypter(SensitiveFileName.apply)
+
+    implicit val sensitiveExtractedCarfFileDetailsFormat: Format[SensitiveExtractedCarfFileDetails] =
+      JsonEncryption.sensitiveEncrypterDecrypter(SensitiveExtractedCarfFileDetails.apply)
+
+    implicit val sensitiveRcaspDetailsFormat: Format[SensitiveRcaspDetails] =
+      JsonEncryption.sensitiveEncrypterDecrypter(SensitiveRcaspDetails.apply)
+
+    implicit val sensitiveDisplaySubscriptionDetailsFormat: Format[SensitiveDisplaySubscriptionDetails] =
+      JsonEncryption.sensitiveEncrypterDecrypter(SensitiveDisplaySubscriptionDetails.apply)
+
+    implicit val sensitiveValidationErrorsFormat: Format[SensitiveValidationErrors] =
+      JsonEncryption.sensitiveEncrypterDecrypter(SensitiveValidationErrors.apply)
+
+    val mongoReads: Reads[SubmissionDetailsCache] =
+      if (encryptionEnabled)
+        (
+          (__ \ "_id").read[UploadId] and
+            (__ \ "carfId").read[SensitiveCarfId].map(_.decryptedValue) and
+            (__ \ "fileStatus").read[FileStatus] and
+            (__ \ "fileName").read[SensitiveFileName].map(_.decryptedValue) and
+            (__ \ "extractedFileDetails").read[SensitiveExtractedCarfFileDetails].map(_.decryptedValue) and
+            (__ \ "rcaspDetails").read[SensitiveRcaspDetails].map(_.decryptedValue) and
+            (__ \ "subscriptionDetails").read[SensitiveDisplaySubscriptionDetails].map(_.decryptedValue) and
+            (__ \ "submissionTime").read(MongoJavatimeFormats.instantFormat) and
+            (__ \ "lastStatusUpdateTime").read(MongoJavatimeFormats.instantFormat) and
+            (__ \ "businessRuleErrors").read[SensitiveValidationErrors].map(_.decryptedValue)
+        )(SubmissionDetailsCache.apply _)
+      else reads
+
+    val mongoWrites: OWrites[SubmissionDetailsCache] =
+      if (encryptionEnabled)
+        (
+          (__ \ "_id").write[UploadId] and
+            (__ \ "carfId").write[SensitiveCarfId] and
+            (__ \ "fileStatus").write[FileStatus] and
+            (__ \ "fileName").write[SensitiveFileName] and
+            (__ \ "extractedFileDetails").write[SensitiveExtractedCarfFileDetails] and
+            (__ \ "rcaspDetails").write[SensitiveRcaspDetails] and
+            (__ \ "subscriptionDetails").write[SensitiveDisplaySubscriptionDetails] and
+            (__ \ "submissionTime").write(MongoJavatimeFormats.instantFormat) and
+            (__ \ "lastStatusUpdateTime").write(MongoJavatimeFormats.instantFormat) and
+            (__ \ "businessRuleErrors").write[SensitiveValidationErrors]
+        )(s =>
+          Tuple.fromProductTyped(
+            s._id,
+            SensitiveCarfId(s.carfId),
+            s.fileStatus,
+            SensitiveFileName(s.fileName),
+            SensitiveExtractedCarfFileDetails(s.extractedFileDetails),
+            SensitiveRcaspDetails(s.rcaspDetails),
+            SensitiveDisplaySubscriptionDetails(s.subscriptionDetails),
+            s.submissionTime,
+            s.lastStatusUpdateTime,
+            SensitiveValidationErrors(s.businessRuleErrors)
+          )
+        )
+      else writes
+
+    OFormat(mongoReads, mongoWrites)
+  }
 }
 
 case class SubmissionHistoryPassed(

@@ -52,4 +52,6 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
 
   val submittedFilesPageSize: Int = config.get[Int]("submitted-files.page-size")
   val enrolmentKey: String        = config.get[String]("keys.enrolmentKey.carf")
+
+  val mongoEncryptionEnabled: Boolean = config.get[Boolean]("mongodb.encryptionEnabled")
 }

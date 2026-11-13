@@ -16,31 +16,38 @@
 
 package uk.gov.hmrc.carfreporting.repositories
 
+import org.mockito.Mockito.when
+import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.model.Filters
-import org.scalatest.concurrent.IntegrationPatience
+import org.scalactic.Prettifier.default
 import org.scalatest.freespec.AnyFreeSpec
+import play.api.Configuration
+import play.api.libs.json.Json
 import uk.gov.hmrc.carfreporting.base.SpecBase
-import uk.gov.hmrc.carfreporting.config.AppConfig
-import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationErrors}
+import uk.gov.hmrc.carfreporting.config.{AppConfig, CryptoProvider}
+import uk.gov.hmrc.carfreporting.models.crypto.CryptoType.{randomAesKey, CryptoT}
 import uk.gov.hmrc.carfreporting.models.errors.BusinessError
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus.{Accepted, Rejected, VirusFound}
 import uk.gov.hmrc.carfreporting.models.submission.SubmissionDetailsCache
+import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationErrors}
+import uk.gov.hmrc.crypto.Crypted
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import java.time.Instant
 
-class SubmissionRepositorySpec
-    extends SpecBase
-    with IntegrationPatience
-    with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
+class SubmissionRepositorySpec extends SpecBase with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
 
   val config: AppConfig = mock[AppConfig]
+  when(config.cacheTtl) thenReturn 1L
+  when(config.mongoEncryptionEnabled) thenReturn false
+
+  private implicit val crypto: CryptoT = new CryptoProvider(Configuration("crypto.key" -> randomAesKey)).get()
 
   override protected val repository: SubmissionRepository = new SubmissionRepository(
     mongoComponent = mongoComponent,
     appConfig = config,
     clock = clock
-  )(ec)
+  )(ec, crypto)
 
   "SubmissionRepository" - {
     ".insert" - {
@@ -71,6 +78,75 @@ class SubmissionRepositorySpec
             message mustBe "[SubmissionRepository][insert] Tried to insert file with a status that is not Pending in SubmissionRepository .insert"
           case _                            => fail()
         }
+      }
+
+      "must persist the data in encrypted format when encryption is enabled" in {
+        val mockConfigWithEncryption = mock[AppConfig]
+        when(mockConfigWithEncryption.cacheTtl) thenReturn 1L
+        when(mockConfigWithEncryption.mongoEncryptionEnabled) thenReturn true
+
+        val repositoryWithEncryption = new SubmissionRepository(
+          mongoComponent = mongoComponent,
+          appConfig = mockConfigWithEncryption,
+          clock = clock
+        )
+
+        val setResult = repositoryWithEncryption.insert(testSubmissionDetailsCache).value.futureValue
+
+        setResult mustBe Right(true)
+
+        val record = repositoryWithEncryption.collection
+          .find[BsonDocument](Filters.equal("_id", testSubmissionDetailsCache._id.value))
+          .headOption()
+          .futureValue
+          .value
+
+        val rawCarfId               = record.get("carfId").asString().getValue
+        val rawFileName             = record.get("fileName").asString().getValue
+        val rawExtractedFileDetails = record.get("extractedFileDetails").asString().getValue
+        val rawRcaspDetails         = record.get("rcaspDetails").asString().getValue
+        val rawSubscriptionDetails  = record.get("subscriptionDetails").asString().getValue
+        val rawValidationErrors     = record.get("businessRuleErrors").asString().getValue
+
+        val decryptedCarfId               = crypto.decrypt(Crypted(rawCarfId)).value
+        val decryptedFileName             = crypto.decrypt(Crypted(rawFileName)).value
+        val decryptedExtractedFileDetails = crypto.decrypt(Crypted(rawExtractedFileDetails)).value
+        val decryptedRcaspDetails         = crypto.decrypt(Crypted(rawRcaspDetails)).value
+        val decryptedSubscriptionDetails  = crypto.decrypt(Crypted(rawSubscriptionDetails)).value
+        val decryptedValidationErrors     = crypto.decrypt(Crypted(rawValidationErrors)).value
+
+        Json.parse(decryptedCarfId)               mustBe Json.toJson(testSubmissionDetailsCache.carfId)
+        Json.parse(decryptedFileName)             mustBe Json.toJson(testSubmissionDetailsCache.fileName)
+        Json.parse(decryptedExtractedFileDetails) mustBe Json.toJson(testSubmissionDetailsCache.extractedFileDetails)
+        Json.parse(decryptedRcaspDetails)         mustBe Json.toJson(testSubmissionDetailsCache.rcaspDetails)
+        Json.parse(decryptedSubscriptionDetails)  mustBe Json.toJson(testSubmissionDetailsCache.subscriptionDetails)
+        Json.parse(decryptedValidationErrors)     mustBe Json.toJson(testSubmissionDetailsCache.businessRuleErrors)
+      }
+
+      "must persist the data in plain format when encryption is disabled" in {
+        val setResult = repository.insert(testSubmissionDetailsCache).value.futureValue
+
+        setResult mustBe Right(true)
+
+        val record = repository.collection
+          .find[BsonDocument](Filters.equal("_id", testSubmissionDetailsCache._id.value))
+          .headOption()
+          .futureValue
+          .value
+
+        val rawCarfId               = record.get("carfId").asString().getValue
+        val rawFileName             = record.get("fileName").asString().getValue
+        val rawExtractedFileDetails = record.get("extractedFileDetails").asDocument()
+        val rawRcaspDetails         = record.get("rcaspDetails").asDocument()
+        val rawSubscriptionDetails  = record.get("subscriptionDetails").asDocument()
+        val rawValidationErrors     = record.get("businessRuleErrors").asDocument()
+
+        rawCarfId                                  mustBe testSubmissionDetailsCache.carfId.value
+        rawFileName                                mustBe testSubmissionDetailsCache.fileName.value
+        Json.parse(rawExtractedFileDetails.toJson) mustBe Json.toJson(testSubmissionDetailsCache.extractedFileDetails)
+        Json.parse(rawRcaspDetails.toJson)         mustBe Json.toJson(testSubmissionDetailsCache.rcaspDetails)
+        Json.parse(rawSubscriptionDetails.toJson)  mustBe Json.toJson(testSubmissionDetailsCache.subscriptionDetails)
+        Json.parse(rawValidationErrors.toJson)     mustBe Json.toJson(testSubmissionDetailsCache.businessRuleErrors)
       }
     }
 
@@ -121,6 +197,72 @@ class SubmissionRepositorySpec
         record.fileStatus           mustBe Rejected
         record.businessRuleErrors   mustBe businessRuleValidationErrors
         record.lastStatusUpdateTime mustBe clock.instant()
+      }
+
+      "must persist BusinessErrors in encrypted format when encryption is enabled" in {
+        val mockConfigWithEncryption = mock[AppConfig]
+        when(mockConfigWithEncryption.cacheTtl) thenReturn 1L
+        when(mockConfigWithEncryption.mongoEncryptionEnabled) thenReturn true
+
+        val repositoryWithEncryption = new SubmissionRepository(
+          mongoComponent = mongoComponent,
+          appConfig = mockConfigWithEncryption,
+          clock = clock
+        )
+
+        repositoryWithEncryption.insert(testSubmissionDetailsCache).value.futureValue mustBe Right(true)
+
+        val uploadId = testSubmissionDetailsCache._id
+
+        val updateResult = repositoryWithEncryption
+          .updateStatusWithErrors(
+            uploadId,
+            Rejected,
+            businessRuleValidationErrors
+          )
+          .value
+          .futureValue
+
+        updateResult mustBe Right(true)
+
+        val record = repositoryWithEncryption.collection
+          .find[BsonDocument](Filters.equal("_id", uploadId.value))
+          .headOption()
+          .futureValue
+          .value
+
+        val rawValidationErrors = record.get("businessRuleErrors").asString().getValue
+
+        val decryptedValidationErrors = crypto.decrypt(Crypted(rawValidationErrors)).value
+
+        Json.parse(decryptedValidationErrors) mustBe Json.toJson(businessRuleValidationErrors)
+      }
+
+      "must persist BusinessErrors in plain format when encryption is disabled" in {
+        repository.insert(testSubmissionDetailsCache).value.futureValue mustBe Right(true)
+
+        val uploadId = testSubmissionDetailsCache._id
+
+        val updateResult = repository
+          .updateStatusWithErrors(
+            uploadId,
+            Rejected,
+            businessRuleValidationErrors
+          )
+          .value
+          .futureValue
+
+        updateResult mustBe Right(true)
+
+        val record = repository.collection
+          .find[BsonDocument](Filters.equal("_id", uploadId.value))
+          .headOption()
+          .futureValue
+          .value
+
+        val rawValidationErrors = record.get("businessRuleErrors").asDocument()
+
+        Json.parse(rawValidationErrors.toJson) mustBe Json.toJson(businessRuleValidationErrors)
       }
 
       "must return a BusinessError when attempting to update with a status other than Rejected" in {
