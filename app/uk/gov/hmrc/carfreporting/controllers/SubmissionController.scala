@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.carfreporting.controllers
 
+import play.api.Logging
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.carfreporting.controllers.actions.{AuthAction, CheckCarfIdAction}
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
 import uk.gov.hmrc.carfreporting.services.submission.SubmissionService
-import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
@@ -34,7 +34,8 @@ class SubmissionController @Inject() (
     checkCarfId: CheckCarfIdAction
 )(implicit
     e: ExecutionContext
-) extends BackendController(cc) {
+) extends BackendController(cc)
+    with Logging {
 
   def submit(carfId: String): Action[JsValue] = (authorise andThen checkCarfId(carfId)).async(parse.json) {
     implicit request =>
@@ -42,7 +43,7 @@ class SubmissionController @Inject() (
         .validate[SubmissionRequest]
         .fold(
           invalid =>
-            logWarn(
+            logger.warn(
               s"[SubmissionController][submit] Failed to parse request body with message: ${invalid.mkString(",\n")}"
             )
             Future.successful(BadRequest(s"Request body provided is invalid with message: ${invalid.mkString(",\n")}"))
@@ -52,7 +53,7 @@ class SubmissionController @Inject() (
               case Right(_)    =>
                 NoContent
               case Left(error) =>
-                logWarn(
+                logger.warn(
                   s"[SubmissionController][submit] Unexpected error with message: ${error.message}"
                 )
                 InternalServerError("Unexpected error")

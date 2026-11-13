@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.carfreporting.controllers.actions
 
+import play.api.Logging
 import play.api.mvc.*
 import play.api.mvc.Results.Unauthorized
 import uk.gov.hmrc.auth.core.*
@@ -24,7 +25,6 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.carfreporting.models.IdentifierType
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.requests.AuthenticatedRequest
-import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId, UnauthorizedException}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
@@ -37,7 +37,8 @@ class DefaultAuthAction @Inject() (
     config: AppConfig
 )(implicit val executionContext: ExecutionContext)
     extends AuthAction
-    with AuthorisedFunctions {
+    with AuthorisedFunctions
+    with Logging {
 
   override def invokeBlock[A](
       request: Request[A],
@@ -66,12 +67,12 @@ class DefaultAuthAction @Inject() (
             )
 
           case _ =>
-            logWarn("[DefaultAuthAction][invokeBlock] Unable to retrieve required auth values")
+            logger.warn("[DefaultAuthAction][invokeBlock] Unable to retrieve required auth values")
             throw new UnauthorizedException("Unable to retrieve required auth values")
       }
       .recover { case _: AuthorisationException =>
         val error = "[DefaultAuthAction][invokeBlock] Failed to authorise request"
-        logWarn(error)
+        logger.warn(error)
         Unauthorized(error)
       }
 
