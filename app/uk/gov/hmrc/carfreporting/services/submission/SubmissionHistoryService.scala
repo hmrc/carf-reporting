@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.carfreporting.services.submission
 
+import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.connectors.SubmissionHistoryConnector
 import uk.gov.hmrc.carfreporting.models.requests.{SubmissionHistoryRequest, SubmissionHistoryRequestCommon, SubmissionHistoryRequestDetails, SubmissionsListRequest}
 import uk.gov.hmrc.carfreporting.models.submission.*
 import uk.gov.hmrc.carfreporting.types.ResultT
-import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.{Clock, Instant}
@@ -32,7 +32,8 @@ class SubmissionHistoryService @Inject() (
     submissionHistoryConnector: SubmissionHistoryConnector,
     clock: Clock,
     appConfig: AppConfig
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext)
+    extends Logging {
 
   private def submissionHistoryRequest(carfId: String): SubmissionHistoryRequest =
     SubmissionHistoryRequest(
@@ -51,7 +52,7 @@ class SubmissionHistoryService @Inject() (
     submissionHistoryConnector
       .getSubmissionHistory(submissionHistoryRequest(carfId))
       .leftMap { error =>
-        logWarn(s"[SubmissionHistoryService][getSubmissionHistory] Error getting submission history: $error")
+        logger.warn(s"[SubmissionHistoryService][getSubmissionHistory] Error getting submission history: $error")
         error
       }
       .map { submissionRecordList =>
@@ -71,7 +72,7 @@ class SubmissionHistoryService @Inject() (
     submissionHistoryConnector
       .getSubmissionHistory(submissionHistoryRequest(carfId))
       .leftMap { error =>
-        logWarn(
+        logger.warn(
           s"[SubmissionHistoryService][checkSubmissionHistoryForPassedFiles] Error getting submission history: $error"
         )
         error

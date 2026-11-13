@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.carfreporting.controllers
 
+import play.api.Logging
 import play.api.libs.json.*
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.carfreporting.controllers.actions.{AuthAction, CheckCarfIdAction}
 import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.NotFoundError
 import uk.gov.hmrc.carfreporting.services.submission.SubmissionService
-import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
@@ -34,7 +34,8 @@ class SubmissionDetailsController @Inject() (
     cc: ControllerComponents,
     submissionService: SubmissionService
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+    extends BackendController(cc)
+    with Logging {
 
   def getSubmissionDetailsByUploadId(uploadId: String, carfId: String): Action[AnyContent] =
     (authorise andThen checkCarfId(carfId)).async { implicit request =>
@@ -42,12 +43,12 @@ class SubmissionDetailsController @Inject() (
         case Right(submissionDetails) =>
           Ok(Json.toJson(submissionDetails))
         case Left(NotFoundError)      =>
-          logWarn(
+          logger.warn(
             s"[SubmissionDetailsController][getSubmissionDetailsByUploadId] Submission details not found for uploadId $uploadId"
           )
           NotFound
         case Left(error)              =>
-          logWarn(
+          logger.warn(
             s"[SubmissionDetailsController][getSubmissionDetailsByUploadId] Error getting submission details for uploadId $uploadId"
           )
           InternalServerError(s"Unexpected error: $error")
@@ -60,7 +61,7 @@ class SubmissionDetailsController @Inject() (
         case Right(detailsOfFilesSent) =>
           Ok(Json.toJson(detailsOfFilesSent))
         case Left(error)               =>
-          logWarn(
+          logger.warn(
             s"[SubmissionDetailsController][getSubmissionDetailsByCarfId] Error getting submission details for carfId $carfId"
           )
           InternalServerError(s"Unexpected error: $error")
@@ -73,7 +74,7 @@ class SubmissionDetailsController @Inject() (
         case Right(hasSentFiles) =>
           Ok(Json.toJson(hasSentFiles))
         case Left(error)         =>
-          logWarn(
+          logger.warn(
             s"[SubmissionDetailsController][checkForSentFiles] Error getting submission details for carfId $carfId"
           )
           InternalServerError(s"Unexpected error: $error")

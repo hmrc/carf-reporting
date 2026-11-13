@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.carfreporting.controllers
 
+import play.api.Logging
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.carfreporting.models.requests.sdes.CallbackRequest
 import uk.gov.hmrc.carfreporting.models.submission.NotificationType.*
 import uk.gov.hmrc.carfreporting.services.submission.{SDESService, SubmissionService}
-import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
@@ -32,14 +32,15 @@ class SDESCallbackController @Inject() (
     submissionService: SubmissionService,
     sdesService: SDESService
 )(implicit e: ExecutionContext)
-    extends BackendController(cc) {
+    extends BackendController(cc)
+    with Logging {
 
   def callback: Action[JsValue] = Action.async(parse.json) { implicit request =>
     request.body
       .validate[CallbackRequest]
       .fold(
         invalid =>
-          logError(
+          logger.error(
             s"[SDESCallbackController][callback] Failed to parse request body with message: ${invalid.mkString(",\n")}"
           )
           Future.successful(BadRequest(s"Request body provided is invalid with message: ${invalid.mkString(",\n")}"))
@@ -50,7 +51,7 @@ class SDESCallbackController @Inject() (
               submissionService.updateFileStatusAsFailure(valid.correlationID, valid.failureReason).value.map {
                 case Right(_)    => Ok
                 case Left(error) =>
-                  logWarn(
+                  logger.warn(
                     s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}"
                   )
                   InternalServerError("Unexpected error")
@@ -59,18 +60,18 @@ class SDESCallbackController @Inject() (
               sdesService.getAndProcessBusinessRulesResponseFile(valid.correlationID, valid.filename).value.map {
                 case Right(_)    => Ok
                 case Left(error) =>
-                  logWarn(
+                  logger.warn(
                     s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}"
                   )
                   InternalServerError("Unexpected error")
               }
             case FileProcessed | FileReceived =>
-              logInfo(
+              logger.info(
                 s"[SDESCallbackController][callback] Callback received for upload/correlation ID: ${valid.correlationID}"
               )
               Future.successful(Ok)
             case FileDelayed                  =>
-              logInfo(
+              logger.info(
                 s"[SDESCallbackController][callback] Callback received with status ${FileDelayed.toString} for upload/correlation ID: ${valid.correlationID}"
               )
               Future.successful(Ok)
