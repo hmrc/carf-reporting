@@ -64,7 +64,7 @@ class SubmissionHistoryConnector @Inject() (
                   Right(submissionHistoryResponse.submissionsListResponse.responseDetails.submissionsList)
                 case Failure(exception)                 =>
                   logError(
-                    s"[SubmissionHistoryConnector][getSubmissionHistory] Error parsing response as SubmissionHistoryResponse. Endpoint: <${url.toURI}> Exception: <${exception.getMessage}>"
+                    s"[SubmissionHistoryConnector][getSubmissionHistory] Error parsing response as SubmissionHistoryResponse from submission history lookup"
                   )
                   Left(ApiError.JsonValidationError)
               }
@@ -74,7 +74,7 @@ class SubmissionHistoryConnector @Inject() (
               Left(ErrorDetailsHandler.errorParse(httpResponse, url))
             case _                                                                                          =>
               logError(
-                s"[SubmissionHistoryConnector][getSubmissionHistory] Unexpected response: status code: ${httpResponse.status}, from endpoint: ${url.toURI}"
+                s"[SubmissionHistoryConnector][getSubmissionHistory] Unexpected response from submission history lookup: status code: ${httpResponse.status}"
               )
               Left(ApiError.InternalServerError)
           }
