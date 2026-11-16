@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.carfreporting.services.submission
 
+import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.Constants.*
 import uk.gov.hmrc.carfreporting.connectors.{EmailConnector, EmailSent, EmailStatus}
 import uk.gov.hmrc.carfreporting.models.{getReportType, ExtractedCarfFileDetails}
 import uk.gov.hmrc.carfreporting.models.submission.*
 import uk.gov.hmrc.carfreporting.utils.EmailDateTimeFormatter
-import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
@@ -30,7 +30,8 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class EmailService @Inject() (
     emailConnector: EmailConnector
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext)
+    extends Logging {
 
   private case class Recipient(name: String, email: String)
 
@@ -50,7 +51,7 @@ class EmailService @Inject() (
 
     val rcaspSends =
       if (submission.rcaspDetails.IsRCASPUser) {
-        logInfo("[EmailService][sendFilePassedEmails] User is the RCASP, skipping RCASP email")
+        logger.info("[EmailService][sendFilePassedEmails] User is the RCASP, skipping RCASP email")
         List.empty[Future[EmailStatus]]
       } else {
         val rcaspParams = withUserBusinessName("sendFilePassedEmails", submission, common)
@@ -86,7 +87,7 @@ class EmailService @Inject() (
         subscriptionContactName(c) match {
           case Some(name) => Some(Recipient(name, c.email))
           case None       =>
-            logWarn("[EmailService][userRecipients] Contact has no name, skipping email")
+            logger.warn("[EmailService][userRecipients] Contact has no name, skipping email")
             None
         }
       }
@@ -124,7 +125,7 @@ class EmailService @Inject() (
     userBusinessName(submission) match {
       case Some(name) => params + ("userBusinessName" -> name)
       case None       =>
-        logInfo(s"[EmailService][$context] User business name not known, using fallback content")
+        logger.info(s"[EmailService][$context] User business name not known, using fallback content")
         params
     }
 
@@ -149,7 +150,7 @@ class EmailService @Inject() (
   private def logOutcome(context: String)(statuses: List[EmailStatus]): Unit = {
     val sent   = statuses.count(_ == EmailSent)
     val failed = statuses.length - sent
-    if (failed > 0) logWarn(s"[EmailService][$context] Failed to send $failed of ${statuses.length} email(s)")
-    logInfo(s"[EmailService][$context] Sent $sent of ${statuses.length} email(s)")
+    if (failed > 0) logger.warn(s"[EmailService][$context] Failed to send $failed of ${statuses.length} email(s)")
+    logger.info(s"[EmailService][$context] Sent $sent of ${statuses.length} email(s)")
   }
 }

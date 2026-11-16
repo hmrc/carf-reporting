@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.carfreporting.connectors
 
+import play.api.Logging
 import play.api.http.Status.ACCEPTED
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.email.SendEmailRequest
-import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
@@ -33,7 +33,7 @@ sealed trait EmailStatus
 case object EmailSent extends EmailStatus
 case object EmailNotSent extends EmailStatus
 
-class EmailConnector @Inject() (appConfig: AppConfig, httpV2Client: HttpClientV2) {
+class EmailConnector @Inject() (appConfig: AppConfig, httpV2Client: HttpClientV2) extends Logging {
 
   def sendEmail(
       emailAddress: String,
@@ -58,15 +58,15 @@ class EmailConnector @Inject() (appConfig: AppConfig, httpV2Client: HttpClientV2
       .map { response =>
         response.status match {
           case ACCEPTED =>
-            logInfo("[EmailConnector][sendEmail] Email sent successfully")
+            logger.info("[EmailConnector][sendEmail] Email sent successfully")
             EmailSent
           case status   =>
-            logError(s"[EmailConnector][sendEmail] Sending email failed with response status $status")
+            logger.error(s"[EmailConnector][sendEmail] Sending email failed with response status $status")
             EmailNotSent
         }
       }
       .recover { case t: Throwable =>
-        logError(s"[EmailConnector][sendEmail] Unable to connect to Email Service: ${t.getMessage}")
+        logger.error(s"[EmailConnector][sendEmail] Unable to connect to Email Service: ${t.getMessage}")
         EmailNotSent
       }
   }

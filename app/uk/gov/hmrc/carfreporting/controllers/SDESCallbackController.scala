@@ -25,7 +25,6 @@ import uk.gov.hmrc.carfreporting.models.submission.NotificationType.*
 import uk.gov.hmrc.carfreporting.models.submission.SubmissionDetailsCache
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.services.submission.{EmailService, SDESService, SubmissionService}
-import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.carfreporting.services.submission.{SDESService, SubmissionService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -70,7 +69,7 @@ class SDESCallbackController @Inject() (
                 case Right(status) =>
                   triggerStatusEmails(valid.correlationID, status)
                   Ok
-                case Left(error) =>
+                case Left(error)   =>
                   logger.warn(s"[SDESCallbackController][callback] Unexpected error with message: ${error.message}")
                   InternalServerError("Unexpected error")
               }
@@ -100,7 +99,9 @@ class SDESCallbackController @Inject() (
       .flatMap {
         case Right(Some(submission)) => sendEmails(submission)
         case Right(None)             =>
-          logger.warn(s"[SDESCallbackController][triggerStatusEmails] Submission not found for $uploadId, no emails sent")
+          logger.warn(
+            s"[SDESCallbackController][triggerStatusEmails] Submission not found for $uploadId, no emails sent"
+          )
           Future.unit
         case Left(error)             =>
           logger.warn(s"[SDESCallbackController][triggerStatusEmails] Error fetching submission $uploadId: $error")
