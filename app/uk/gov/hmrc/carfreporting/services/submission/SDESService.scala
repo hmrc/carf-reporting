@@ -95,10 +95,10 @@ class SDESService @Inject() (
                     s"[SDESService][getAndProcessBusinessRulesResponseFile] Failed to validate XML with (${xmlErrors.errors.size}) schema error(s)"
                   )
                   Left(xmlErrors)
-                case Left(InvalidXmlError)      =>
+                case Left(InvalidXmlError)       =>
                   logger.warn("[SDESService][getAndProcessBusinessRulesResponseFile] Error parsing XML file")
                   Left(InvalidXmlError)
-                case Left(error)                =>
+                case Left(error)                 =>
                   logger.warn(
                     s"[SDESService][getAndProcessBusinessRulesResponseFile] Unexpected error with message: ${error.message}"
                   )
