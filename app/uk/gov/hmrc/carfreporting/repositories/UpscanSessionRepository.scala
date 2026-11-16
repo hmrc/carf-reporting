@@ -68,7 +68,8 @@ class UpscanSessionRepository @Inject() (
         )
       ),
       replaceIndexes = true
-    ) with Logging {
+    )
+    with Logging {
 
   def findByUploadId(uploadId: UploadId): ResultT[Option[UploadSessionDetails]] =
     ResultT.fromFuture {
