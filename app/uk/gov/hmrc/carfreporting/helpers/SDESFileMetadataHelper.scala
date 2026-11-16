@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.carfreporting.helpers
 
+import play.api.Logging
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
 import uk.gov.hmrc.carfreporting.models.requests.sdes.Property
 import uk.gov.hmrc.carfreporting.models.submission.{DisplaySubscriptionContact, DisplaySubscriptionOrganisation}
-import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
-object SDESFileMetadataHelper {
+object SDESFileMetadataHelper extends Logging {
 
   private final val formatter = DateTimeFormatter.ISO_INSTANT
 
@@ -71,13 +71,13 @@ object SDESFileMetadataHelper {
         )
       case (None, Some(org))    => orgProperties(org)
       case (Some(_), Some(org)) =>
-        logWarn(
+        logger.warn(
           "[SDESFileMetadataHelper][individualOrOrganisationDetails](Individual and organisation) " +
             "contact details provided defaulting to organisation"
         )
         orgProperties(org)
       case (_, _)               =>
-        logWarn(
+        logger.warn(
           "[SDESFileMetadataHelper][individualOrOrganisationDetails] No" +
             "contact details provided submission will fail in transit"
         )

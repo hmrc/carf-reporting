@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.carfreporting.controllers
 
+import play.api.Logging
 import play.api.libs.json.*
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.carfreporting.controllers.actions.{AuthAction, CheckCarfIdAction}
@@ -23,7 +24,6 @@ import uk.gov.hmrc.carfreporting.models.ExtractedCarfFileDetails
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.models.requests.XmlValidationRequest
 import uk.gov.hmrc.carfreporting.services.XmlParserService
-import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
@@ -35,7 +35,8 @@ class XmlValidationAndExtractionController @Inject() (
     authorise: AuthAction,
     checkCarfId: CheckCarfIdAction
 )(implicit e: ExecutionContext)
-    extends BackendController(cc) {
+    extends BackendController(cc)
+    with Logging {
 
   def processXml(carfId: String): Action[JsValue] = (authorise andThen checkCarfId(carfId)).async(parse.json) {
     implicit request =>
@@ -43,25 +44,26 @@ class XmlValidationAndExtractionController @Inject() (
         .validate[XmlValidationRequest]
         .fold(
           invalid =>
-            logWarn("[XmlValidationAndExtractionController][processXml] Failed to parse request body")
+            logger.warn("[XmlValidationAndExtractionController][processXml] Failed to parse request body")
             Future.successful(BadRequest("Request body provided is invalid"))
           ,
           valid =>
-            logInfo("[XmlValidationAndExtractionController][processXml]\nStarting CARF XML Validation")
+            logger.info("[XmlValidationAndExtractionController][processXml]\nStarting CARF XML Validation")
             service.validateAndExtractCARF(valid.path).value.map {
               case Right(extractedFileDetails) =>
-                logInfo("[XmlValidationAndExtractionController][processXml]\nFinished CARF XML Validation with success")
+                logger
+                  .info("[XmlValidationAndExtractionController][processXml]\nFinished CARF XML Validation with success")
                 Ok(Json.toJson(extractedFileDetails))
               case Left(xmlErrors: XmlErrors)  =>
-                logWarn(
+                logger.warn(
                   s"[XmlValidationAndExtractionController][processXml] Failed to validate XML with (${xmlErrors.errors.size}) error(s)"
                 )
                 UnprocessableEntity(Json.toJson(xmlErrors: XmlValidationError))
               case Left(InvalidXmlError)       =>
-                logWarn("[XmlValidationAndExtractionController][processXml] Error parsing XML file")
+                logger.warn("[XmlValidationAndExtractionController][processXml] Error parsing XML file")
                 UnprocessableEntity(Json.toJson(InvalidXmlError: XmlValidationError))
               case Left(error)                 =>
-                logWarn(
+                logger.warn(
                   s"[XmlValidationAndExtractionController][processXml] Unexpected error with message: ${error.message}"
                 )
                 InternalServerError("Unexpected error")

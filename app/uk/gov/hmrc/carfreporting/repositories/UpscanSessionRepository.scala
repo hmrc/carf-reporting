@@ -22,13 +22,13 @@ import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.carfreporting.models.crypto.CryptoType.CryptoT
 import uk.gov.hmrc.carfreporting.models.errors.MongoError
 import uk.gov.hmrc.carfreporting.models.upscan.*
 import uk.gov.hmrc.carfreporting.types.ResultT
-import uk.gov.hmrc.carfreporting.utils.LoggerUtil.logError
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
@@ -68,7 +68,8 @@ class UpscanSessionRepository @Inject() (
         )
       ),
       replaceIndexes = true
-    ) {
+    )
+    with Logging {
 
   def findByUploadId(uploadId: UploadId): ResultT[Option[UploadSessionDetails]] =
     ResultT.fromFuture {
@@ -117,7 +118,7 @@ class UpscanSessionRepository @Inject() (
       case None               =>
         val errorMessage =
           "[UpscanSessionRepository][updateStatus] Failed to retrieve record to update"
-        logError(errorMessage)
+        logger.error(errorMessage)
         ResultT.fromError(MongoError(errorMessage))
     }
 

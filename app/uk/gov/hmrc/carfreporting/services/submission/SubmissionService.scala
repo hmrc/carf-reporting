@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.carfreporting.services.submission
 
+import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.NotFoundError
 import uk.gov.hmrc.carfreporting.models.requests.SubmissionRequest
@@ -24,7 +25,6 @@ import uk.gov.hmrc.carfreporting.models.submission.FileStatus.Pending
 import uk.gov.hmrc.carfreporting.models.{UploadId, ValidationErrors}
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.types.ResultT
-import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.Instant
@@ -36,7 +36,8 @@ class SubmissionService @Inject() (
     repository: SubmissionRepository,
     submissionHistoryService: SubmissionHistoryService,
     appConfig: AppConfig
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext)
+    extends Logging {
 
   def saveAndSubmit(submissionRequest: SubmissionRequest)(implicit headerCarrier: HeaderCarrier): ResultT[Unit] = {
     val submissionTime  = Instant.now
@@ -75,14 +76,14 @@ class SubmissionService @Inject() (
     repository
       .findByUploadId(uploadId)
       .leftMap { error =>
-        logWarn(
+        logger.warn(
           s"[SubmissionService][getSubmissionDetailsByUploadId] Error getting submission details for uploadId $uploadId"
         )
         error
       }
       .subflatMap { maybeSubmissionDetails =>
         maybeSubmissionDetails.fold {
-          logWarn(
+          logger.warn(
             s"[SubmissionService][getSubmissionDetailsByUploadId] Submission details not found for uploadId $uploadId"
           )
           Left(NotFoundError)
@@ -92,13 +93,13 @@ class SubmissionService @Inject() (
   def getSubmissionDetailsByCarfId(carfId: String, page: Int)(implicit hc: HeaderCarrier): ResultT[DetailsOfFilesSent] =
     for {
       submissionDetailsCacheList  <- repository.findByCarfId(carfId).leftMap { error =>
-                                       logWarn(
+                                       logger.warn(
                                          s"[SubmissionService][getSubmissionDetailsByCarfId] Error getting submission details from repository for carfId $carfId"
                                        )
                                        error
                                      }
       submissionHistoryPassedList <- submissionHistoryService.getSubmissionHistory(carfId).leftMap { error =>
-                                       logWarn(
+                                       logger.warn(
                                          s"[SubmissionService][getSubmissionDetailsByCarfId] Error getting submission history for carfId $carfId"
                                        )
                                        error
@@ -123,7 +124,7 @@ class SubmissionService @Inject() (
           ResultT.fromValue(true)
         } else {
           submissionHistoryService.checkSubmissionHistoryForPassedFiles(carfId).leftMap { error =>
-            logWarn(s"[SubmissionService][checkForSentFiles] Error getting submission history for carfId $carfId")
+            logger.warn(s"[SubmissionService][checkForSentFiles] Error getting submission history for carfId $carfId")
             error
           }
         }
