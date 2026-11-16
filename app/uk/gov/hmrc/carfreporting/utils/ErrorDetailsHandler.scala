@@ -16,27 +16,27 @@
 
 package uk.gov.hmrc.carfreporting.utils
 
+import play.api.Logging
 import uk.gov.hmrc.carfreporting.models.errors.{ApiError, ErrorDetail}
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.*
 import uk.gov.hmrc.carfreporting.models.responses.SubmissionHistoryRecord
-import uk.gov.hmrc.carfreporting.utils.LoggerUtil.*
 import uk.gov.hmrc.http.HttpResponse
 
 import java.net.URL
 import scala.util.{Failure, Success, Try}
 
-object ErrorDetailsHandler {
+object ErrorDetailsHandler extends Logging {
 
   def errorParse(response: HttpResponse, endpoint: URL): ApiError =
-    logWarn(s"[ErrorDetailsHandler][errorParse] Status code: ${response.status} from endpoint: ${endpoint.toURI}")
+    logger.warn(s"[ErrorDetailsHandler][errorParse] Status code: ${response.status} from endpoint: ${endpoint.toURI}")
     Try(response.json.as[ErrorDetail]) match {
       case Success(error)     =>
-        logError(
+        logger.error(
           s"[ErrorDetailsHandler][errorParse] Error code: ${error.errorDetail.errorCode}. Error message: ${error.errorDetail.errorMessage}. Source fault detail: ${error.errorDetail.sourceFaultDetail}"
         )
         InternalServerError
       case Failure(exception) =>
-        logError(
+        logger.error(
           s"[ErrorDetailsHandler][errorParse] Error parsing response as ErrorDetails. Exception: <${exception.getMessage}>"
         )
         JsonValidationError
@@ -48,17 +48,17 @@ object ErrorDetailsHandler {
     Try(response.json.as[ErrorDetail]) match {
       case Success(error)
           if error.errorDetail.sourceFaultDetail.flatMap(_.detail.headOption).forall(_.trim.startsWith("001")) =>
-        logInfo(
+        logger.info(
           "[ErrorDetailsHandler][errorParseForSubmissionHistory422] UnprocessableEntity from submission history API with detail 001. No records found."
         )
         Right(Seq.empty[SubmissionHistoryRecord])
       case Success(error)     =>
-        logError(
+        logger.error(
           s"[ErrorDetailsHandler][errorParseForSubmissionHistory422] Error code: ${error.errorDetail.errorCode}. Error message: ${error.errorDetail.errorMessage}. Source fault detail: ${error.errorDetail.sourceFaultDetail}"
         )
         Left(InternalServerError)
       case Failure(exception) =>
-        logError(
+        logger.error(
           s"[ErrorDetailsHandler][errorParseForSubmissionHistory422] Error parsing response as ErrorDetails. Exception: <${exception.getMessage}>"
         )
         Left(JsonValidationError)
