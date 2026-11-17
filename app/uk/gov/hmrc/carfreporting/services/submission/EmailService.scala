@@ -42,7 +42,9 @@ class EmailService @Inject() (
       "fileId"     -> details.messageRefId,
       "rcaspId"    -> details.sendingEntityIn,
       "rcaspName"  -> rcaspName(submission),
-      "reportType" -> details.reportType.getOrElse(details.getReportType).description
+      "reportType" -> details.reportType
+        .getOrElse(details.getReportType)
+        .description // TODO: remove getOrElse when doing CARF-743
     )
 
     val userSends = userRecipients(submission).map { r =>
@@ -111,10 +113,9 @@ class EmailService @Inject() (
 
   private def userBusinessName(submission: SubmissionDetailsCache): Option[String] = {
     val details = submission.subscriptionDetails
-    details.tradingName
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .orElse(details.primaryContact.individual.map(_.fullName))
+    details.primaryContact.individual
+      .map(_.fullName)
+      .orElse(details.tradingName.map(_.trim).filter(_.nonEmpty))
   }
 
   private def withUserBusinessName(

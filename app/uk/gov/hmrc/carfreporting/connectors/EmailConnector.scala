@@ -61,7 +61,7 @@ class EmailConnector @Inject() (appConfig: AppConfig, httpV2Client: HttpClientV2
             logger.info("[EmailConnector][sendEmail] Email sent successfully")
             EmailSent
           case status   =>
-            logger.error(s"[EmailConnector][sendEmail] Sending email failed with response status $status")
+            logger.warn(s"[EmailConnector][sendEmail] Sending email failed with response status $status")
             EmailNotSent
         }
       }
