@@ -185,7 +185,7 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
         .sort(Sorts.descending("submissionTime"))
         .toFuture()
         .map(Right(_))
-        .recover { case error =>
+        .recover { case _ =>
           val errorMessage =
             "[SubmissionRepository][findByCarfId] Failed to call SubmissionRepository .findByCarfId"
           logger.error(errorMessage)
