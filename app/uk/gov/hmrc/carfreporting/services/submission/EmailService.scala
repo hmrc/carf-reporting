@@ -62,7 +62,7 @@ class EmailService @Inject() (
         }
       }
 
-    Future.sequence(userSends ++ rcaspSends).map(logOutcome("sendFilePassedEmails"))
+    Future.sequence(userSends ++ rcaspSends).map(logOutcome("sendFilePassedEmails", _))
   }
 
   def sendFileFailedEmails(submission: SubmissionDetailsCache)(implicit hc: HeaderCarrier): Future[Unit] = {
@@ -80,7 +80,7 @@ class EmailService @Inject() (
       emailConnector.sendEmail(r.email, carfFileFailedUserTemplateId, common + ("contactName" -> r.name))
     }
 
-    Future.sequence(sends).map(logOutcome("sendFileFailedEmails"))
+    Future.sequence(sends).map(logOutcome("sendFileFailedEmails", _))
   }
 
   private def userRecipients(submission: SubmissionDetailsCache): List[Recipient] =
@@ -145,7 +145,7 @@ class EmailService @Inject() (
   private def rcaspLabel(details: ExtractedCarfFileDetails): String =
     if (details.reportType.contains(ReportType.NilReport)) "RCASP" else "RCASP (RCASP Name)"
 
-  private def logOutcome(context: String)(statuses: List[EmailStatus]): Unit = {
+  private def logOutcome(context: String, statuses: List[EmailStatus]): Unit = {
     val sent   = statuses.count(_ == EmailSent)
     val failed = statuses.length - sent
     if (failed > 0) logger.warn(s"[EmailService][$context] Failed to send $failed of ${statuses.length} email(s)")
