@@ -21,8 +21,6 @@ import uk.gov.hmrc.carfreporting.models.upscan.UploadStatus
 import uk.gov.hmrc.carfreporting.models.{ExtractedCarfFileDetails, ValidationErrors}
 import uk.gov.hmrc.crypto.Sensitive
 
-case class SensitiveCarfId(override val decryptedValue: CarfId) extends Sensitive[CarfId]
-
 case class SensitiveFileName(override val decryptedValue: FileName) extends Sensitive[FileName]
 
 case class SensitiveExtractedCarfFileDetails(override val decryptedValue: ExtractedCarfFileDetails)

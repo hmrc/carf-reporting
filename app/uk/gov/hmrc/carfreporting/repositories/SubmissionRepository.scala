@@ -18,11 +18,10 @@ package uk.gov.hmrc.carfreporting.repositories
 
 import com.mongodb.MongoWriteException
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.*
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Updates.set
-import org.mongodb.scala.model.{FindOneAndUpdateOptions, IndexModel, IndexOptions, Sorts, Updates}
+import org.mongodb.scala.model.*
 import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.crypto.CryptoType.CryptoT
@@ -180,16 +179,17 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
     }
 
   def findByCarfId(carfId: String): ResultT[Seq[SubmissionDetailsCache]] =
+    logger.warn("WOW: " + Codecs.toBson(carfId))
     ResultT.fromFuture {
       collection
         .find(equal("carfId", Codecs.toBson(carfId)))
         .sort(Sorts.descending("submissionTime"))
         .toFuture()
         .map(Right(_))
-        .recover { case _ =>
+        .recover { case error =>
           val errorMessage =
             "[SubmissionRepository][findByCarfId] Failed to call SubmissionRepository .findByCarfId"
-          logger.error(errorMessage)
+          logger.error(errorMessage + s" raw error: ${error.getMessage}")
           Left(MongoError("Failed to call SubmissionRepository .findByCarfId"))
         }
     }
