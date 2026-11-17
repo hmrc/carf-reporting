@@ -44,11 +44,11 @@ class EmailServiceSpec extends SpecBase {
 
   private val rcaspUser = OrganisationRcaspDetailsRcaspUser("ZMCAR0123456788", true, "Crypto Co")
 
-  private val orgSubscription: DisplaySubscriptionDetails = displaySubscriptionDetailsOrg
-
-  private val orgNoTradingName: DisplaySubscriptionDetails = displaySubscriptionDetailsOrg.copy(tradingName = None)
-
-  private val indSubscription: DisplaySubscriptionDetails = displaySubscriptionDetailsInd
+  private val orgSubscription: DisplaySubscriptionDetails    = displaySubscriptionDetailsOrg
+  private val orgNoTradingName: DisplaySubscriptionDetails   = displaySubscriptionDetailsOrg.copy(tradingName = None)
+  private val indSubscription: DisplaySubscriptionDetails    = displaySubscriptionDetailsInd.copy(tradingName = None)
+  private val indWithTradingName: DisplaySubscriptionDetails =
+    displaySubscriptionDetailsInd.copy(tradingName = Some(testTradingName))
 
   private def submission(
       subscription: DisplaySubscriptionDetails = orgSubscription,
@@ -172,7 +172,7 @@ class EmailServiceSpec extends SpecBase {
         verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams("Jane Smith"))
       }
 
-      "must use the trading name as the user business name in the RCASP email" in {
+      "must use the trading name as the user business name for an organisation" in {
         service.sendFilePassedEmails(submission()).futureValue
 
         verifySent(
@@ -202,28 +202,19 @@ class EmailServiceSpec extends SpecBase {
         )
       }
 
-      "must use the trading name over the individual's full name when both are present" in {
-        val subscription = indSubscription.copy(tradingName = Some(testTradingName))
-
-        service.sendFilePassedEmails(submission(subscription = subscription)).futureValue
-
-        verifySent(
-          rcaspEmail,
-          carfFilePassedRcaspTemplateId,
-          passedRcaspParams("testContactName", Some(testTradingName))
-        )
-      }
-
-      "must treat a blank trading name as missing and use the individual's full name" in {
-        val subscription = indSubscription.copy(tradingName = Some("   "))
-
-        service.sendFilePassedEmails(submission(subscription = subscription)).futureValue
+      "must use the individual's full name over the trading name when both are present" in {
+        service.sendFilePassedEmails(submission(subscription = indWithTradingName)).futureValue
 
         verifySent(
           rcaspEmail,
           carfFilePassedRcaspTemplateId,
           passedRcaspParams("testContactName", Some("Jane Smith"))
         )
+        verify(mockEmailConnector, never()).sendEmail(
+          any(),
+          eqTo(carfFilePassedRcaspTemplateId),
+          eqTo(passedRcaspParams("testContactName", Some(testTradingName)))
+        )(any(), any())
       }
 
       "must still email the RCASP, without a user business name, for an organisation with no trading name" in {
@@ -235,7 +226,7 @@ class EmailServiceSpec extends SpecBase {
       }
 
       "must still email the RCASP, without a user business name, for an organisation with a blank trading name" in {
-        val subscription = orgNoTradingName.copy(tradingName = Some(""))
+        val subscription = orgNoTradingName.copy(tradingName = Some("   "))
 
         service.sendFilePassedEmails(submission(subscription = subscription)).futureValue
 
@@ -371,12 +362,15 @@ class EmailServiceSpec extends SpecBase {
         verifySent(userEmail, carfFileFailedUserTemplateId, failedParams("Jane Smith", Some("Jane Smith")))
       }
 
-      "must use the trading name over the individual's full name when both are present" in {
-        val subscription = indSubscription.copy(tradingName = Some(testTradingName))
+      "must use the individual's full name over the trading name when both are present" in {
+        service.sendFileFailedEmails(submission(subscription = indWithTradingName)).futureValue
 
-        service.sendFileFailedEmails(submission(subscription = subscription)).futureValue
-
-        verifySent(userEmail, carfFileFailedUserTemplateId, failedParams("Jane Smith", Some(testTradingName)))
+        verifySent(userEmail, carfFileFailedUserTemplateId, failedParams("Jane Smith", Some("Jane Smith")))
+        verify(mockEmailConnector, never()).sendEmail(
+          any(),
+          eqTo(carfFileFailedUserTemplateId),
+          eqTo(failedParams("Jane Smith", Some(testTradingName)))
+        )(any(), any())
       }
 
       "must still email the user, without a user business name, for an organisation with no trading name" in {
