@@ -29,7 +29,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.Instant
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class SubmissionService @Inject() (
     sdesService: SDESService,
