@@ -66,7 +66,7 @@ class EmailServiceSpec extends SpecBase {
     messageTypeIndic = nilReportMessageTypeIndic,
     rcaspName = None,
     docTypeIndic = None,
-    reportType = None
+    reportType = Some(ReportType.NilReport)
   )
 
   private val passedCommon = Map(

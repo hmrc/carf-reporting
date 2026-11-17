@@ -19,7 +19,7 @@ package uk.gov.hmrc.carfreporting.services.submission
 import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.Constants.*
 import uk.gov.hmrc.carfreporting.connectors.{EmailConnector, EmailSent, EmailStatus}
-import uk.gov.hmrc.carfreporting.models.{getReportType, ExtractedCarfFileDetails}
+import uk.gov.hmrc.carfreporting.models.{getReportType, ExtractedCarfFileDetails, ReportType}
 import uk.gov.hmrc.carfreporting.models.submission.*
 import uk.gov.hmrc.carfreporting.utils.EmailDateTimeFormatter
 import uk.gov.hmrc.http.HeaderCarrier
@@ -132,7 +132,7 @@ class EmailService @Inject() (
 
   private def rcaspName(submission: SubmissionDetailsCache): String = {
     val details = submission.extractedFileDetails
-    if (isNilReport(details)) managementRcaspName(submission)
+    if (details.reportType.contains(ReportType.NilReport)) managementRcaspName(submission)
     else details.rcaspName.getOrElse(managementRcaspName(submission))
   }
 
@@ -142,11 +142,8 @@ class EmailService @Inject() (
       case o: OrganisationRcaspDetails => o.RCASPName
     }
 
-  private def isNilReport(details: ExtractedCarfFileDetails): Boolean =
-    details.messageTypeIndic == nilReportMessageTypeIndic
-
   private def rcaspLabel(details: ExtractedCarfFileDetails): String =
-    if (isNilReport(details)) "RCASP" else "RCASP (RCASP Name)"
+    if (details.reportType.contains(ReportType.NilReport)) "RCASP" else "RCASP (RCASP Name)"
 
   private def logOutcome(context: String)(statuses: List[EmailStatus]): Unit = {
     val sent   = statuses.count(_ == EmailSent)
