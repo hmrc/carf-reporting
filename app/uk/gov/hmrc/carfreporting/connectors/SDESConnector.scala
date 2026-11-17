@@ -88,7 +88,7 @@ class SDESConnector @Inject() (val config: AppConfig, val http: HttpClientV2) ex
     ResultT.fromFuture(
       http
         .get(requestUrl)
-        .setHeader(clientIdHeader -> config.sdesClientIdListing, sdesKeyHeader -> config.sdesKeyValueListing)
+        .setHeader(clientIdHeader -> config.sdesClientIdListing, sdesKeyHeader -> config.sdesSrnListing)
         .execute[HttpResponse]
         .map { httpResponse =>
           httpResponse.status match {

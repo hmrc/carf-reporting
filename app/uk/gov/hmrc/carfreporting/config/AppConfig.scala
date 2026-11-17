@@ -48,7 +48,7 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
     config.get[String]("sdes.listing.informationType")
 
   val sdesClientIdListing: String = config.get[String]("sdes.listing.client-id")
-  val sdesKeyValueListing: String = config.get[String]("sdes.listing.srn")
+  val sdesSrnListing: String      = config.get[String]("sdes.listing.srn")
 
   val submissionTtlDays: Long = config.get[Long]("mongodb.submissionTimeToLiveInDays")
 
