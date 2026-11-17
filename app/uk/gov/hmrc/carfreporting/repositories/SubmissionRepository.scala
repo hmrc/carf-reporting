@@ -179,7 +179,6 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
     }
 
   def findByCarfId(carfId: String): ResultT[Seq[SubmissionDetailsCache]] =
-    logger.warn("WOW: " + Codecs.toBson(carfId))
     ResultT.fromFuture {
       collection
         .find(equal("carfId", Codecs.toBson(carfId)))
@@ -189,7 +188,7 @@ class SubmissionRepository @Inject() (mongoComponent: MongoComponent, appConfig:
         .recover { case error =>
           val errorMessage =
             "[SubmissionRepository][findByCarfId] Failed to call SubmissionRepository .findByCarfId"
-          logger.error(errorMessage + s" raw error: ${error.getMessage}")
+          logger.error(errorMessage)
           Left(MongoError("Failed to call SubmissionRepository .findByCarfId"))
         }
     }
