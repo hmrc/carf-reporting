@@ -104,9 +104,6 @@ object SubmissionDetailsCache {
 
   def mongoFormat(encryptionEnabled: Boolean)(implicit crypto: CryptoT): OFormat[SubmissionDetailsCache] = {
 
-    implicit val sensitiveCarfIdFormat: Format[SensitiveCarfId] =
-      JsonEncryption.sensitiveEncrypterDecrypter(SensitiveCarfId.apply)
-
     implicit val sensitiveFileNameFormat: Format[SensitiveFileName] =
       JsonEncryption.sensitiveEncrypterDecrypter(SensitiveFileName.apply)
 
@@ -126,7 +123,7 @@ object SubmissionDetailsCache {
       if (encryptionEnabled)
         (
           (__ \ "_id").read[UploadId] and
-            (__ \ "carfId").read[SensitiveCarfId].map(_.decryptedValue) and
+            (__ \ "carfId").read[CarfId] and
             (__ \ "fileStatus").read[FileStatus] and
             (__ \ "fileName").read[SensitiveFileName].map(_.decryptedValue) and
             (__ \ "extractedFileDetails").read[SensitiveExtractedCarfFileDetails].map(_.decryptedValue) and
@@ -142,7 +139,7 @@ object SubmissionDetailsCache {
       if (encryptionEnabled)
         (
           (__ \ "_id").write[UploadId] and
-            (__ \ "carfId").write[SensitiveCarfId] and
+            (__ \ "carfId").write[CarfId] and
             (__ \ "fileStatus").write[FileStatus] and
             (__ \ "fileName").write[SensitiveFileName] and
             (__ \ "extractedFileDetails").write[SensitiveExtractedCarfFileDetails] and
@@ -154,7 +151,7 @@ object SubmissionDetailsCache {
         )(s =>
           Tuple.fromProductTyped(
             s._id,
-            SensitiveCarfId(s.carfId),
+            s.carfId,
             s.fileStatus,
             SensitiveFileName(s.fileName),
             SensitiveExtractedCarfFileDetails(s.extractedFileDetails),

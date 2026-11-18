@@ -101,21 +101,18 @@ class SubmissionRepositorySpec extends SpecBase with DefaultPlayMongoRepositoryS
           .futureValue
           .value
 
-        val rawCarfId               = record.get("carfId").asString().getValue
         val rawFileName             = record.get("fileName").asString().getValue
         val rawExtractedFileDetails = record.get("extractedFileDetails").asString().getValue
         val rawRcaspDetails         = record.get("rcaspDetails").asString().getValue
         val rawSubscriptionDetails  = record.get("subscriptionDetails").asString().getValue
         val rawValidationErrors     = record.get("businessRuleErrors").asString().getValue
 
-        val decryptedCarfId               = crypto.decrypt(Crypted(rawCarfId)).value
         val decryptedFileName             = crypto.decrypt(Crypted(rawFileName)).value
         val decryptedExtractedFileDetails = crypto.decrypt(Crypted(rawExtractedFileDetails)).value
         val decryptedRcaspDetails         = crypto.decrypt(Crypted(rawRcaspDetails)).value
         val decryptedSubscriptionDetails  = crypto.decrypt(Crypted(rawSubscriptionDetails)).value
         val decryptedValidationErrors     = crypto.decrypt(Crypted(rawValidationErrors)).value
 
-        Json.parse(decryptedCarfId)               mustBe Json.toJson(testSubmissionDetailsCache.carfId)
         Json.parse(decryptedFileName)             mustBe Json.toJson(testSubmissionDetailsCache.fileName)
         Json.parse(decryptedExtractedFileDetails) mustBe Json.toJson(testSubmissionDetailsCache.extractedFileDetails)
         Json.parse(decryptedRcaspDetails)         mustBe Json.toJson(testSubmissionDetailsCache.rcaspDetails)
@@ -134,14 +131,12 @@ class SubmissionRepositorySpec extends SpecBase with DefaultPlayMongoRepositoryS
           .futureValue
           .value
 
-        val rawCarfId               = record.get("carfId").asString().getValue
         val rawFileName             = record.get("fileName").asString().getValue
         val rawExtractedFileDetails = record.get("extractedFileDetails").asDocument()
         val rawRcaspDetails         = record.get("rcaspDetails").asDocument()
         val rawSubscriptionDetails  = record.get("subscriptionDetails").asDocument()
         val rawValidationErrors     = record.get("businessRuleErrors").asDocument()
 
-        rawCarfId                                  mustBe testSubmissionDetailsCache.carfId.value
         rawFileName                                mustBe testSubmissionDetailsCache.fileName.value
         Json.parse(rawExtractedFileDetails.toJson) mustBe Json.toJson(testSubmissionDetailsCache.extractedFileDetails)
         Json.parse(rawRcaspDetails.toJson)         mustBe Json.toJson(testSubmissionDetailsCache.rcaspDetails)

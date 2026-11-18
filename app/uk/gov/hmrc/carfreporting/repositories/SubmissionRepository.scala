@@ -18,11 +18,10 @@ package uk.gov.hmrc.carfreporting.repositories
 
 import com.mongodb.MongoWriteException
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.*
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Updates.set
-import org.mongodb.scala.model.{FindOneAndUpdateOptions, IndexModel, IndexOptions, Sorts, Updates}
+import org.mongodb.scala.model.*
 import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.models.crypto.CryptoType.CryptoT
