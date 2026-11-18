@@ -50,18 +50,6 @@ class EmailServiceSpec extends SpecBase {
   private val indWithTradingName: DisplaySubscriptionDetails =
     displaySubscriptionDetailsInd.copy(tradingName = Some(testTradingName))
 
-  private def submission(
-      subscription: DisplaySubscriptionDetails = orgSubscription,
-      rcasp: RcaspDetails = individualRcaspDetails,
-      details: ExtractedCarfFileDetails = extractedFileDetailsCarf
-  ): SubmissionDetailsCache =
-    testSubmissionDetailsCache.copy(
-      subscriptionDetails = subscription,
-      rcaspDetails = rcasp,
-      extractedFileDetails = details,
-      lastStatusUpdateTime = statusTime
-    )
-
   private val nilReportDetails = extractedFileDetailsCarf.copy(
     messageTypeIndic = nilReportMessageTypeIndic,
     rcaspName = None,
@@ -88,22 +76,28 @@ class EmailServiceSpec extends SpecBase {
   private val secondUserContact =
     DisplaySubscriptionContact(None, Some(DisplaySubscriptionOrganisation(secondUserOrgName)), secondUserEmail)
 
+  private def submission(
+      subscription: DisplaySubscriptionDetails,
+      rcasp: RcaspDetails,
+      details: ExtractedCarfFileDetails
+  ): SubmissionDetailsCache =
+    testSubmissionDetailsCache.copy(
+      subscriptionDetails = subscription,
+      rcaspDetails = rcasp,
+      extractedFileDetails = details,
+      lastStatusUpdateTime = statusTime
+    )
+
   private def withBusinessName(params: Map[String, String], businessName: Option[String]): Map[String, String] =
     businessName.fold(params)(name => params + ("userBusinessName" -> name))
 
   private def passedUserParams(contactName: String): Map[String, String] =
     passedCommon + ("contactName" -> contactName)
 
-  private def passedRcaspParams(
-      contactName: String,
-      businessName: Option[String] = Some(testTradingName)
-  ): Map[String, String] =
+  private def passedRcaspParams(contactName: String, businessName: Option[String]): Map[String, String] =
     withBusinessName(passedCommon + ("contactName" -> contactName), businessName)
 
-  private def failedParams(
-      contactName: String,
-      businessName: Option[String] = Some(testTradingName)
-  ): Map[String, String] =
+  private def failedParams(contactName: String, businessName: Option[String]): Map[String, String] =
     withBusinessName(failedCommon + ("contactName" -> contactName), businessName)
 
   override def beforeEach(): Unit = {
@@ -124,10 +118,16 @@ class EmailServiceSpec extends SpecBase {
     "sendFilePassedEmails" - {
 
       "must email the user and the RCASP contact when the user is not the RCASP" in {
-        service.sendFilePassedEmails(submission()).futureValue
+        service
+          .sendFilePassedEmails(submission(orgSubscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgName))
-        verifySent(rcaspEmail, carfFilePassedRcaspTemplateId, passedRcaspParams("testContactName"))
+        verifySent(
+          rcaspEmail,
+          carfFilePassedRcaspTemplateId,
+          passedRcaspParams("testContactName", Some(testTradingName))
+        )
         verifyTotalSent(2)
       }
 
@@ -137,17 +137,25 @@ class EmailServiceSpec extends SpecBase {
           SecondaryContactDetails = Some(RcaspContactDetails(secondRcaspContact, secondRcaspEmail))
         )
 
-        service.sendFilePassedEmails(submission(subscription = subscription, rcasp = rcasp)).futureValue
+        service.sendFilePassedEmails(submission(subscription, rcasp, extractedFileDetailsCarf)).futureValue
 
         verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgName))
         verifySent(secondUserEmail, carfFilePassedUserTemplateId, passedUserParams(secondUserOrgName))
-        verifySent(rcaspEmail, carfFilePassedRcaspTemplateId, passedRcaspParams("testContactName"))
-        verifySent(secondRcaspEmail, carfFilePassedRcaspTemplateId, passedRcaspParams(secondRcaspContact))
+        verifySent(
+          rcaspEmail,
+          carfFilePassedRcaspTemplateId,
+          passedRcaspParams("testContactName", Some(testTradingName))
+        )
+        verifySent(
+          secondRcaspEmail,
+          carfFilePassedRcaspTemplateId,
+          passedRcaspParams(secondRcaspContact, Some(testTradingName))
+        )
         verifyTotalSent(4)
       }
 
       "must email only the user when the user is the RCASP" in {
-        service.sendFilePassedEmails(submission(rcasp = rcaspUser)).futureValue
+        service.sendFilePassedEmails(submission(orgSubscription, rcaspUser, extractedFileDetailsCarf)).futureValue
 
         verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgName))
         verify(mockEmailConnector, never())
@@ -156,24 +164,24 @@ class EmailServiceSpec extends SpecBase {
       }
 
       "must email only the user when an individual RCASP is also the user" in {
-        service
-          .sendFilePassedEmails(submission(rcasp = individualRcaspDetails.copy(IsRCASPUser = true)))
-          .futureValue
+        val rcasp = individualRcaspDetails.copy(IsRCASPUser = true)
+
+        service.sendFilePassedEmails(submission(orgSubscription, rcasp, extractedFileDetailsCarf)).futureValue
 
         verifyTotalSent(1)
         verify(mockEmailConnector, never()).sendEmail(eqTo(rcaspEmail), any(), any())(any(), any())
       }
 
       "must greet an individual user by their full name" in {
-        service
-          .sendFilePassedEmails(submission(subscription = indSubscription, rcasp = rcaspUser))
-          .futureValue
+        service.sendFilePassedEmails(submission(indSubscription, rcaspUser, extractedFileDetailsCarf)).futureValue
 
         verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams("Jane Smith"))
       }
 
       "must use the trading name as the user business name for an organisation" in {
-        service.sendFilePassedEmails(submission()).futureValue
+        service
+          .sendFilePassedEmails(submission(orgSubscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verifySent(
           rcaspEmail,
@@ -183,7 +191,9 @@ class EmailServiceSpec extends SpecBase {
       }
 
       "must not use the primary contact's organisation name as the user business name" in {
-        service.sendFilePassedEmails(submission()).futureValue
+        service
+          .sendFilePassedEmails(submission(orgSubscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verify(mockEmailConnector, never()).sendEmail(
           any(),
@@ -193,7 +203,9 @@ class EmailServiceSpec extends SpecBase {
       }
 
       "must use the individual's full name as the user business name when there is no trading name" in {
-        service.sendFilePassedEmails(submission(subscription = indSubscription)).futureValue
+        service
+          .sendFilePassedEmails(submission(indSubscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verifySent(
           rcaspEmail,
@@ -203,7 +215,9 @@ class EmailServiceSpec extends SpecBase {
       }
 
       "must use the individual's full name over the trading name when both are present" in {
-        service.sendFilePassedEmails(submission(subscription = indWithTradingName)).futureValue
+        service
+          .sendFilePassedEmails(submission(indWithTradingName, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verifySent(
           rcaspEmail,
@@ -218,7 +232,9 @@ class EmailServiceSpec extends SpecBase {
       }
 
       "must still email the RCASP, without a user business name, for an organisation with no trading name" in {
-        service.sendFilePassedEmails(submission(subscription = orgNoTradingName)).futureValue
+        service
+          .sendFilePassedEmails(submission(orgNoTradingName, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgName))
         verifySent(rcaspEmail, carfFilePassedRcaspTemplateId, passedRcaspParams("testContactName", None))
@@ -228,7 +244,9 @@ class EmailServiceSpec extends SpecBase {
       "must still email the RCASP, without a user business name, for an organisation with a blank trading name" in {
         val subscription = orgNoTradingName.copy(tradingName = Some("   "))
 
-        service.sendFilePassedEmails(submission(subscription = subscription)).futureValue
+        service
+          .sendFilePassedEmails(submission(subscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verifySent(rcaspEmail, carfFilePassedRcaspTemplateId, passedRcaspParams("testContactName", None))
       }
@@ -236,7 +254,7 @@ class EmailServiceSpec extends SpecBase {
       "must use the reportType already stored on the file details when there is one" in {
         val details = extractedFileDetailsCarf.copy(reportType = Some(ReportType.DeletionOfExistingReport))
 
-        service.sendFilePassedEmails(submission(rcasp = rcaspUser, details = details)).futureValue
+        service.sendFilePassedEmails(submission(orgSubscription, rcaspUser, details)).futureValue
 
         verifySent(
           userEmail,
@@ -248,13 +266,15 @@ class EmailServiceSpec extends SpecBase {
       "must work out the reportType from the file details when none is stored" in {
         val details = extractedFileDetailsCarf.copy(reportType = None)
 
-        service.sendFilePassedEmails(submission(rcasp = rcaspUser, details = details)).futureValue
+        service.sendFilePassedEmails(submission(orgSubscription, rcaspUser, details)).futureValue
 
         verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgName))
       }
 
       "must use the RCASP name from management data for a nil report (individual RCASP)" in {
-        service.sendFilePassedEmails(submission(details = nilReportDetails)).futureValue
+        service
+          .sendFilePassedEmails(submission(orgSubscription, individualRcaspDetails, nilReportDetails))
+          .futureValue
 
         verifySent(
           userEmail,
@@ -268,7 +288,7 @@ class EmailServiceSpec extends SpecBase {
 
       "must use the RCASP name from management data for a nil report (organisation RCASP)" in {
         service
-          .sendFilePassedEmails(submission(rcasp = organisationRcaspDetails, details = nilReportDetails))
+          .sendFilePassedEmails(submission(orgSubscription, organisationRcaspDetails, nilReportDetails))
           .futureValue
 
         verifySent(
@@ -285,7 +305,7 @@ class EmailServiceSpec extends SpecBase {
         val subscription =
           orgSubscription.copy(primaryContact = DisplaySubscriptionContact(None, None, userEmail))
 
-        service.sendFilePassedEmails(submission(subscription = subscription, rcasp = rcaspUser)).futureValue
+        service.sendFilePassedEmails(submission(subscription, rcaspUser, extractedFileDetailsCarf)).futureValue
 
         verifyNoInteractions(mockEmailConnector)
       }
@@ -294,7 +314,7 @@ class EmailServiceSpec extends SpecBase {
         val noNameContact = DisplaySubscriptionContact(None, None, "noname@example.com")
         val subscription  = orgSubscription.copy(secondaryContact = Some(noNameContact))
 
-        service.sendFilePassedEmails(submission(subscription = subscription, rcasp = rcaspUser)).futureValue
+        service.sendFilePassedEmails(submission(subscription, rcaspUser, extractedFileDetailsCarf)).futureValue
 
         verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgName))
         verify(mockEmailConnector, never()).sendEmail(eqTo("noname@example.com"), any(), any())(any(), any())
@@ -305,9 +325,15 @@ class EmailServiceSpec extends SpecBase {
         when(mockEmailConnector.sendEmail(eqTo(userEmail), any(), any())(any(), any()))
           .thenReturn(Future.successful(EmailNotSent))
 
-        service.sendFilePassedEmails(submission()).futureValue
+        service
+          .sendFilePassedEmails(submission(orgSubscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
-        verifySent(rcaspEmail, carfFilePassedRcaspTemplateId, passedRcaspParams("testContactName"))
+        verifySent(
+          rcaspEmail,
+          carfFilePassedRcaspTemplateId,
+          passedRcaspParams("testContactName", Some(testTradingName))
+        )
         verifyTotalSent(2)
       }
 
@@ -315,14 +341,18 @@ class EmailServiceSpec extends SpecBase {
         when(mockEmailConnector.sendEmail(any(), any(), any())(any(), any()))
           .thenReturn(Future.successful(EmailNotSent))
 
-        service.sendFilePassedEmails(submission()).futureValue mustBe ((): Unit)
+        service
+          .sendFilePassedEmails(submission(orgSubscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue mustBe ((): Unit)
       }
     }
 
     "sendFileFailedEmails" - {
 
       "must email the user with the failed template, using the trading name as the user business name" in {
-        service.sendFileFailedEmails(submission()).futureValue
+        service
+          .sendFileFailedEmails(submission(orgSubscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verifySent(userEmail, carfFileFailedUserTemplateId, failedParams(testOrgName, Some(testTradingName)))
         verifyTotalSent(1)
@@ -331,15 +361,23 @@ class EmailServiceSpec extends SpecBase {
       "must email every user contact" in {
         val subscription = orgSubscription.copy(secondaryContact = Some(secondUserContact))
 
-        service.sendFileFailedEmails(submission(subscription = subscription)).futureValue
+        service
+          .sendFileFailedEmails(submission(subscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
-        verifySent(userEmail, carfFileFailedUserTemplateId, failedParams(testOrgName))
-        verifySent(secondUserEmail, carfFileFailedUserTemplateId, failedParams(secondUserOrgName))
+        verifySent(userEmail, carfFileFailedUserTemplateId, failedParams(testOrgName, Some(testTradingName)))
+        verifySent(
+          secondUserEmail,
+          carfFileFailedUserTemplateId,
+          failedParams(secondUserOrgName, Some(testTradingName))
+        )
         verifyTotalSent(2)
       }
 
       "must not email the RCASP, even when the user is not the RCASP" in {
-        service.sendFileFailedEmails(submission()).futureValue
+        service
+          .sendFileFailedEmails(submission(orgSubscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verify(mockEmailConnector, never()).sendEmail(eqTo(rcaspEmail), any(), any())(any(), any())
         verify(mockEmailConnector, never())
@@ -347,7 +385,9 @@ class EmailServiceSpec extends SpecBase {
       }
 
       "must not use the primary contact's organisation name as the user business name" in {
-        service.sendFileFailedEmails(submission()).futureValue
+        service
+          .sendFileFailedEmails(submission(orgSubscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verify(mockEmailConnector, never()).sendEmail(
           any(),
@@ -357,13 +397,17 @@ class EmailServiceSpec extends SpecBase {
       }
 
       "must use the individual's full name as the user business name when there is no trading name" in {
-        service.sendFileFailedEmails(submission(subscription = indSubscription)).futureValue
+        service
+          .sendFileFailedEmails(submission(indSubscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verifySent(userEmail, carfFileFailedUserTemplateId, failedParams("Jane Smith", Some("Jane Smith")))
       }
 
       "must use the individual's full name over the trading name when both are present" in {
-        service.sendFileFailedEmails(submission(subscription = indWithTradingName)).futureValue
+        service
+          .sendFileFailedEmails(submission(indWithTradingName, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verifySent(userEmail, carfFileFailedUserTemplateId, failedParams("Jane Smith", Some("Jane Smith")))
         verify(mockEmailConnector, never()).sendEmail(
@@ -374,7 +418,9 @@ class EmailServiceSpec extends SpecBase {
       }
 
       "must still email the user, without a user business name, for an organisation with no trading name" in {
-        service.sendFileFailedEmails(submission(subscription = orgNoTradingName)).futureValue
+        service
+          .sendFileFailedEmails(submission(orgNoTradingName, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verifySent(userEmail, carfFileFailedUserTemplateId, failedParams(testOrgName, None))
         verifyTotalSent(1)
@@ -383,18 +429,22 @@ class EmailServiceSpec extends SpecBase {
       "must treat a blank trading name as missing for an organisation" in {
         val subscription = orgNoTradingName.copy(tradingName = Some("  "))
 
-        service.sendFileFailedEmails(submission(subscription = subscription)).futureValue
+        service
+          .sendFileFailedEmails(submission(subscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verifySent(userEmail, carfFileFailedUserTemplateId, failedParams(testOrgName, None))
       }
 
       "must use the label RCASP and the management data name for a nil report" in {
-        service.sendFileFailedEmails(submission(details = nilReportDetails)).futureValue
+        service
+          .sendFileFailedEmails(submission(orgSubscription, individualRcaspDetails, nilReportDetails))
+          .futureValue
 
         verifySent(
           userEmail,
           carfFileFailedUserTemplateId,
-          failedParams(testOrgName) ++ Map(
+          failedParams(testOrgName, Some(testTradingName)) ++ Map(
             "rcaspLabel" -> "RCASP",
             "rcaspName"  -> "testFirstName testLastName"
           )
@@ -405,7 +455,9 @@ class EmailServiceSpec extends SpecBase {
         val subscription =
           orgSubscription.copy(primaryContact = DisplaySubscriptionContact(None, None, userEmail))
 
-        service.sendFileFailedEmails(submission(subscription = subscription)).futureValue
+        service
+          .sendFileFailedEmails(submission(subscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
 
         verifyNoInteractions(mockEmailConnector)
       }
@@ -414,7 +466,9 @@ class EmailServiceSpec extends SpecBase {
         when(mockEmailConnector.sendEmail(any(), any(), any())(any(), any()))
           .thenReturn(Future.successful(EmailNotSent))
 
-        service.sendFileFailedEmails(submission()).futureValue mustBe ((): Unit)
+        service
+          .sendFileFailedEmails(submission(orgSubscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue mustBe ((): Unit)
       }
     }
   }
