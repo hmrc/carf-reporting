@@ -36,13 +36,19 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   private val sdesBaseUrl: String = servicesConfig.baseUrl("sdes")
   val sdesUrl: String             = s"$sdesBaseUrl/${config.get[String]("sdes.url")}"
 
-  val sdesInformationType: String = s"${config.get[String]("sdes.informationType")}"
-  val sdesClientId: String        = s"${config.get[String]("sdes.client-id")}"
-  val sdesSrn: String             = s"${config.get[String]("sdes.srn")}"
+  val sdesInformationType: String = config.get[String]("sdes.informationType")
+  val sdesClientId: String        = config.get[String]("sdes.client-id")
+  val sdesSrn: String             = config.get[String]("sdes.srn")
 
   private val sdesFileListingHost: String = servicesConfig.baseUrl("sdes-file-listing")
   val sdesFileListingBaseUrl: String      =
     s"$sdesFileListingHost${config.get[String]("microservice.services.sdes-file-listing.uri")}"
+
+  val sdesInformationTypeListing: String =
+    config.get[String]("sdes.listing.informationType")
+
+  val sdesClientIdListing: String = config.get[String]("sdes.listing.client-id")
+  val sdesSrnListing: String      = config.get[String]("sdes.listing.srn")
 
   val submissionTtlDays: Long = config.get[Long]("mongodb.submissionTimeToLiveInDays")
 

@@ -117,7 +117,7 @@ class SDESConnectorISpec extends ApplicationWithWiremock {
   }
 
   "getBusinessRulesFileListing" - {
-    val testUrl = "/files-available/list/carf-submission"
+    val testUrl = "/files-available/list/carf-submission-listing"
 
     val testFileListingJson: String =
       s"""[

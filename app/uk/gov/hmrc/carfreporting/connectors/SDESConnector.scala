@@ -81,14 +81,14 @@ class SDESConnector @Inject() (val config: AppConfig, val http: HttpClientV2) ex
   }
 
   def getBusinessRulesFileListing()(implicit hc: HeaderCarrier, ec: ExecutionContext): ResultT[Seq[FileListing]] = {
-    val requestUrl = url"${config.sdesFileListingBaseUrl}/${config.sdesInformationType}"
+    val requestUrl = url"${config.sdesFileListingBaseUrl}/${config.sdesInformationTypeListing}"
 
     logger.info("[SDESConnector][getBusinessRulesFileListing] Getting list of business rules response XML files")
 
     ResultT.fromFuture(
       http
         .get(requestUrl)
-        .setHeader(clientIdHeader -> config.sdesClientId, sdesKeyHeader -> config.sdesSrn)
+        .setHeader(clientIdHeader -> config.sdesClientIdListing, sdesKeyHeader -> config.sdesSrnListing)
         .execute[HttpResponse]
         .map { httpResponse =>
           httpResponse.status match {
