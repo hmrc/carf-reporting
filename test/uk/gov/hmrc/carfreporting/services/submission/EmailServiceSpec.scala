@@ -172,6 +172,61 @@ class EmailServiceSpec extends SpecBase {
         verify(mockEmailConnector, never()).sendEmail(eqTo(rcaspEmail), any(), any())(any(), any())
       }
 
+      "must send only the user email when the RCASP contact has the same email address as the user" in {
+        val rcasp = individualRcaspDetails.copy(
+          PrimaryContactDetails = individualRcaspDetails.PrimaryContactDetails.copy(EmailAddress = userEmail)
+        )
+
+        service.sendFilePassedEmails(submission(orgSubscription, rcasp, extractedFileDetailsCarf)).futureValue
+
+        verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgContactName))
+        verify(mockEmailConnector, never())
+          .sendEmail(any(), eqTo(carfFilePassedRcaspTemplateId), any())(any(), any())
+        verifyTotalSent(1)
+      }
+
+      "must treat the RCASP and user addresses as the same when they differ only by case or surrounding spaces" in {
+        val rcasp = individualRcaspDetails.copy(
+          PrimaryContactDetails =
+            individualRcaspDetails.PrimaryContactDetails.copy(EmailAddress = s"  ${userEmail.toUpperCase} ")
+        )
+
+        service.sendFilePassedEmails(submission(orgSubscription, rcasp, extractedFileDetailsCarf)).futureValue
+
+        verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgContactName))
+        verify(mockEmailConnector, never())
+          .sendEmail(any(), eqTo(carfFilePassedRcaspTemplateId), any())(any(), any())
+        verifyTotalSent(1)
+      }
+
+      "must only email the RCASP contacts whose address is not a user address" in {
+        val rcasp = organisationRcaspDetails.copy(
+          PrimaryContactDetails = organisationRcaspDetails.PrimaryContactDetails.copy(EmailAddress = userEmail),
+          SecondaryContactDetails = Some(RcaspContactDetails(secondRcaspContact, secondRcaspEmail))
+        )
+
+        service.sendFilePassedEmails(submission(orgSubscription, rcasp, extractedFileDetailsCarf)).futureValue
+
+        verifySent(userEmail, carfFilePassedUserTemplateId, passedUserParams(testOrgContactName))
+        verifySent(
+          secondRcaspEmail,
+          carfFilePassedRcaspTemplateId,
+          passedRcaspParams(secondRcaspContact, Some(testTradingName))
+        )
+        verify(mockEmailConnector, never())
+          .sendEmail(eqTo(userEmail), eqTo(carfFilePassedRcaspTemplateId), any())(any(), any())
+        verifyTotalSent(2)
+      }
+
+      "must still send the RCASP email when its address differs from every user address" in {
+        service
+          .sendFilePassedEmails(submission(orgSubscription, individualRcaspDetails, extractedFileDetailsCarf))
+          .futureValue
+
+        verify(mockEmailConnector, times(1))
+          .sendEmail(eqTo(rcaspEmail), eqTo(carfFilePassedRcaspTemplateId), any())(any(), any())
+      }
+
       "must greet an individual user by their full name" in {
         service.sendFilePassedEmails(submission(indSubscription, rcaspUser, extractedFileDetailsCarf)).futureValue
 
