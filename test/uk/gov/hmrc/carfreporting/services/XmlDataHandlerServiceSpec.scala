@@ -18,7 +18,7 @@ package uk.gov.hmrc.carfreporting.services
 
 import org.codehaus.stax2.validation.{XMLValidationSchema, XMLValidationSchemaFactory}
 import uk.gov.hmrc.carfreporting.base.{NoGuiceSpecBase, TestData}
-import uk.gov.hmrc.carfreporting.models.ExtractedCarfFileDetails
+import uk.gov.hmrc.carfreporting.models.{ExtractedCarfFileDetails, ReportType}
 import uk.gov.hmrc.carfreporting.models.errors.{InvalidXmlError, XmlErrors}
 
 import java.io.InputStream
@@ -66,7 +66,8 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
               docTypeIndic = Some("OECD10"),
               isTestData = true,
               allCryptoUsersAreCorrections = false,
-              allCryptoUsersAreDeletions = false
+              allCryptoUsersAreDeletions = false,
+              reportType = Some(ReportType.TestData)
             )
           )
         }
@@ -92,7 +93,8 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
               docTypeIndic = None,
               isTestData = false,
               allCryptoUsersAreCorrections = false,
-              allCryptoUsersAreDeletions = false
+              allCryptoUsersAreDeletions = false,
+              reportType = Some(ReportType.NilReport)
             )
           )
         }
@@ -118,7 +120,8 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
               docTypeIndic = Some("OECD1"),
               isTestData = false,
               allCryptoUsersAreCorrections = false,
-              allCryptoUsersAreDeletions = false
+              allCryptoUsersAreDeletions = false,
+              reportType = Some(ReportType.NotificationOfReportingOutsideUk)
             )
           )
         }
@@ -144,7 +147,8 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
               docTypeIndic = Some("OECD1"),
               isTestData = false,
               allCryptoUsersAreCorrections = false,
-              allCryptoUsersAreDeletions = false
+              allCryptoUsersAreDeletions = false,
+              reportType = Some(ReportType.NewInformation)
             )
           )
         }
@@ -170,7 +174,8 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
               docTypeIndic = Some("OECD0"),
               isTestData = false,
               allCryptoUsersAreCorrections = false,
-              allCryptoUsersAreDeletions = false
+              allCryptoUsersAreDeletions = false,
+              reportType = Some(ReportType.AdditionalInformationForExistingReport)
             )
           )
         }
@@ -196,7 +201,8 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
               docTypeIndic = Some("OECD3"),
               isTestData = false,
               allCryptoUsersAreCorrections = false,
-              allCryptoUsersAreDeletions = false
+              allCryptoUsersAreDeletions = false,
+              reportType = Some(ReportType.DeletionOfExistingReport)
             )
           )
         }
@@ -222,7 +228,8 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
               docTypeIndic = Some("OECD2"),
               isTestData = false,
               allCryptoUsersAreCorrections = true,
-              allCryptoUsersAreDeletions = false
+              allCryptoUsersAreDeletions = false,
+              reportType = Some(ReportType.CorrectedInformationForExistingReport)
             )
           )
         }
@@ -248,7 +255,8 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
               docTypeIndic = Some("OECD0"),
               isTestData = false,
               allCryptoUsersAreCorrections = false,
-              allCryptoUsersAreDeletions = true
+              allCryptoUsersAreDeletions = true,
+              reportType = Some(ReportType.DeletedInformationForExistingReport)
             )
           )
         }
@@ -274,7 +282,8 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
               docTypeIndic = Some("OECD2"),
               isTestData = false,
               allCryptoUsersAreCorrections = false,
-              allCryptoUsersAreDeletions = false
+              allCryptoUsersAreDeletions = false,
+              reportType = Some(ReportType.CorrectedAndDeletedInformationForExistingReport)
             )
           )
         }
@@ -300,7 +309,8 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
               docTypeIndic = Some("OECD1"),
               isTestData = false,
               allCryptoUsersAreCorrections = false,
-              allCryptoUsersAreDeletions = true
+              allCryptoUsersAreDeletions = true,
+              reportType = Some(ReportType.ReportableInformationFallback)
             )
           )
         }
@@ -326,7 +336,8 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
               docTypeIndic = Some("OECD1"),
               isTestData = false,
               allCryptoUsersAreCorrections = false,
-              allCryptoUsersAreDeletions = false
+              allCryptoUsersAreDeletions = false,
+              reportType = Some(ReportType.NewInformation)
             )
           )
         }
