@@ -47,7 +47,10 @@ class EmailService @Inject() (
         .description // TODO: remove getOrElse when doing CARF-743
     )
 
-    val userSends = userRecipients(submission).map { r =>
+    val userRecipientList = userRecipients(submission)
+    val userEmails        = userRecipientList.map(r => normaliseEmail(r.email)).toSet
+
+    val userSends = userRecipientList.map { r =>
       emailConnector.sendEmail(r.email, carfFilePassedUserTemplateId, common + ("contactName" -> r.name))
     }
 
@@ -56,8 +59,17 @@ class EmailService @Inject() (
         logger.info("[EmailService][sendFilePassedEmails] User is the RCASP, skipping RCASP email")
         List.empty[Future[EmailStatus]]
       } else {
+        val allRcasp = rcaspRecipients(submission)
+        val toSend   = allRcasp.filterNot(r => userEmails.contains(normaliseEmail(r.email)))
+        val skipped  = allRcasp.length - toSend.length
+        if (skipped > 0) {
+          logger.info(
+            s"[EmailService][sendFilePassedEmails] Skipping $skipped RCASP email(s) already sent to a user contact"
+          )
+        }
+
         val rcaspParams = withUserBusinessName("sendFilePassedEmails", submission, common)
-        rcaspRecipients(submission).map { r =>
+        toSend.map { r =>
           emailConnector.sendEmail(r.email, carfFilePassedRcaspTemplateId, rcaspParams + ("contactName" -> r.name))
         }
       }
@@ -82,6 +94,8 @@ class EmailService @Inject() (
 
     Future.sequence(sends).map(logOutcome("sendFileFailedEmails", _))
   }
+
+  private def normaliseEmail(email: String): String = email.trim.toLowerCase
 
   private def userRecipients(submission: SubmissionDetailsCache): List[Recipient] =
     (submission.subscriptionDetails.primaryContact :: submission.subscriptionDetails.secondaryContact.toList)
