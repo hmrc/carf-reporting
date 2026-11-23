@@ -94,7 +94,9 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
         when(mockXmlDataHandlerService.carfValidationAndExtraction(any(), any()))
           .thenReturn(Right(extractedFileDetailsCarf))
 
-        val result = service.validateAndExtractCarf(testUrl).value.futureValue
+        val exampleValidUriPath = getClass.getResource("/data/new-info.xml").toURI.toString
+
+        val result = service.validateAndExtractCarf(exampleValidUriPath).value.futureValue
 
         result mustBe Right(extractedFileDetailsCarf)
 
