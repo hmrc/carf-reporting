@@ -20,8 +20,9 @@ import org.mockito.Mockito.when
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.carfreporting.base.NoGuiceSpecBase
-import uk.gov.hmrc.carfreporting.config.{AppConfig, CryptoProvider}
 import uk.gov.hmrc.carfreporting.config.Constants.ukZoneId
+import uk.gov.hmrc.carfreporting.config.{AppConfig, CryptoProvider}
+import uk.gov.hmrc.carfreporting.connectors.FtsConnector
 import uk.gov.hmrc.carfreporting.controllers.XmlValidationAndExtractionController
 import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, XmlDispatcher}
 import uk.gov.hmrc.carfreporting.itutil.Reporter.*
@@ -40,6 +41,8 @@ class XmlParserApiPerformanceTestSpec
     extends NoGuiceSpecBase
     with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
 
+  val testDataCommonPath: String = "test/uk/gov/hmrc/carfreporting/data"
+
   val clock: Clock = Clock.fixed(Instant.ofEpochMilli(1718118467838L), ukZoneId)
 
   val config: AppConfig = mock[AppConfig]
@@ -52,6 +55,8 @@ class XmlParserApiPerformanceTestSpec
     appConfig = config,
     clock = clock
   )(ec)
+
+  val mockFtsConnector: FtsConnector = mock[FtsConnector]
 
   override def beforeEach(): Unit = {
     println("Cleaning")
@@ -73,7 +78,7 @@ class XmlParserApiPerformanceTestSpec
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository, mockFtsConnector)(testEnv)(xmlDispatcher)
 
     val testController: XmlValidationAndExtractionController = new XmlValidationAndExtractionController(
       cc,
@@ -86,12 +91,12 @@ class XmlParserApiPerformanceTestSpec
 
     lazy val calls = Vector( // keep lazy Futures are eager
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/valid-carf.xml").toUri.toString,
         validCarfXmlSizeOnDisk,
         testController
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/valid-carf.xml").toUri.toString,
         validCarfXmlSizeOnDisk,
         testController
       )
@@ -108,7 +113,7 @@ class XmlParserApiPerformanceTestSpec
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository, mockFtsConnector)(testEnv)(xmlDispatcher)
 
     val testController: XmlValidationAndExtractionController =
       new XmlValidationAndExtractionController(cc, service, fakeAuthAction, fakeCheckCarfIdAction)
@@ -137,7 +142,7 @@ class XmlParserApiPerformanceTestSpec
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository, mockFtsConnector)(testEnv)(xmlDispatcher)
 
     val testController: XmlValidationAndExtractionController =
       new XmlValidationAndExtractionController(cc, service, fakeAuthAction, fakeCheckCarfIdAction)
@@ -166,7 +171,7 @@ class XmlParserApiPerformanceTestSpec
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository, mockFtsConnector)(testEnv)(xmlDispatcher)
 
     val testController: XmlValidationAndExtractionController =
       new XmlValidationAndExtractionController(cc, service, fakeAuthAction, fakeCheckCarfIdAction)
@@ -193,27 +198,27 @@ class XmlParserApiPerformanceTestSpec
   private def smallBatchOfSmall(controller: XmlValidationAndExtractionController) = {
     lazy val calls = Vector( // keep lazy Futures are eager
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/valid-carf.xml").toUri.toString,
         validCarfXmlSizeOnDisk,
         controller
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/valid-carf.xml").toUri.toString,
         validCarfXmlSizeOnDisk,
         controller
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/valid-carf.xml").toUri.toString,
         validCarfXmlSizeOnDisk,
         controller
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/invalid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/invalid-carf.xml").toUri.toString,
         invalidCarfXmlSizeOnDisk,
         controller
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/invalid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/invalid-carf.xml").toUri.toString,
         invalidCarfXmlSizeOnDisk,
         controller
       )
@@ -239,7 +244,7 @@ class XmlParserApiPerformanceTestSpec
     lazy val validFiles =
       (1 to 25).map(_ =>
         createAndMeasureExecution(
-          Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+          Paths.get(s"$testDataCommonPath/valid-carf.xml").toUri.toString,
           validCarfXmlSizeOnDisk,
           controller
         )
@@ -247,7 +252,7 @@ class XmlParserApiPerformanceTestSpec
 
     lazy val invalidFiles = (1 to 25).map(_ =>
       createAndMeasureExecution(
-        Paths.get("data/examples/invalid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/invalid-carf.xml").toUri.toString,
         invalidCarfXmlSizeOnDisk,
         controller
       )
@@ -274,27 +279,27 @@ class XmlParserApiPerformanceTestSpec
   private def smallBatchOfLarge(controller: XmlValidationAndExtractionController) = {
     lazy val calls = Vector(
       createAndMeasureExecution(
-        Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/sized/carf-262mb.xml").toUri.toString,
         twoFiftyMbInBytes,
         controller
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/sized/carf-262mb.xml").toUri.toString,
         twoFiftyMbInBytes,
         controller
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/sized/carf-262mb.xml").toUri.toString,
         twoFiftyMbInBytes,
         controller
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/too-many-schema-errors.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/too-many-schema-errors.xml").toUri.toString,
         bigInvalidXmlSizeOnDisk,
         controller
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/too-many-schema-errors.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/too-many-schema-errors.xml").toUri.toString,
         bigInvalidXmlSizeOnDisk,
         controller
       )
@@ -320,7 +325,7 @@ class XmlParserApiPerformanceTestSpec
     lazy val validFiles =
       (1 to 25).map(_ =>
         createAndMeasureExecution(
-          Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString,
+          Paths.get(s"$testDataCommonPath/sized/carf-262mb.xml").toUri.toString,
           twoFiftyMbInBytes,
           controller
         )
@@ -328,7 +333,7 @@ class XmlParserApiPerformanceTestSpec
 
     lazy val invalidFiles = (1 to 25).map(_ =>
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/too-many-schema-errors.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/too-many-schema-errors.xml").toUri.toString,
         bigInvalidXmlSizeOnDisk,
         controller
       )

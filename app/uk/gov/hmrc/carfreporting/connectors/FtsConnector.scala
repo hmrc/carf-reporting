@@ -16,26 +16,32 @@
 
 package uk.gov.hmrc.carfreporting.connectors
 
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Source, StreamConverters}
+import org.apache.pekko.util.ByteString
 import play.api.Logging
 import play.api.http.Status.{BAD_REQUEST, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.*
 import uk.gov.hmrc.carfreporting.config.AppConfig
 import uk.gov.hmrc.carfreporting.config.Constants.{clientIdHeader, sdesKeyHeader}
-import uk.gov.hmrc.carfreporting.models.errors.ApiError.{BadRequestError, InternalServerError, JsonValidationError}
+import uk.gov.hmrc.carfreporting.models.errors.ApiError.*
+import uk.gov.hmrc.carfreporting.models.errors.CarfError
 import uk.gov.hmrc.carfreporting.models.requests.sdes.FileTransferNotification
 import uk.gov.hmrc.carfreporting.models.responses.FileListing
 import uk.gov.hmrc.carfreporting.types.ResultT
-import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
-import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.client.{HttpClientV2, given}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 
+import java.io.InputStream
+import java.net.URL
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.DurationInt
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
-class SDESConnector @Inject() (val config: AppConfig, val http: HttpClientV2) extends Logging {
+class FtsConnector @Inject() (val config: AppConfig, val http: HttpClientV2)(using Materializer) extends Logging {
 
   def sendFileReadyNotification(
       fileTransferNotification: FileTransferNotification
@@ -116,4 +122,30 @@ class SDESConnector @Inject() (val config: AppConfig, val http: HttpClientV2) ex
         }
     )
   }
+
+  def downloadBusinessRulesFile(
+      url: URL
+  )(using ec: ExecutionContext): ResultT[InputStream] =
+    ResultT.fromFuture(
+      http
+        .get(url)(using HeaderCarrier())
+        .withProxy
+        .stream[Source[ByteString, ?]]
+        .map[Either[CarfError, InputStream]](src =>
+          Right(
+            src.runWith(
+              StreamConverters.asInputStream(readTimeout = config.downloadBusinessRulesFileTimeoutInSeconds.seconds)
+            )
+          )
+        )
+        .recover {
+          case e: UpstreamErrorResponse if e.statusCode == 404 =>
+            Left(NotFoundError)
+          case e: UpstreamErrorResponse if e.statusCode == 410 =>
+            Left(FileGoneError)
+          case NonFatal(e)                                     =>
+            logger.error(s"Failed to download from ${url.getHost}${url.getPath}", e)
+            Left(InternalServerError)
+        }
+    )
 }

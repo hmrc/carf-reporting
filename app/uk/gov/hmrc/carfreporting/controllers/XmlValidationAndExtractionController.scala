@@ -49,7 +49,7 @@ class XmlValidationAndExtractionController @Inject() (
           ,
           valid =>
             logger.info("[XmlValidationAndExtractionController][processXml]\nStarting CARF XML Validation")
-            service.validateAndExtractCARF(valid.path).value.map {
+            service.validateAndExtractCarf(valid.path).value.map {
               case Right(extractedFileDetails) =>
                 logger
                   .info("[XmlValidationAndExtractionController][processXml]\nFinished CARF XML Validation with success")

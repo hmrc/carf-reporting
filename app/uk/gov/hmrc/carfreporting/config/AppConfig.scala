@@ -60,4 +60,6 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   val enrolmentKey: String        = config.get[String]("keys.enrolmentKey.carf")
 
   val mongoEncryptionEnabled: Boolean = config.get[Boolean]("mongodb.encryptionEnabled")
+
+  val downloadBusinessRulesFileTimeoutInSeconds: Int = config.get[Int]("sdes.businessRuleDownloadTimeoutInSeconds")
 }

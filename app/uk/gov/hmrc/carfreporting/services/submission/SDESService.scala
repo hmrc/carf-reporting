@@ -18,7 +18,7 @@ package uk.gov.hmrc.carfreporting.services.submission
 
 import play.api.Logging
 import uk.gov.hmrc.carfreporting.config.AppConfig
-import uk.gov.hmrc.carfreporting.connectors.SDESConnector
+import uk.gov.hmrc.carfreporting.connectors.FtsConnector
 import uk.gov.hmrc.carfreporting.helpers.SDESFileMetadataHelper
 import uk.gov.hmrc.carfreporting.models.UploadId
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.InternalServerError
@@ -37,7 +37,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class SDESService @Inject() (
-    sdesConnector: SDESConnector,
+    ftsConnector: FtsConnector,
     xmlParserService: XmlParserService,
     repository: SubmissionRepository,
     appConfig: AppConfig
@@ -50,7 +50,7 @@ class SDESService @Inject() (
 
     val conversationId = submissionRequest.uploadId.value
 
-    sdesConnector.sendFileReadyNotification(
+    ftsConnector.sendFileReadyNotification(
       FileTransferNotification(
         informationType = appConfig.sdesInformationType,
         file = File(
@@ -71,7 +71,7 @@ class SDESService @Inject() (
       fileName: String
   )(implicit hc: HeaderCarrier): ResultT[Unit] =
     ResultT.fromFuture {
-      sdesConnector.getBusinessRulesFileListing().value.flatMap {
+      ftsConnector.getBusinessRulesFileListing().value.flatMap {
         case Right(fileList) =>
           fileList
             .find(_.filename == fileName)
@@ -84,7 +84,7 @@ class SDESService @Inject() (
               logger.info(
                 s"[SDESService][getAndProcessBusinessRulesResponseFile]\nStarting BR XML Validation <Upload ID: ${uploadId.value}>"
               )
-              xmlParserService.validateAndExtractAEOI(fileListingRecord.downloadURL, uploadId).value.map {
+              xmlParserService.validateAndExtractBusinessRules(fileListingRecord.downloadURL, uploadId).value.map {
                 case Right(_)                   =>
                   logger.info(
                     s"[SDESService][getAndProcessBusinessRulesResponseFile]\nFinished BR XML Validation with success <Upload ID: ${uploadId.value}>"

@@ -53,11 +53,11 @@ class XmlDataHandlerService @Inject() extends Logging {
   ): Either[CarfError, ExtractedCarfFileDetails] =
     validateAndExtract(schema, inputStream)(readCarfXml)
 
-  def aeoiValidationAndExtraction(
+  def businessRulesValidationAndExtraction(
       schema: XMLValidationSchema,
       inputStream: InputStream
-  ): Either[CarfError, ExtractedAEOIFileDetails] =
-    validateAndExtract(schema, inputStream)(readAEOIXml)
+  ): Either[CarfError, ExtractedBusinessRulesFileDetails] =
+    validateAndExtract(schema, inputStream)(readBusinessRulesXml)
 
   private def validateAndExtract[A](schema: XMLValidationSchema, inputStream: InputStream)(
       readXml: XMLStreamReader2 => A
@@ -202,8 +202,8 @@ class XmlDataHandlerService @Inject() extends Logging {
     )
   }
 
-  private def readAEOIXml(reader: XMLStreamReader2): ExtractedAEOIFileDetails = {
-    import xmlElements.AEOIRequestDetail.*
+  private def readBusinessRulesXml(reader: XMLStreamReader2): ExtractedBusinessRulesFileDetails = {
+    import xmlElements.BusinessRulesRequestDetail.*
 
     val path = ListBuffer.empty[String]
 
@@ -284,7 +284,7 @@ class XmlDataHandlerService @Inject() extends Logging {
         case _ => // Nothing
       }
 
-    ExtractedAEOIFileDetails(
+    ExtractedBusinessRulesFileDetails(
       uploadId = UploadId(currentConversationId),
       validationErrors = ValidationErrors(
         fileError = fileErrors.toSeq,

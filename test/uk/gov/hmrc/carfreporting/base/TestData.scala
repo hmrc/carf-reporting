@@ -126,7 +126,7 @@ trait TestData {
     )
   )
 
-  val validExtractedAEOIFileDetails = ExtractedAEOIFileDetails(
+  val validExtractedBusinessRulesFileDetails = ExtractedBusinessRulesFileDetails(
     UploadId("3ada9236-21a6-4ad2-9f0c-f01shdt40c5"),
     ValidationErrors(
       Seq.empty,
@@ -154,15 +154,15 @@ trait TestData {
     )
   )
 
-  val validExtractedAEOIFileDetailsWithErrors = ExtractedAEOIFileDetails(
+  val validExtractedBusinessRulesFileDetailsWithErrors = ExtractedBusinessRulesFileDetails(
     UploadId("3ada9236-21a6-4ad2-9f0c-f01shdt40c5"),
     businessRuleValidationErrors,
     ValidationResult(ValidationStatus.fromString("Rejected"))
   )
 
-  lazy val testSavedAEOIFileDetails: SavedAEOIFileDetails = SavedAEOIFileDetails(
+  lazy val testSavedBusinessRulesFileDetails: SavedBusinessRulesFileDetails = SavedBusinessRulesFileDetails(
     ObjectId.get(),
-    validExtractedAEOIFileDetails,
+    validExtractedBusinessRulesFileDetails,
     Instant.ofEpochSecond(1)
   )
 

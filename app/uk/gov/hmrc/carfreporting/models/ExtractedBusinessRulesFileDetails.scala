@@ -18,7 +18,7 @@ package uk.gov.hmrc.carfreporting.models
 
 import play.api.libs.json.*
 
-case class ExtractedAEOIFileDetails(
+case class ExtractedBusinessRulesFileDetails(
     uploadId: UploadId,
     validationErrors: ValidationErrors,
     validationResult: ValidationResult
@@ -30,8 +30,9 @@ case class ValidationErrors(
 )
 
 /** @param status
-  *   \- can be 'Accepted' or 'Rejected' from an AEOI XML file. Furthermore, It can also be 'SchemaValidationError' when
-  *   an XML file fails schema validation or 'UnexpectedFailure' for any other unexpected errors.
+  *   \- can be 'Accepted' or 'Rejected' from a Business Rules XML file. Furthermore, It can also be
+  *   'SchemaValidationError' when an XML file fails schema validation or 'UnexpectedFailure' for any other unexpected
+  *   errors.
   */
 
 case class ValidationResult(status: ValidationStatus)
@@ -80,8 +81,8 @@ case class RecordError(
     docRefIDInError: Seq[String]
 )
 
-object ExtractedAEOIFileDetails {
-  implicit val format: OFormat[ExtractedAEOIFileDetails] = Json.format[ExtractedAEOIFileDetails]
+object ExtractedBusinessRulesFileDetails {
+  implicit val format: OFormat[ExtractedBusinessRulesFileDetails] = Json.format[ExtractedBusinessRulesFileDetails]
 }
 
 object ValidationErrors {
