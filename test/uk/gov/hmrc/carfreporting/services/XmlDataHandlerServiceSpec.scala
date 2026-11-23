@@ -36,12 +36,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
   }
 
   private def getInputStream(path: String): InputStream =
-    testEnv
-      .resource(path)
-      .map(url => new java.io.BufferedInputStream(url.openStream()))
-      .getOrElse(fail("Failed to open input stream"))
+    testEnv.resource(path) match
+      case Some(url) => new java.io.BufferedInputStream(url.openStream())
+      case None      => fail(s"Test resource not found on classpath: '$path'")
 
-  val testDataCommonPath = "resources/data"
+  val testDataCommonPath = "data"
+
   "XmlDataHandlerService" - {
     "carfValidationAndExtraction" - {
       val schemaPath = "data/schemas/CARFXML_v1.5.xsd"

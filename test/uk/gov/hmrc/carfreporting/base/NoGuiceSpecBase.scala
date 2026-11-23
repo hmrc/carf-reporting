@@ -18,22 +18,18 @@ package uk.gov.hmrc.carfreporting.base
 
 import com.typesafe.config.ConfigFactory
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.Materializer
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.{Configuration, Environment}
 import play.api.libs.json.JsValue
-import play.api.libs.ws.ahc.AhcWSClient
 import play.api.mvc.{ControllerComponents, PlayBodyParsers}
 import play.api.test.Helpers.stubControllerComponents
 import play.api.test.{DefaultAwaitTimeout, FakeHeaders, FakeRequest}
-import uk.gov.hmrc.carfreporting.config.AppConfig
+import play.api.{Environment, Mode}
 import uk.gov.hmrc.carfreporting.controllers.actions.{FakeAuthAction, FakeCheckCarfIdAction}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.client.{HttpClientV2, HttpClientV2Impl}
 
 import java.io.File
 import scala.concurrent.ExecutionContext
@@ -59,8 +55,7 @@ trait NoGuiceSpecBase
     playConfig.resolve()
   )
 
-  val testEnv: Environment = Environment.simple()
-  val mockEnv: Environment = mock[Environment]
+  val testEnv: Environment = Environment(new File("."), getClass.getClassLoader, Mode.Test)
 
   val cc: ControllerComponents = stubControllerComponents()
 

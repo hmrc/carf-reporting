@@ -47,7 +47,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockXmlDataHandlerService, mockSubmissionRepository, mockFtsConnector, mockEnv)
+    reset(mockXmlDataHandlerService, mockSubmissionRepository, mockFtsConnector)
   }
 
   val testInputStreamSuccess: ResultT[InputStream] =
@@ -105,7 +105,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
         when(mockXmlDataHandlerService.carfValidationAndExtraction(any(), any()))
           .thenReturn(Right(extractedFileDetailsCarf))
 
-        val path = "resources/data/valid-carf.xml"
+        val path = "data/valid-carf.xml"
 
         val result = service.validateAndExtractCarf(path).value.futureValue
 
