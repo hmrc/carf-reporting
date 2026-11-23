@@ -41,7 +41,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
       .map(url => new java.io.BufferedInputStream(url.openStream()))
       .getOrElse(fail("Failed to open input stream"))
 
-  val testDataCommonPath = "uk/gov/hmrc/carfreporting/data"
+  val testDataCommonPath = "resources/data"
   "XmlDataHandlerService" - {
     "carfValidationAndExtraction" - {
       val schemaPath = "data/schemas/CARFXML_v1.5.xsd"

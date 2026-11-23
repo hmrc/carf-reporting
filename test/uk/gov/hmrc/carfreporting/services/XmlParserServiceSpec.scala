@@ -105,7 +105,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
         when(mockXmlDataHandlerService.carfValidationAndExtraction(any(), any()))
           .thenReturn(Right(extractedFileDetailsCarf))
 
-        val path = "uk/gov/hmrc/carfreporting/data/valid-carf.xml"
+        val path = "resources/data/valid-carf.xml"
 
         val result = service.validateAndExtractCarf(path).value.futureValue
 
@@ -117,7 +117,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
       "must return XmlErrors when XmlDataHandlerService returns schema errors (the XML is well-formed but fails schema validation)" in {
         when(mockXmlDataHandlerService.carfValidationAndExtraction(any(), any())).thenReturn(Left(xmlErrors))
 
-        val fileName = "test/uk/gov/hmrc/carfreporting/data/invalid-carf.xml"
+        val fileName = "test/resources/data/invalid-carf.xml"
         val path     = Paths.get(fileName).toUri.toString
 
         val result = service.validateAndExtractCarf(path).value.futureValue
@@ -139,7 +139,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
       "must return an InvalidXmlError when XmlDataHandlerService returns InvalidXmlError (the XML is completely malformed)" in {
         when(mockXmlDataHandlerService.carfValidationAndExtraction(any(), any())).thenReturn(Left(InvalidXmlError))
 
-        val fileName = "test/uk/gov/hmrc/carfreporting/data/malformed-xml.xml"
+        val fileName = "test/resources/data/malformed-xml.xml"
         val path     = Paths.get(fileName).toUri.toString
 
         val result = service.validateAndExtractCarf(path).value.futureValue

@@ -40,7 +40,7 @@ class XmlParserPerformanceTestSpec
 
   import uk.gov.hmrc.carfreporting.itutil.Reporter.*
 
-  val testDataCommonPath: String = "test/uk/gov/hmrc/carfreporting/data"
+  val testDataCommonPath: String = "test/resources/data"
   val config: AppConfig          = mock[AppConfig]
   when(config.mongoEncryptionEnabled) thenReturn false
 

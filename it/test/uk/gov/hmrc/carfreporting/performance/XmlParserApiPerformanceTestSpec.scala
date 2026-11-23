@@ -41,7 +41,7 @@ class XmlParserApiPerformanceTestSpec
     extends NoGuiceSpecBase
     with DefaultPlayMongoRepositorySupport[SubmissionDetailsCache] {
 
-  val testDataCommonPath: String = "test/uk/gov/hmrc/carfreporting/data"
+  val testDataCommonPath: String = "test/resources/data"
 
   val clock: Clock = Clock.fixed(Instant.ofEpochMilli(1718118467838L), ukZoneId)
 

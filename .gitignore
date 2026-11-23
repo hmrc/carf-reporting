@@ -38,5 +38,5 @@ test-result
 tmp
 .vscode/
 
-test/uk/gov/hmrc/carfreporting/data/sized/carf-262mb.xml
-test/uk/gov/hmrc/carfreporting/data/sized/carf-100mb.xml
+test/resources/data/sized/carf-262mb.xml
+test/resources/data/sized/carf-100mb.xml
