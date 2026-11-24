@@ -35,13 +35,14 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, Upstream
 
 import java.io.InputStream
 import java.net.URL
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
-class FtsConnector @Inject() (val config: AppConfig, val http: HttpClientV2)(using Materializer) extends Logging {
+@Singleton
+class FtsConnector @Inject() (val config: AppConfig, val http: HttpClientV2)(using mat: Materializer) extends Logging {
 
   def sendFileReadyNotification(
       fileTransferNotification: FileTransferNotification
@@ -123,9 +124,9 @@ class FtsConnector @Inject() (val config: AppConfig, val http: HttpClientV2)(usi
     )
   }
 
-  def downloadBusinessRulesFile(
-      url: URL
-  )(using ec: ExecutionContext): ResultT[InputStream] =
+  def downloadBusinessRulesFile(url: URL): ResultT[InputStream] =
+    given ExecutionContext = mat.executionContext
+
     ResultT.fromFuture(
       http
         .get(url)(using HeaderCarrier())

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.carfreporting.services
 
-import cats.data.EitherT
 import org.codehaus.stax2.validation.*
 import play.api.{Environment, Logging}
 import uk.gov.hmrc.carfreporting.connectors.FtsConnector
@@ -161,12 +160,12 @@ class XmlParserService @Inject (
       case None      => ResultT.fromError(InternalServerError("Could not find file"))
       case Some(url) =>
         Try(openStream(url)) match
-          case Success(in)                       => EitherT.rightT[Future, CarfError](in)
+          case Success(in)                       => ResultT.fromValue(in)
           case Failure(_: FileNotFoundException) =>
-            EitherT.leftT[Future, InputStream](InternalServerError("File not found exception"))
+            ResultT.fromError(InternalServerError("File not found exception"))
           case Failure(e)                        =>
-            logger.error(s"Unexpected error opening $path", e)
-            EitherT.leftT[Future, InputStream](InternalServerError("Unexpected error opening file"))
+            logger.error(s"Unexpected error opening", e)
+            ResultT.fromError(InternalServerError("Unexpected error opening file"))
 
   private def loadSchema(validationType: ValidationType): ResultT[XMLValidationSchema] = {
     val schemaPath = validationType match {

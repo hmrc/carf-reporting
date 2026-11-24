@@ -157,7 +157,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
         when(mockXmlDataHandlerService.businessRulesValidationAndExtraction(any(), any()))
           .thenReturn(Right(validExtractedBusinessRulesFileDetails))
         when(mockSubmissionRepository.updateStatus(any(), any())).thenReturn(ResultT.fromValue(true))
-        when(mockFtsConnector.downloadBusinessRulesFile(eqTo(testUrlAsURL))(using any()))
+        when(mockFtsConnector.downloadBusinessRulesFile(eqTo(testUrlAsURL)))
           .thenReturn(testInputStreamSuccess)
 
         val result = service.validateAndExtractBusinessRules(testUrl, testUploadId).value.futureValue
@@ -165,7 +165,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
         result mustBe Right(validExtractedBusinessRulesFileDetails)
 
         verify(mockXmlDataHandlerService, times(1)).businessRulesValidationAndExtraction(any(), any())
-        verify(mockFtsConnector, times(1)).downloadBusinessRulesFile(eqTo(testUrlAsURL))(using any())
+        verify(mockFtsConnector, times(1)).downloadBusinessRulesFile(eqTo(testUrlAsURL))
         verify(mockSubmissionRepository, times(1)).updateStatus(
           argThat(_ == testUploadId),
           argThat(_ == FileStatus.Accepted)
@@ -175,7 +175,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
 
       "must return an error when path is a url but the connector call returns an error" in {
         when(mockSubmissionRepository.updateStatus(any(), any())).thenReturn(ResultT.fromValue(true))
-        when(mockFtsConnector.downloadBusinessRulesFile(eqTo(testUrlAsURL))(using any()))
+        when(mockFtsConnector.downloadBusinessRulesFile(eqTo(testUrlAsURL)))
           .thenReturn(ResultT.fromError(ApiInternalServerError("unexpected error")))
 
         val result = service.validateAndExtractBusinessRules(testUrl, testUploadId).value.futureValue
@@ -183,7 +183,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
         result mustBe Left(ApiInternalServerError("unexpected error"))
 
         verify(mockXmlDataHandlerService, never()).businessRulesValidationAndExtraction(any(), any())
-        verify(mockFtsConnector, times(1)).downloadBusinessRulesFile(eqTo(testUrlAsURL))(using any())
+        verify(mockFtsConnector, times(1)).downloadBusinessRulesFile(eqTo(testUrlAsURL))
         verify(mockSubmissionRepository, times(1)).updateStatus(any(), any())
         verify(mockSubmissionRepository, never()).updateStatusWithErrors(any(), any(), any())
       }
@@ -202,7 +202,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
           argThat(_ == testUploadId),
           argThat(_ == FileStatus.Accepted)
         )
-        verify(mockFtsConnector, never()).downloadBusinessRulesFile(any())(using any())
+        verify(mockFtsConnector, never()).downloadBusinessRulesFile(any())
         verify(mockSubmissionRepository, never()).updateStatusWithErrors(any(), any(), any())
       }
 
@@ -215,7 +215,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
 
         verify(mockXmlDataHandlerService, never()).businessRulesValidationAndExtraction(any(), any())
         verify(mockSubmissionRepository, times(1)).updateStatus(any(), any())
-        verify(mockFtsConnector, never()).downloadBusinessRulesFile(any())(using any())
+        verify(mockFtsConnector, never()).downloadBusinessRulesFile(any())
       }
 
       "must return an internal server error when path is NOT a url but file isn't found when opening stream" in {
@@ -233,7 +233,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
 
         verify(mockXmlDataHandlerService, never()).businessRulesValidationAndExtraction(any(), any())
         verify(mockSubmissionRepository, times(1)).updateStatus(any(), any())
-        verify(mockFtsConnector, never()).downloadBusinessRulesFile(any())(using any())
+        verify(mockFtsConnector, never()).downloadBusinessRulesFile(any())
         verify(mockSubmissionRepository, never()).updateStatusWithErrors(any(), any(), any())
       }
 
@@ -251,7 +251,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
 
         verify(mockXmlDataHandlerService, never()).businessRulesValidationAndExtraction(any(), any())
         verify(mockSubmissionRepository, times(1)).updateStatus(any(), any())
-        verify(mockFtsConnector, never()).downloadBusinessRulesFile(any())(using any())
+        verify(mockFtsConnector, never()).downloadBusinessRulesFile(any())
         verify(mockSubmissionRepository, never()).updateStatusWithErrors(any(), any(), any())
       }
 
@@ -259,7 +259,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
         when(mockXmlDataHandlerService.businessRulesValidationAndExtraction(any(), any()))
           .thenReturn(Right(validExtractedBusinessRulesFileDetails))
         when(mockSubmissionRepository.updateStatus(any(), any())).thenReturn(ResultT.fromValue(true))
-        when(mockFtsConnector.downloadBusinessRulesFile(any())(using any())).thenReturn(testInputStreamSuccess)
+        when(mockFtsConnector.downloadBusinessRulesFile(any())).thenReturn(testInputStreamSuccess)
 
         val result = service.validateAndExtractBusinessRules(testUrl, testUploadId).value.futureValue
 
@@ -277,7 +277,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
         when(mockXmlDataHandlerService.businessRulesValidationAndExtraction(any(), any()))
           .thenReturn(Right(validExtractedBusinessRulesFileDetailsWithErrors))
         when(mockSubmissionRepository.updateStatusWithErrors(any(), any(), any())).thenReturn(ResultT.fromValue(true))
-        when(mockFtsConnector.downloadBusinessRulesFile(any())(using any())).thenReturn(testInputStreamSuccess)
+        when(mockFtsConnector.downloadBusinessRulesFile(any())).thenReturn(testInputStreamSuccess)
 
         val result = service.validateAndExtractBusinessRules(testUrl, testUploadId).value.futureValue
 
@@ -296,7 +296,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
         when(mockXmlDataHandlerService.businessRulesValidationAndExtraction(any(), any())).thenReturn(Left(xmlErrors))
         when(mockSubmissionRepository.updateStatus(testUploadId, FileStatus.UnprocessableErrorFile))
           .thenReturn(ResultT.fromValue(true))
-        when(mockFtsConnector.downloadBusinessRulesFile(any())(using any())).thenReturn(testInputStreamSuccess)
+        when(mockFtsConnector.downloadBusinessRulesFile(any())).thenReturn(testInputStreamSuccess)
 
         val result = service.validateAndExtractBusinessRules(testUrl, testUploadId).value.futureValue
 
@@ -320,7 +320,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
           when(mockXmlDataHandlerService.businessRulesValidationAndExtraction(any(), any()))
             .thenReturn(Left(InvalidXmlError))
           when(mockSubmissionRepository.updateStatus(any(), any())).thenReturn(ResultT.fromValue(true))
-          when(mockFtsConnector.downloadBusinessRulesFile(any())(using any())).thenReturn(testInputStreamSuccess)
+          when(mockFtsConnector.downloadBusinessRulesFile(any())).thenReturn(testInputStreamSuccess)
 
           val result = service.validateAndExtractBusinessRules(testUrl, testUploadId).value.futureValue
 
@@ -338,7 +338,7 @@ class XmlParserServiceSpec extends NoGuiceSpecBase with TestData {
         when(mockXmlDataHandlerService.businessRulesValidationAndExtraction(any(), any()))
           .thenThrow(new RuntimeException("unexpected explosion"))
         when(mockSubmissionRepository.updateStatus(any(), any())).thenReturn(ResultT.fromValue(true))
-        when(mockFtsConnector.downloadBusinessRulesFile(any())(using any())).thenReturn(testInputStreamSuccess)
+        when(mockFtsConnector.downloadBusinessRulesFile(any())).thenReturn(testInputStreamSuccess)
 
         val result = service.validateAndExtractBusinessRules(testUrl, testUploadId).value.futureValue
 
