@@ -26,6 +26,8 @@ case class MongoError(override val message: String = "") extends CarfError
 
 case class BusinessError(override val message: String = "") extends CarfError
 
+case class InternalServerError(override val message: String) extends CarfError
+
 sealed trait ApiError extends CarfError
 
 object ApiError {
@@ -38,6 +40,10 @@ object ApiError {
     override val message: String = "Not Found"
   }
 
+  case object FileGoneError extends ApiError {
+    override val message: String = "File Gone"
+  }
+
   case class ApiInternalServerError(override val message: String) extends ApiError
 
   case object JsonValidationError extends ApiError {
@@ -48,8 +54,6 @@ object ApiError {
     override val message: String = "Internal Server Error"
   }
 }
-
-case class InternalServerError(override val message: String) extends CarfError
 
 sealed trait XmlValidationError extends CarfError
 

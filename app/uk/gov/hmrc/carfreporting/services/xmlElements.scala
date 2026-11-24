@@ -43,7 +43,7 @@ object xmlElements {
     }
   }
 
-  object AEOIRequestDetail {
+  object BusinessRulesRequestDetail {
     val REQUEST_COMMON         = "requestCommon"
     val CONVERSATION_ID        = "conversationID"
     val REQUEST_DETAIL         = "requestDetail"

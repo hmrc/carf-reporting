@@ -22,29 +22,29 @@ import uk.gov.hmrc.mongo.play.json.formats.{MongoFormats, MongoJavatimeFormats}
 
 import java.time.Instant
 
-case class SavedAEOIFileDetails(
+case class SavedBusinessRulesFileDetails(
     _id: ObjectId,
-    extractedAEOIFileDetails: ExtractedAEOIFileDetails,
+    extractedBusinessRulesFileDetails: ExtractedBusinessRulesFileDetails,
     lastUpdated: Instant = Instant.now
 )
 
-object SavedAEOIFileDetails {
+object SavedBusinessRulesFileDetails {
 
   import play.api.libs.functional.syntax.*
 
-  val reads: Reads[SavedAEOIFileDetails] =
+  val reads: Reads[SavedBusinessRulesFileDetails] =
     (
       (__ \ "_id").read(MongoFormats.objectIdFormat) and
-        (__ \ "extractedAEOIFileDetails").read[ExtractedAEOIFileDetails] and
+        (__ \ "extractedBusinessRulesFileDetails").read[ExtractedBusinessRulesFileDetails] and
         (__ \ "lastUpdated").read(MongoJavatimeFormats.instantFormat)
-    )(SavedAEOIFileDetails.apply _)
+    )(SavedBusinessRulesFileDetails.apply _)
 
-  private val writes: OWrites[SavedAEOIFileDetails] =
+  private val writes: OWrites[SavedBusinessRulesFileDetails] =
     (
       (__ \ "_id").write(MongoFormats.objectIdFormat) and
-        (__ \ "extractedAEOIFileDetails").write[ExtractedAEOIFileDetails] and
+        (__ \ "extractedBusinessRulesFileDetails").write[ExtractedBusinessRulesFileDetails] and
         (__ \ "lastUpdated").write(MongoJavatimeFormats.instantFormat)
     )(o => Tuple.fromProductTyped(o))
 
-  val mongoFormat: OFormat[SavedAEOIFileDetails] = OFormat(reads, writes)
+  val mongoFormat: OFormat[SavedBusinessRulesFileDetails] = OFormat(reads, writes)
 }

@@ -2,7 +2,7 @@ import uk.gov.hmrc.DefaultBuildSettings
 
 val appName = "carf-reporting"
 ThisBuild / majorVersion := 0
-ThisBuild / scalaVersion := "3.3.6"
+ThisBuild / scalaVersion := "3.3.7"
 ThisBuild / scalacOptions += "-Wconf:msg=Flag.*repeatedly:s"
 
 lazy val microservice = Project("carf-reporting", file("."))

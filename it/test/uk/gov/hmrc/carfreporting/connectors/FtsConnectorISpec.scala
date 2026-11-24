@@ -17,16 +17,20 @@
 package uk.gov.hmrc.carfreporting.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
+import org.apache.pekko.util.ByteString.UTF_8
 import play.api.http.Status.*
 import uk.gov.hmrc.carfreporting.itutil.ApplicationWithWiremock
+import uk.gov.hmrc.carfreporting.itutil.WireMockConstants.{stubHost, stubPort}
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.*
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.net.{URI, URL}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Using
 
-class SDESConnectorISpec extends ApplicationWithWiremock {
+class FtsConnectorISpec extends ApplicationWithWiremock {
 
-  lazy val connector: SDESConnector = app.injector.instanceOf[SDESConnector]
+  lazy val connector: FtsConnector = app.injector.instanceOf[FtsConnector]
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -202,4 +206,82 @@ class SDESConnectorISpec extends ApplicationWithWiremock {
       result mustBe Left(InternalServerError)
     }
   }
+
+  "downloadBusinessRulesFile" - {
+    val testUrl                      = "/testUrl"
+    val testBusinessRulesXml: String = """<item>test</item>"""
+    val testUrlParam: URL            = URI.create(s"http://$stubHost:$stubPort$testUrl").toURL
+
+    "must return the xml given a 200 response" in {
+      stubFor(
+        get(urlPathMatching(testUrl))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(testBusinessRulesXml)
+          )
+      )
+
+      val result = connector.downloadBusinessRulesFile(testUrlParam).value.futureValue.toOption.get
+      Using.resource(result)(s => new String(s.readAllBytes(), UTF_8)) mustBe testBusinessRulesXml
+    }
+
+    "must return NotFoundError given a 404 response" in {
+      stubFor(
+        get(urlPathMatching(testUrl))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+              .withBody("Not found")
+          )
+      )
+      val result = connector.downloadBusinessRulesFile(testUrlParam).value.futureValue
+
+      result mustBe Left(NotFoundError)
+    }
+
+    "must return FileGoneError given a 410 response" in {
+      stubFor(
+        get(urlPathMatching(testUrl))
+          .willReturn(
+            aResponse()
+              .withStatus(GONE)
+              .withBody("File gone")
+          )
+      )
+      val result = connector.downloadBusinessRulesFile(testUrlParam).value.futureValue
+
+      result mustBe Left(FileGoneError)
+    }
+
+    "must return InternalServerError given a 400 response" in {
+      stubFor(
+        get(urlPathMatching(testUrl))
+          .willReturn(
+            aResponse()
+              .withStatus(BAD_REQUEST)
+              .withBody("Bad request")
+          )
+      )
+      val result = connector.downloadBusinessRulesFile(testUrlParam).value.futureValue
+
+      result mustBe Left(InternalServerError)
+    }
+
+    "must return InternalServerError given a 500 response" in {
+      stubFor(
+        get(urlPathMatching(testUrl))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+              .withBody("Internal server error")
+          )
+      )
+
+      val result = connector.downloadBusinessRulesFile(testUrlParam).value.futureValue
+
+      result mustBe Left(InternalServerError)
+    }
+  }
+
 }

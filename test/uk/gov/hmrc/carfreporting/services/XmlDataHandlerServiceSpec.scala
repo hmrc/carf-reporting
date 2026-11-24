@@ -36,17 +36,18 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
   }
 
   private def getInputStream(path: String): InputStream =
-    testEnv
-      .resource(path)
-      .map(url => new java.io.BufferedInputStream(url.openStream()))
-      .getOrElse(fail("Failed to open input stream"))
+    testEnv.resource(path) match
+      case Some(url) => new java.io.BufferedInputStream(url.openStream())
+      case None      => fail(s"Test resource not found on classpath: '$path'")
+
+  val testDataCommonPath = "data"
 
   "XmlDataHandlerService" - {
     "carfValidationAndExtraction" - {
       val schemaPath = "data/schemas/CARFXML_v1.5.xsd"
       "must successfully validate and extract a well-formed XML that matches the schema" - {
         "given an XML file containing test data" in {
-          val path        = "data/examples/test-data.xml"
+          val path        = s"$testDataCommonPath/test-data.xml"
           val inputStream = getInputStream(path)
 
           val service = new XmlDataHandlerService
@@ -72,7 +73,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
         }
 
         "given an XML file for a nil report" in {
-          val path        = "data/examples/nil-report.xml"
+          val path        = s"$testDataCommonPath/nil-report.xml"
           val inputStream = getInputStream(path)
 
           val service = new XmlDataHandlerService
@@ -98,7 +99,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
         }
 
         "given an XML file containing a notification of reporting outside the UK" in {
-          val path        = "data/examples/reporting-outside-uk.xml"
+          val path        = s"$testDataCommonPath/reporting-outside-uk.xml"
           val inputStream = getInputStream(path)
 
           val service = new XmlDataHandlerService
@@ -124,7 +125,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
         }
 
         "given an XML file containing new information" in {
-          val path        = "data/examples/new-info.xml"
+          val path        = s"$testDataCommonPath/new-info.xml"
           val inputStream = getInputStream(path)
 
           val service = new XmlDataHandlerService
@@ -150,7 +151,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
         }
 
         "given an XML file containing additional information for an existing report" in {
-          val path        = "data/examples/additional-info.xml"
+          val path        = s"$testDataCommonPath/additional-info.xml"
           val inputStream = getInputStream(path)
 
           val service = new XmlDataHandlerService
@@ -176,7 +177,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
         }
 
         "given an XML file for deletion of an existing report" in {
-          val path        = "data/examples/deleted-report.xml"
+          val path        = s"$testDataCommonPath/deleted-report.xml"
           val inputStream = getInputStream(path)
 
           val service = new XmlDataHandlerService
@@ -202,7 +203,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
         }
 
         "given an XML file containing corrected information for an existing report" in {
-          val path        = "data/examples/corrected-info.xml"
+          val path        = s"$testDataCommonPath/corrected-info.xml"
           val inputStream = getInputStream(path)
 
           val service = new XmlDataHandlerService
@@ -228,7 +229,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
         }
 
         "given an XML file containing deleted information for an existing report" in {
-          val path        = "data/examples/deleted-info.xml"
+          val path        = s"$testDataCommonPath/deleted-info.xml"
           val inputStream = getInputStream(path)
 
           val service = new XmlDataHandlerService
@@ -254,7 +255,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
         }
 
         "given an XML file containing corrected and deleted information for an existing report" in {
-          val path        = "data/examples/corrected-and-deleted-info.xml"
+          val path        = s"$testDataCommonPath/corrected-and-deleted-info.xml"
           val inputStream = getInputStream(path)
 
           val service = new XmlDataHandlerService
@@ -280,7 +281,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
         }
 
         "given an XML file containing an unexpected docTypeIndic for messageTypeIndic CARF702 (reportable information fallback)" in {
-          val path        = "data/examples/fallback.xml"
+          val path        = s"$testDataCommonPath/fallback.xml"
           val inputStream = getInputStream(path)
 
           val service = new XmlDataHandlerService
@@ -306,7 +307,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
         }
 
         "given an XML file containing no SendingEntityIN (RCASP ID)" in {
-          val path        = "data/examples/no-rcasp-id.xml"
+          val path        = s"$testDataCommonPath/no-rcasp-id.xml"
           val inputStream = getInputStream(path)
 
           val service = new XmlDataHandlerService
@@ -333,7 +334,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
       }
 
       "must return XmlErrors when the XML is well-formed but has invalid root" in {
-        val path        = "data/examples/invalid-xml.xml"
+        val path        = s"$testDataCommonPath/invalid-xml.xml"
         val inputStream = getInputStream(path)
 
         val service = new XmlDataHandlerService
@@ -351,7 +352,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
       }
 
       "must return XmlErrors when the XML is well-formed but fails schema validation (under 101 errors)" in {
-        val path        = "data/examples/invalid-carf.xml"
+        val path        = s"$testDataCommonPath/invalid-carf.xml"
         val inputStream = getInputStream(path)
 
         val service = new XmlDataHandlerService
@@ -374,7 +375,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
       }
 
       "must truncate errors and exit cleanly when schema errors exceed max errors of (101) and xml contains 150 errors" in {
-        val path        = "data/examples/too-many-schema-errors.xml"
+        val path        = s"$testDataCommonPath/too-many-schema-errors.xml"
         val inputStream = getInputStream(path)
 
         val service = new XmlDataHandlerService
@@ -392,7 +393,7 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
       }
 
       "must return an InvalidXmlError when the XML is completely malformed (Fatal XML Stream Error)" in {
-        val path        = "data/examples/malformed-xml.xml"
+        val path        = s"$testDataCommonPath/malformed-xml.xml"
         val inputStream = getInputStream(path)
 
         val service = new XmlDataHandlerService
@@ -405,46 +406,47 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
       }
     }
 
-    "aeoiValidationAndExtraction" - {
+    "businessRulesValidationAndExtraction" - {
       val schemaPath = "data/schemas/AEOI_Business_Rule_Result_schema_v0.3.xsd"
       "must successfully validate and extract a valid XML that matches the schema" in {
-        val path        = "data/examples/aeoi/BusinessRuleCheckSampleRequest_ValidFile_v0.3.xml"
+        val path        = "data/businessRuleResponseExamples/BusinessRuleCheckSampleRequest_ValidFile_v0.3.xml"
         val inputStream = getInputStream(path)
 
         val service = new XmlDataHandlerService
 
-        val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
+        val result = service.businessRulesValidationAndExtraction(getSchema(schemaPath), inputStream)
 
         inputStream.close()
 
         result match {
-          case Right(result) => result mustBe validExtractedAEOIFileDetails
+          case Right(result) => result mustBe validExtractedBusinessRulesFileDetails
           case _             => fail()
         }
       }
 
       "must successfully validate and extract a valid XML that matches the schema but contains errors from AEOI" in {
-        val path        = "data/examples/aeoi/BusinessRuleCheckSampleRequest_validFile_with_errors.xml"
+        val path        = "data/businessRuleResponseExamples/BusinessRuleCheckSampleRequest_validFile_with_errors.xml"
         val inputStream = getInputStream(path)
 
         val service = new XmlDataHandlerService
 
-        val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
+        val result = service.businessRulesValidationAndExtraction(getSchema(schemaPath), inputStream)
         inputStream.close()
 
         result match {
-          case Right(result) => result mustBe validExtractedAEOIFileDetailsWithErrors
+          case Right(result) => result mustBe validExtractedBusinessRulesFileDetailsWithErrors
           case _             => fail()
         }
       }
 
       "must return XmlErrors when the XML is well-formed but violates the schema (under 101 errors)" in {
-        val path        = "data/examples/aeoi/BusinessRuleCheckSampleRequest_invalidFile_schema__errors.xml"
+        val path        =
+          "data/businessRuleResponseExamples/BusinessRuleCheckSampleRequest_invalidFile_schema__errors.xml"
         val inputStream = getInputStream(path)
 
         val service = new XmlDataHandlerService
 
-        val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
+        val result = service.businessRulesValidationAndExtraction(getSchema(schemaPath), inputStream)
 
         inputStream.close()
 
@@ -459,12 +461,13 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
       }
 
       "must truncate errors and exit cleanly when schema errors exceed max errors of (101) and xml contains 150 errors" in {
-        val path        = "data/examples/aeoi/BusinessRuleCheckSampleRequest_invalidFile_with_150_errors.xml"
+        val path        =
+          "data/businessRuleResponseExamples/BusinessRuleCheckSampleRequest_invalidFile_with_150_errors.xml"
         val inputStream = getInputStream(path)
 
         val service = new XmlDataHandlerService
 
-        val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
+        val result = service.businessRulesValidationAndExtraction(getSchema(schemaPath), inputStream)
 
         inputStream.close()
 
@@ -477,12 +480,12 @@ class XmlDataHandlerServiceSpec extends NoGuiceSpecBase with TestData {
       }
 
       "must return an InvalidXmlError when the XML is completely malformed (Fatal XML Stream Error)" in {
-        val path        = "data/examples/malformed-xml.xml"
+        val path        = "data/businessRuleResponseExamples/BusinessRuleCheckSampleRequest_malformed.xml"
         val inputStream = getInputStream(path)
 
         val service = new XmlDataHandlerService
 
-        val result = service.aeoiValidationAndExtraction(getSchema(schemaPath), inputStream)
+        val result = service.businessRulesValidationAndExtraction(getSchema(schemaPath), inputStream)
 
         inputStream.close()
 

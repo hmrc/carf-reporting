@@ -21,6 +21,7 @@ import play.api.Configuration
 import uk.gov.hmrc.carfreporting.base.NoGuiceSpecBase
 import uk.gov.hmrc.carfreporting.config.{AppConfig, CryptoProvider}
 import uk.gov.hmrc.carfreporting.config.Constants.ukZoneId
+import uk.gov.hmrc.carfreporting.connectors.FtsConnector
 import uk.gov.hmrc.carfreporting.dispatchers.{DispatcherName, XmlDispatcher}
 import uk.gov.hmrc.carfreporting.models.crypto.CryptoType.{randomAesKey, CryptoT}
 import uk.gov.hmrc.carfreporting.models.submission.SubmissionDetailsCache
@@ -39,8 +40,11 @@ class XmlParserPerformanceTestSpec
 
   import uk.gov.hmrc.carfreporting.itutil.Reporter.*
 
-  val config: AppConfig = mock[AppConfig]
+  val testDataCommonPath: String = "test/resources/data"
+  val config: AppConfig          = mock[AppConfig]
   when(config.mongoEncryptionEnabled) thenReturn false
+
+  val mockFtsConnector: FtsConnector = mock[FtsConnector]
 
   private implicit val crypto: CryptoT = new CryptoProvider(Configuration("crypto.key" -> randomAesKey)).get()
 
@@ -65,18 +69,18 @@ class XmlParserPerformanceTestSpec
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository, mockFtsConnector)(testEnv)(xmlDispatcher)
 
     val validCarfXmlSizeOnDisk = 4000L
 
     lazy val calls = Vector(
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/valid-carf.xml").toUri.toString,
         validCarfXmlSizeOnDisk,
         service
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/valid-carf.xml").toUri.toString,
         validCarfXmlSizeOnDisk,
         service
       )
@@ -99,7 +103,7 @@ class XmlParserPerformanceTestSpec
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository, mockFtsConnector)(testEnv)(xmlDispatcher)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(service)
@@ -125,7 +129,7 @@ class XmlParserPerformanceTestSpec
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository, mockFtsConnector)(testEnv)(xmlDispatcher)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(service)
@@ -151,7 +155,7 @@ class XmlParserPerformanceTestSpec
 
     val xmlDispatcher      = new XmlDispatcher(actorSystem, smallDispatcher)
     val dataHandlerService = new XmlDataHandlerService
-    val service            = new XmlParserService(dataHandlerService, repository)(testEnv)(xmlDispatcher)
+    val service            = new XmlParserService(dataHandlerService, repository, mockFtsConnector)(testEnv)(xmlDispatcher)
 
     "must handle a small batch of small valid and invalid XML files (4kb)" in {
       smallBatchOfSmall(service)
@@ -173,7 +177,7 @@ class XmlParserPerformanceTestSpec
   private def createAndMeasureExecution(path: String, fileSizeInBytes: Long, service: => XmlParserService) =
     Future {
       val startTime = System.nanoTime()
-      service.validateAndExtractCARF(path).value map { _ =>
+      service.validateAndExtractCarf(path).value map { _ =>
         FileInfo(fileSizeInBytes, System.nanoTime() - startTime)
       }
     }.flatten
@@ -183,27 +187,27 @@ class XmlParserPerformanceTestSpec
   private def smallBatchOfSmall(service: XmlParserService) = {
     lazy val calls = Vector( // keep lazy Futures are eager
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/valid-carf.xml").toUri.toString,
         validCarfXmlSizeOnDisk,
         service
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/valid-carf.xml").toUri.toString,
         validCarfXmlSizeOnDisk,
         service
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/valid-carf.xml").toUri.toString,
         validCarfXmlSizeOnDisk,
         service
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/invalid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/invalid-carf.xml").toUri.toString,
         invalidCarfXmlSizeOnDisk,
         service
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/invalid-carf.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/invalid-carf.xml").toUri.toString,
         invalidCarfXmlSizeOnDisk,
         service
       )
@@ -229,7 +233,7 @@ class XmlParserPerformanceTestSpec
     lazy val validFiles =
       (1 to 25).map(_ =>
         createAndMeasureExecution(
-          Paths.get("conf/data/examples/valid-carf.xml").toUri.toString,
+          Paths.get(s"$testDataCommonPath/valid-carf.xml").toUri.toString,
           validCarfXmlSizeOnDisk,
           service
         )
@@ -238,7 +242,7 @@ class XmlParserPerformanceTestSpec
     lazy val invalidFiles =
       (1 to 25).map(_ =>
         createAndMeasureExecution(
-          Paths.get("conf/data/examples/invalid-carf.xml").toUri.toString,
+          Paths.get(s"$testDataCommonPath/invalid-carf.xml").toUri.toString,
           invalidCarfXmlSizeOnDisk,
           service
         )
@@ -264,16 +268,28 @@ class XmlParserPerformanceTestSpec
 
   private def smallBatchOfLarge(service: XmlParserService) = {
     lazy val calls = Vector(
-      createAndMeasureExecution(Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString, twoFiftyMbInBytes, service),
-      createAndMeasureExecution(Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString, twoFiftyMbInBytes, service),
-      createAndMeasureExecution(Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString, twoFiftyMbInBytes, service),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/too-many-schema-errors.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/sized/carf-262mb.xml").toUri.toString,
+        twoFiftyMbInBytes,
+        service
+      ),
+      createAndMeasureExecution(
+        Paths.get(s"$testDataCommonPath/sized/carf-262mb.xml").toUri.toString,
+        twoFiftyMbInBytes,
+        service
+      ),
+      createAndMeasureExecution(
+        Paths.get(s"$testDataCommonPath/sized/carf-262mb.xml").toUri.toString,
+        twoFiftyMbInBytes,
+        service
+      ),
+      createAndMeasureExecution(
+        Paths.get(s"$testDataCommonPath/too-many-schema-errors.xml").toUri.toString,
         bigInvalidXmlSizeOnDisk,
         service
       ),
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/too-many-schema-errors.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/too-many-schema-errors.xml").toUri.toString,
         bigInvalidXmlSizeOnDisk,
         service
       )
@@ -299,7 +315,7 @@ class XmlParserPerformanceTestSpec
     lazy val validFiles =
       (1 to 25).map(_ =>
         createAndMeasureExecution(
-          Paths.get("conf/data/sized/carf-262mb.xml").toUri.toString,
+          Paths.get(s"$testDataCommonPath/sized/carf-262mb.xml").toUri.toString,
           twoFiftyMbInBytes,
           service
         )
@@ -307,7 +323,7 @@ class XmlParserPerformanceTestSpec
 
     lazy val invalidFiles = (1 to 25).map(_ =>
       createAndMeasureExecution(
-        Paths.get("conf/data/examples/too-many-schema-errors.xml").toUri.toString,
+        Paths.get(s"$testDataCommonPath/too-many-schema-errors.xml").toUri.toString,
         bigInvalidXmlSizeOnDisk,
         service
       )

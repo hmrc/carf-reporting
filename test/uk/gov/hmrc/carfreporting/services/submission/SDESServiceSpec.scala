@@ -22,7 +22,7 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.{reset, times, verify, when}
 import uk.gov.hmrc.carfreporting.base.{NoGuiceSpecBase, TestData}
 import uk.gov.hmrc.carfreporting.config.AppConfig
-import uk.gov.hmrc.carfreporting.connectors.SDESConnector
+import uk.gov.hmrc.carfreporting.connectors.FtsConnector
 import uk.gov.hmrc.carfreporting.helpers.SDESFileMetadataHelper
 import uk.gov.hmrc.carfreporting.models.errors.ApiError.InternalServerError
 import uk.gov.hmrc.carfreporting.models.errors.{InvalidXmlError, XmlErrors}
@@ -38,12 +38,12 @@ import scala.concurrent.Future
 
 class SDESServiceSpec extends NoGuiceSpecBase with TestData {
 
-  val mockSdesConnector: SDESConnector               = mock[SDESConnector]
+  val mockFtsConnector: FtsConnector                 = mock[FtsConnector]
   val mockXmlParserService: XmlParserService         = mock[XmlParserService]
   val mockSubmissionRepository: SubmissionRepository = mock[SubmissionRepository]
   val mockAppConfig: AppConfig                       = mock[AppConfig]
 
-  val service = new SDESService(mockSdesConnector, mockXmlParserService, mockSubmissionRepository, mockAppConfig)
+  val service = new SDESService(mockFtsConnector, mockXmlParserService, mockSubmissionRepository, mockAppConfig)
 
   val testSubmissionTime: Instant = Instant.now()
   val testInformationType         = "carf-submission"
@@ -67,55 +67,56 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockSdesConnector, mockXmlParserService, mockSubmissionRepository)
+    reset(mockFtsConnector, mockXmlParserService, mockSubmissionRepository)
   }
 
   "SDESService" - {
     "sendNotification" - {
       "construct the payload and send it to the connector successfully" in {
 
-        when(mockSdesConnector.sendFileReadyNotification(eqTo(expectedNotification))(any(), any()))
+        when(mockFtsConnector.sendFileReadyNotification(eqTo(expectedNotification))(any(), any()))
           .thenReturn(EitherT.rightT[Future, uk.gov.hmrc.carfreporting.models.errors.ApiError](()))
 
         val result = service.sendNotification(testSubmissionRequestOrg, testSubmissionTime).value.futureValue
 
         result mustBe Right(())
-        verify(mockSdesConnector, times(1)).sendFileReadyNotification(eqTo(expectedNotification))(any(), any())
+        verify(mockFtsConnector, times(1)).sendFileReadyNotification(eqTo(expectedNotification))(any(), any())
       }
 
       "return a Left error when the connector fails" in {
-        when(mockSdesConnector.sendFileReadyNotification(any())(any(), any()))
+        when(mockFtsConnector.sendFileReadyNotification(any())(any(), any()))
           .thenReturn(EitherT.leftT[Future, Unit](InternalServerError))
 
         val result = service.sendNotification(testSubmissionRequestOrg, testSubmissionTime).value.futureValue
 
         result mustBe Left(InternalServerError)
-        verify(mockSdesConnector, times(1)).sendFileReadyNotification(eqTo(expectedNotification))(any(), any())
+        verify(mockFtsConnector, times(1)).sendFileReadyNotification(eqTo(expectedNotification))(any(), any())
       }
     }
 
     ".getAndProcessBusinessRulesResponseFile" - {
       "must return a Right when the file is found and processed successfully" in {
-        when(mockSdesConnector.getBusinessRulesFileListing()(any(), any()))
+        when(mockFtsConnector.getBusinessRulesFileListing()(any(), any()))
           .thenReturn(ResultT.fromValue(testSdesFileListing))
-        when(mockXmlParserService.validateAndExtractAEOI(any(), any()))
-          .thenReturn(ResultT.fromValue(validExtractedAEOIFileDetails))
+        when(mockXmlParserService.validateAndExtractBusinessRules(any(), any()))
+          .thenReturn(ResultT.fromValue(validExtractedBusinessRulesFileDetails))
 
         val result =
           service.getAndProcessBusinessRulesResponseFile(testUploadId, testBusinessRulesFileName).value.futureValue
 
         result mustBe Right(())
 
-        verify(mockSdesConnector, times(1)).getBusinessRulesFileListing()(any(), any())
-        verify(mockXmlParserService, times(1)).validateAndExtractAEOI(eqTo(testDownloadUrl), eqTo(testUploadId))
+        verify(mockFtsConnector, times(1)).getBusinessRulesFileListing()(any(), any())
+        verify(mockXmlParserService, times(1))
+          .validateAndExtractBusinessRules(eqTo(testDownloadUrl), eqTo(testUploadId))
         verify(mockSubmissionRepository, times(0)).updateStatus(any(), any())
       }
 
       "must return an error when the file is found but XmlParserService returns an error" - {
         "when XmlParserService returns XmlErrors" in {
-          when(mockSdesConnector.getBusinessRulesFileListing()(any(), any()))
+          when(mockFtsConnector.getBusinessRulesFileListing()(any(), any()))
             .thenReturn(ResultT.fromValue(testSdesFileListing))
-          when(mockXmlParserService.validateAndExtractAEOI(any(), any()))
+          when(mockXmlParserService.validateAndExtractBusinessRules(any(), any()))
             .thenReturn(ResultT.fromError(xmlErrors))
 
           val result =
@@ -123,15 +124,16 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
 
           result mustBe Left(xmlErrors)
 
-          verify(mockSdesConnector, times(1)).getBusinessRulesFileListing()(any(), any())
-          verify(mockXmlParserService, times(1)).validateAndExtractAEOI(eqTo(testDownloadUrl), eqTo(testUploadId))
+          verify(mockFtsConnector, times(1)).getBusinessRulesFileListing()(any(), any())
+          verify(mockXmlParserService, times(1))
+            .validateAndExtractBusinessRules(eqTo(testDownloadUrl), eqTo(testUploadId))
           verify(mockSubmissionRepository, times(0)).updateStatus(any(), any())
         }
 
         "when XmlParserService returns InvalidXmlError" in {
-          when(mockSdesConnector.getBusinessRulesFileListing()(any(), any()))
+          when(mockFtsConnector.getBusinessRulesFileListing()(any(), any()))
             .thenReturn(ResultT.fromValue(testSdesFileListing))
-          when(mockXmlParserService.validateAndExtractAEOI(any(), any()))
+          when(mockXmlParserService.validateAndExtractBusinessRules(any(), any()))
             .thenReturn(ResultT.fromError(InvalidXmlError))
 
           val result =
@@ -139,15 +141,16 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
 
           result mustBe Left(InvalidXmlError)
 
-          verify(mockSdesConnector, times(1)).getBusinessRulesFileListing()(any(), any())
-          verify(mockXmlParserService, times(1)).validateAndExtractAEOI(eqTo(testDownloadUrl), eqTo(testUploadId))
+          verify(mockFtsConnector, times(1)).getBusinessRulesFileListing()(any(), any())
+          verify(mockXmlParserService, times(1))
+            .validateAndExtractBusinessRules(eqTo(testDownloadUrl), eqTo(testUploadId))
           verify(mockSubmissionRepository, times(0)).updateStatus(any(), any())
         }
 
         "when XmlParserService returns InternalServerError" in {
-          when(mockSdesConnector.getBusinessRulesFileListing()(any(), any()))
+          when(mockFtsConnector.getBusinessRulesFileListing()(any(), any()))
             .thenReturn(ResultT.fromValue(testSdesFileListing))
-          when(mockXmlParserService.validateAndExtractAEOI(any(), any()))
+          when(mockXmlParserService.validateAndExtractBusinessRules(any(), any()))
             .thenReturn(ResultT.fromError(InternalServerError))
 
           val result =
@@ -155,14 +158,15 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
 
           result mustBe Left(InternalServerError)
 
-          verify(mockSdesConnector, times(1)).getBusinessRulesFileListing()(any(), any())
-          verify(mockXmlParserService, times(1)).validateAndExtractAEOI(eqTo(testDownloadUrl), eqTo(testUploadId))
+          verify(mockFtsConnector, times(1)).getBusinessRulesFileListing()(any(), any())
+          verify(mockXmlParserService, times(1))
+            .validateAndExtractBusinessRules(eqTo(testDownloadUrl), eqTo(testUploadId))
           verify(mockSubmissionRepository, times(0)).updateStatus(any(), any())
         }
       }
 
       "must return InternalServerError and update file status to UnexpectedError when the file is not found" in {
-        when(mockSdesConnector.getBusinessRulesFileListing()(any(), any()))
+        when(mockFtsConnector.getBusinessRulesFileListing()(any(), any()))
           .thenReturn(ResultT.fromValue(Seq.empty[FileListing]))
         when(mockSubmissionRepository.updateStatus(any(), any())).thenReturn(ResultT.fromValue(true))
 
@@ -171,13 +175,13 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
 
         result mustBe Left(InternalServerError)
 
-        verify(mockSdesConnector, times(1)).getBusinessRulesFileListing()(any(), any())
+        verify(mockFtsConnector, times(1)).getBusinessRulesFileListing()(any(), any())
         verify(mockSubmissionRepository, times(1)).updateStatus(eqTo(testUploadId), eqTo(FileStatus.UnexpectedError))
-        verify(mockXmlParserService, times(0)).validateAndExtractAEOI(any(), any())
+        verify(mockXmlParserService, times(0)).validateAndExtractBusinessRules(any(), any())
       }
 
       "must return the error and update file status to UnexpectedError when the connector returns an error" in {
-        when(mockSdesConnector.getBusinessRulesFileListing()(any(), any()))
+        when(mockFtsConnector.getBusinessRulesFileListing()(any(), any()))
           .thenReturn(ResultT.fromError(InternalServerError))
         when(mockSubmissionRepository.updateStatus(any(), any())).thenReturn(ResultT.fromValue(true))
 
@@ -186,9 +190,9 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
 
         result mustBe Left(InternalServerError)
 
-        verify(mockSdesConnector, times(1)).getBusinessRulesFileListing()(any(), any())
+        verify(mockFtsConnector, times(1)).getBusinessRulesFileListing()(any(), any())
         verify(mockSubmissionRepository, times(1)).updateStatus(eqTo(testUploadId), eqTo(FileStatus.UnexpectedError))
-        verify(mockXmlParserService, times(0)).validateAndExtractAEOI(any(), any())
+        verify(mockXmlParserService, times(0)).validateAndExtractBusinessRules(any(), any())
       }
     }
   }

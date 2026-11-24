@@ -18,17 +18,18 @@ package uk.gov.hmrc.carfreporting.services
 
 import org.codehaus.stax2.validation.*
 import play.api.{Environment, Logging}
+import uk.gov.hmrc.carfreporting.connectors.FtsConnector
 import uk.gov.hmrc.carfreporting.dispatchers.XmlDispatcher
 import uk.gov.hmrc.carfreporting.models.*
-import uk.gov.hmrc.carfreporting.models.ValidationType.{AEOI, CARF}
+import uk.gov.hmrc.carfreporting.models.ValidationType.{BusinessRules, CARF}
 import uk.gov.hmrc.carfreporting.models.errors.*
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus
 import uk.gov.hmrc.carfreporting.models.submission.FileStatus.UnprocessableErrorFile
 import uk.gov.hmrc.carfreporting.repositories.SubmissionRepository
 import uk.gov.hmrc.carfreporting.types.ResultT
 
-import java.io.{FileNotFoundException, InputStream}
-import java.net.URI
+import java.io.{BufferedInputStream, FileNotFoundException, InputStream}
+import java.net.{URI, URL}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -36,26 +37,33 @@ import scala.util.{Failure, Success, Try}
 @Singleton
 class XmlParserService @Inject (
     dataHandlerService: XmlDataHandlerService,
-    submissionRepository: SubmissionRepository
+    submissionRepository: SubmissionRepository,
+    ftsConnector: FtsConnector
 )(env: Environment)(implicit xmlDispatcher: XmlDispatcher)
     extends Logging {
 
-  def validateAndExtractCARF(path: String): ResultT[ExtractedCarfFileDetails] =
+  def validateAndExtractCarf(path: String): ResultT[ExtractedCarfFileDetails] =
     for {
       schema      <- loadSchema(CARF)
-      inputStream <- openInputStream(path)
+      inputStream <-
+        openInputStreamCarf(
+          path
+        )
       result      <- initiate(schema, inputStream) { (schema, inputStream) =>
                        dataHandlerService.carfValidationAndExtraction(schema, inputStream)
                      }
     } yield result
 
-  def validateAndExtractAEOI(path: String, conversationId: UploadId): ResultT[ExtractedAEOIFileDetails] =
+  def validateAndExtractBusinessRules(
+      path: String,
+      conversationId: UploadId
+  ): ResultT[ExtractedBusinessRulesFileDetails] =
     for {
-      schema               <- loadSchema(AEOI)
+      schema               <- loadSchema(BusinessRules)
       inputStream          <- openInputStream(path).leftFlatMap(saveToRepository(_, conversationId))
       extractedFileDetails <-
         initiate(schema, inputStream) { (schema, inputStream) =>
-          dataHandlerService.aeoiValidationAndExtraction(schema, inputStream)
+          dataHandlerService.businessRulesValidationAndExtraction(schema, inputStream)
         }.leftFlatMap(saveToRepository(_, conversationId))
       _                    <- {
         extractedFileDetails.validationResult.status match {
@@ -82,14 +90,14 @@ class XmlParserService @Inject (
     }
 
     logger.warn(
-      s"[XmlParserService][validateAndExtractAEOI] XML Parsing Failure detected, caused by $savedStatus"
+      s"[XmlParserService][saveToRepository] XML Parsing Failure detected, caused by $savedStatus"
     )
 
     submissionRepository
       .updateStatus(conversationId, UnprocessableErrorFile)
       .leftMap { _ =>
         logger.warn(
-          "[XmlParserService][validateAndExtractAEOI] Repository call to submissionRepository.insert threw " +
+          "[XmlParserService][saveToRepository] Repository call to submissionRepository.insert threw " +
             "an error but initial error is being returned"
         )
         initialError
@@ -112,12 +120,14 @@ class XmlParserService @Inject (
       }
     }
 
-  private def openInputStream(path: String): ResultT[InputStream] =
+  protected def openStream(url: URL): InputStream = url.openStream()
+
+  private def openInputStreamCarf(path: String): ResultT[InputStream] =
     Try {
       Try(new URI(path).toURL).toOption
         .orElse(env.resource(path))
         .map { url =>
-          new java.io.BufferedInputStream(url.openStream())
+          new java.io.BufferedInputStream(openStream(url))
         }
     } match {
       case Success(Some(in))                                 => ResultT.fromValue(in)
@@ -133,10 +143,34 @@ class XmlParserService @Inject (
         )
     }
 
+  private def openInputStream(path: String): ResultT[InputStream] =
+    val raw = remoteUrl(path) match
+      case Some(url) => ftsConnector.downloadBusinessRulesFile(url)
+      case None      => openLocal(path)
+    raw.map(new BufferedInputStream(_))
+
+  // Only http(s) goes over the network. Other file paths (e.g: file:, jar: and classpath) stay local
+  private def remoteUrl(path: String): Option[URL] =
+    Try(new URI(path)).toOption
+      .filter(uri => Option(uri.getScheme).exists(s => s.equalsIgnoreCase("http") || s.equalsIgnoreCase("https")))
+      .flatMap(uri => Try(uri.toURL).toOption)
+
+  private def openLocal(path: String): ResultT[InputStream] =
+    env.resource(path) match
+      case None      => ResultT.fromError(InternalServerError("Could not find file"))
+      case Some(url) =>
+        Try(openStream(url)) match
+          case Success(in)                       => ResultT.fromValue(in)
+          case Failure(_: FileNotFoundException) =>
+            ResultT.fromError(InternalServerError("File not found exception"))
+          case Failure(e)                        =>
+            logger.error(s"Unexpected error opening", e)
+            ResultT.fromError(InternalServerError("Unexpected error opening file"))
+
   private def loadSchema(validationType: ValidationType): ResultT[XMLValidationSchema] = {
     val schemaPath = validationType match {
-      case CARF => "data/schemas/CARFXML_v1.5.xsd"
-      case AEOI => "data/schemas/AEOI_Business_Rule_Result_schema_v0.3.xsd"
+      case CARF          => "data/schemas/CARFXML_v1.5.xsd"
+      case BusinessRules => "data/schemas/AEOI_Business_Rule_Result_schema_v0.3.xsd"
     }
 
     Try {
@@ -154,10 +188,10 @@ class XmlParserService @Inject (
         ResultT.fromError(InternalServerError("Schema file cannot be found"))
       case Failure(e)                      =>
         logger.error(
-          s"[XmlParserService][loadSchema] Unexpected error when creating Buffered Input Stream: ${e.getMessage}"
+          s"[XmlParserService][loadSchema] Unexpected error when loading schema: ${e.getMessage}"
         )
         ResultT.fromError(
-          InternalServerError(s"Unexpected error when creating Buffered Input Stream: ${e.getMessage}")
+          InternalServerError(s"Unexpected error when loading schema: ${e.getMessage}")
         )
     }
   }

@@ -38,5 +38,5 @@ test-result
 tmp
 .vscode/
 
-conf/data/sized/carf-262mb.xml
-conf/data/sized/carf-100mb.xml
+test/resources/data/sized/carf-262mb.xml
+test/resources/data/sized/carf-100mb.xml
