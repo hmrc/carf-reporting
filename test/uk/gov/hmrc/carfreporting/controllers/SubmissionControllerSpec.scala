@@ -66,7 +66,7 @@ class SubmissionControllerSpec extends SpecBase {
              |    "gbUser": true,
              |    "primaryContact": {
              |      "organisation": {
-             |        "name": "$testOrgName"
+             |        "name": "$testOrgContactName"
              |      },
              |      "email": "jane.smith@example.com"
              |    }
