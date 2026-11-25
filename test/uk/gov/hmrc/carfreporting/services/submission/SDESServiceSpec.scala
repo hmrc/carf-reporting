@@ -97,7 +97,7 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
 
     ".getAndProcessBusinessRulesResponseFile" - {
       "must return the Accepted status when the file is found and the business rules result is Accepted" in {
-        when(mockSdesConnector.getBusinessRulesFileListing()(any(), any()))
+        when(mockFtsConnector.getBusinessRulesFileListing()(any(), any()))
           .thenReturn(ResultT.fromValue(testSdesFileListing))
         when(mockXmlParserService.validateAndExtractBusinessRules(any(), any()))
           .thenReturn(ResultT.fromValue(validExtractedBusinessRulesFileDetails))
@@ -117,14 +117,15 @@ class SDESServiceSpec extends NoGuiceSpecBase with TestData {
         when(mockFtsConnector.getBusinessRulesFileListing()(any(), any()))
           .thenReturn(ResultT.fromValue(testSdesFileListing))
         when(mockXmlParserService.validateAndExtractBusinessRules(any(), any()))
-          .thenReturn(ResultT.fromValue(validExtractedAEOIFileDetailsWithErrors))
+          .thenReturn(ResultT.fromValue(validExtractedBusinessRulesFileDetailsWithErrors))
 
         val result =
           service.getAndProcessBusinessRulesResponseFile(testUploadId, testBusinessRulesFileName).value.futureValue
 
         result mustBe Right(ValidationStatus.Rejected)
 
-        verify(mockXmlParserService, times(1)).validateAndExtractAEOI(eqTo(testDownloadUrl), eqTo(testUploadId))
+        verify(mockXmlParserService, times(1))
+          .validateAndExtractBusinessRules(eqTo(testDownloadUrl), eqTo(testUploadId))
         verify(mockSubmissionRepository, times(0)).updateStatus(any(), any())
       }
 
