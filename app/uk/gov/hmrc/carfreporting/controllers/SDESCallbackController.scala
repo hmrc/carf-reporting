@@ -56,6 +56,7 @@ class SDESCallbackController @Inject() (
         valid =>
           valid.notification match {
             case FileProcessingFailure        =>
+              logger.warn(s"[SDESCallbackController][callback] There was an error processing the file")
               submissionService.updateFileStatusAsFailure(valid.correlationID, valid.failureReason).value.map {
                 case Right(_)    => Ok
                 case Left(error) =>
@@ -75,7 +76,7 @@ class SDESCallbackController @Inject() (
               }
             case FileProcessed | FileReceived =>
               logger.info(
-                s"[SDESCallbackController][callback] Callback received for upload/correlation ID: ${valid.correlationID}"
+                s"[SDESCallbackController][callback] Callback received for upload/correlation ID: ${valid.correlationID}, status: ${valid.notification}"
               )
               Future.successful(Ok)
             case FileDelayed                  =>
